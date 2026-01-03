@@ -1,0 +1,32 @@
+﻿@model Domain.ViewModel.VentaDetalleViewModel
+
+<div class="border rounded p-3 bg-light">
+    <h5 class="fw-bold mb-3">DETALLE DE VENTA @Model.VentaId</h5>
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="table-secondary">
+                <tr>
+                    <th>Cod Prov</th>
+                    <th>Cod Barras</th>
+                    <th>Descripción</th>
+                    <th>Precio S/IVA</th>
+                    <th>Cantidad</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var d in Model.Items)
+                {
+                    <tr>
+                        <td>@d.CodProv</td>
+                        <td>@d.CodBarras</td>
+                        <td>@d.Descripcion</td>
+                        <td>@d.PrecioSIVA.ToString("N2")</td>
+                        <td>@d.Cantidad.ToString("N2")</td>
+                        <td>@d.Subtotal.ToString("N2")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

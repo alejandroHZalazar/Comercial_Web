@@ -1,0 +1,80 @@
+﻿@page
+@model Comercial_Web.Pages.Configuracion.TipoPrecios.IndexModel
+@{
+    ViewData["Title"] = "ABM Tipos de Precios";
+}
+
+<div class="card mb-4">
+    <div class="card-header fw-semibold mb-3">
+        Tipos de Precios
+    </div>
+
+    @* Formulario genérico *@
+    @if (Model.MostrarFormulario)
+    {
+        @await Html.PartialAsync("_FormularioConfiguracion",
+                new Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.FormularioVm
+    {
+        Id = Model.Id,
+        TituloPrincipal = "Tipos de Precios",
+        TituloSecundario = Model.Id.HasValue ? "Editar Tipo de Precio" : "Agregar Tipo de Precio",
+        Handler = Model.Id.HasValue ? "GuardarEdicion" : "GuardarNuevo",
+        UrlCancelar = Url.Page("Index"),
+        MostrarFormulario = Model.MostrarFormulario,
+        Campos = new List<Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.CampoVm>
+    {
+    new()
+    {
+    Nombre = "Descripcion",
+    Label = "Descripción",
+    Tipo = Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Texto,
+    Valor = Model.Descripcion
+    },
+    new()
+    {
+    Nombre = "FkTipoValor",
+    Label = "Tipo de Valor",
+    Tipo = Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Select,
+    Valor = Model.FkTipoValor.HasValue ? Model.FkTipoValor.Value.ToString() : null,
+    Opciones = Model.TiposValor // IEnumerable<SelectListItem>
+    },
+    new()
+    {
+    Nombre = "Valor",
+    Label = "Valor",
+    Tipo = Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Texto,
+    Valor = Model.Valor.HasValue ? Model.Valor.Value.ToString("N4") : string.Empty
+    }
+    }
+    })
+    }
+
+    @* Botón Agregar *@
+    <form method="post" asp-page-handler="Nuevo" class="ms-3 mb-3">
+        <button type="submit" class="btn btn-success">Agregar</button>
+    </form>
+
+    @* Grilla genérica *@
+    <div class="card-body p-0">
+        @await Html.PartialAsync("_GrillaConfiguracion",
+                 new Comercial_Web.Pages.Shared.Components.GrillaConfiguracion.GrillaVm
+        {
+            Columnas = new List<string> { "Id", "Descripción", "Tipo", "Valor" },
+            Filas = Model.Items.Select(item => new Comercial_Web.Pages.Shared.Components.GrillaConfiguracion.FilaVm
+            {
+                Id = item.Id,
+                Valores = new List<string>
+        {
+        item.Id.ToString(),
+        item.Descripcion,
+        item.TipoValorDescripcion,
+        item.Valor?.ToString("N4") ?? string.Empty
+        }
+            }).ToList()
+        })
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

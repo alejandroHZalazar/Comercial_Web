@@ -1,0 +1,62 @@
+﻿@model Domain.Entities.Proveedore
+
+<div class="border rounded p-3 bg-light">
+    <h5 class="fw-bold mb-3">Datos del Proveedor</h5>
+
+@if (Model != null)
+{
+    <dl class="row">
+            <div class="row mb-2">
+                <div class="col-sm-4 fw-bold">Id</div>
+                <div class="col-sm-8">@Model.Id</div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-sm-4 fw-bold">Nombre Comercial</div>
+                <div class="col-sm-8">@Model.NombreComercial</div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-sm-4 fw-bold">CUIL</div>
+                <div class="col-sm-8">@Model.Cuil</div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-sm-4 fw-bold">Dirección</div>
+                <div class="col-sm-8">@Model.Direccion</div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-sm-4 fw-bold">Email</div>
+                <div class="col-sm-8">@Model.Email</div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-sm-4 fw-bold">Teléfono</div>
+                <div class="col-sm-8">@Model.Telefono</div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-sm-4 fw-bold">Celular</div>
+                <div class="col-sm-8">@Model.Celular</div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-sm-4 fw-bold">Ganancia</div>
+                <div class="col-sm-8">@((Model.Ganancia ?? 0m).ToString("N2"))</div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-sm-4 fw-bold">Descuento</div>
+                <div class="col-sm-8">@((Model.Descuento ?? 0m).ToString("N2"))</div>
+            </div>
+
+    </dl>
+
+        <div class="d-flex justify-content-end mt-3">
+            <form method="post" asp-page-handler="Eliminar" asp-route-id="@Model.Id">
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-trash"></i> Eliminar
+                </button>
+            </form>
+        </div>
+
+}
+    else
+    {
+        <p class="text-muted">Seleccione un proveedor para ver sus datos.</p>
+    }   
+
+</div>

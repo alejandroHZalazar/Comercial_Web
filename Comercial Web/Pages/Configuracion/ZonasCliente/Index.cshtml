@@ -1,0 +1,49 @@
+﻿@page
+@model Comercial_Web.Pages.Configuracion.ZonasClientes.IndexModel
+@{
+    ViewData["Title"] = "ABM Zonas de Clientes";
+}
+
+<form method="post" asp-page-handler="Nuevo" class="ms-3 mb-3">
+    <button type="submit" class="btn btn-success">Nueva Zona</button>
+</form>
+
+@if (Model.MostrarFormulario)
+{
+    @await Html.PartialAsync("_FormularioConfiguracion",
+                        new Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.FormularioVm
+        {
+            Id = Model.Id,
+            TituloPrincipal = "Zonas de Clientes",
+            TituloSecundario = Model.Id.HasValue ? "Editar Zona" : "Nueva Zona",
+            Handler = Model.Id.HasValue ? "GuardarEdicion" : "GuardarNuevo",
+            UrlCancelar = Url.Page("Index"),
+            MostrarFormulario = Model.MostrarFormulario,
+                            Campos = new List<Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.CampoVm>
+            {
+                new()
+                {
+                    Nombre = "Nombre",
+                    Label = "Nombre",
+                    Tipo = Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Texto,
+                    Valor = Model.Nombre
+                }
+            }
+        })
+}
+
+<div class="card-header fw-semibold">Zonas de Clientes</div>
+@await Html.PartialAsync("_GrillaConfiguracion",
+            new Comercial_Web.Pages.Shared.Components.GrillaConfiguracion.GrillaVm
+    {
+        Columnas = new List<string> { "Id", "Nombre" },
+                Filas = Model.Items.Select(z => new Comercial_Web.Pages.Shared.Components.GrillaConfiguracion.FilaVm
+        {
+            Id = z.Id,
+            Valores = new List<string> { z.Id.ToString(), z.Nombre }
+        }).ToList()
+    })
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

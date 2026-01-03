@@ -1,0 +1,48 @@
+﻿@page
+@model Comercial_Web.Pages.Usuarios.IndexModel
+@{
+    ViewData["Title"] = "ABM Usuarios";
+}
+
+<form method="post" asp-page-handler="Nuevo" class="mb-3">
+    <button type="submit" class="btn btn-success">Agregar Usuario</button>
+</form>
+
+@if (Model.MostrarFormulario)
+{ 
+    @await Html.PartialAsync("_FormularioConfiguracion",
+                        new Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.FormularioVm
+        {
+            Id = Model.Id,
+            TituloPrincipal = "Usuarios",
+            TituloSecundario = Model.Id.HasValue ? "Editar Usuario" : "Nuevo Usuario",
+            Handler = Model.Id.HasValue ? "GuardarEdicion" : "GuardarNuevo",
+            UrlCancelar = Url.Page("Index"),
+            MostrarFormulario = Model.MostrarFormulario,
+                            Campos = new List<Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.CampoVm>
+            {
+                new() { Nombre = "Nombre", Label = "Nombre", Tipo = Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Texto, Valor = Model.Nombre },
+                new() { Nombre = "TipoUsuarioId", Label = "Tipo", Tipo = Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Select, Valor = Model.TipoUsuarioId.HasValue ? Model.TipoUsuarioId.Value.ToString() : null, Opciones = Model.TiposUsuario },
+                new() { Nombre = "Contraseña", Label = "Contraseña", Tipo = Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Password, Valor = Model.Contraseña },
+                new() { Nombre = "RepitaContraseña", Label = "Repita Contraseña", Tipo = Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Password, Valor = Model.RepitaContraseña }
+            }
+        })
+}
+
+@await Html.PartialAsync("_GrillaConfiguracion",
+            new Comercial_Web.Pages.Shared.Components.GrillaConfiguracion.GrillaVm
+    {
+        Columnas = new List<string> { "Id", "Nombre", "Tipo" },
+                Filas = Model.Items.Select(u => new Comercial_Web.Pages.Shared.Components.GrillaConfiguracion.FilaVm
+        {
+            Id = u.Id,
+            Valores = new List<string> { u.Id.ToString(), u.Nombre ?? "", u.TipoDescripcion ?? "" }
+        }).ToList()
+    })
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+       
+    </script>
+}

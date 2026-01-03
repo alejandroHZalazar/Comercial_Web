@@ -1,0 +1,135 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inicio Gestion Comercial</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Comercial_Web.styles.css" asp-append-version="true" />
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 220px;
+            height: 100vh; /* siempre ocupa toda la pantalla */
+            background-color: rgba(255, 255, 255, 0.95);
+            background: linear-gradient(to bottom, #f9f9f9, #e0e0e0); /* degradado gris */
+            border-right: 2px solid #bbb;
+            display: flex;
+            flex-direction: column; /* distribuye verticalmente */
+        }
+
+            .sidebar h5 {
+                padding: 15px;
+                margin: 0;
+                text-align: center;
+                border-bottom: 1px solid #ccc;
+                background-color: #dcdcdc;
+                color: #333;
+                font-weight: bold;
+            }
+
+        .accordion {
+            flex: 1; /* ocupa todo el espacio disponible */
+            overflow-y: auto; /* scroll interno si hay muchos ítems */
+            padding: 10px;
+        }
+
+        .accordion-item {
+            background-color: #f0f0f0;
+            border: none;
+            margin-bottom: 0.5rem;
+            border-radius: 4px;
+        }
+
+        .accordion-button {
+            background-color: #e0e0e0;
+            color: #222;
+            font-weight: 600;
+        }
+
+            .accordion-button:not(.collapsed) {
+                background-color: #cfcfcf;
+                color: #000;
+            }
+
+        .accordion-body ul li {
+            display: flex;
+            align-items: center;
+            background-color: #eaeaea;
+            margin-bottom: 0.3rem;
+            padding: 0.4rem 0.6rem;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+
+            .accordion-body ul li:nth-child(even) {
+                background-color: #eaeaea;
+            }
+
+            .accordion-body ul li:hover {
+                background-color: #dcdcdc;
+            }
+
+            .accordion-body ul li img.icono {
+                width: 18px;
+                height: 18px;
+                margin-right: 0.5rem;
+            }
+
+
+        .content {
+            margin-left: 220px;
+            height: 100vh;
+            background: url('/images/login_background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            flex-direction: column;
+        }
+
+            .content main {
+                background-color: white;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                flex: 1;
+                overflow-y: auto;
+            }
+
+        .icono {
+            width: 18px;
+            height: 18px;
+            margin-right: 0.5rem;
+            opacity: 0.8;
+        }
+
+
+    </style>
+</head>
+<body>
+    <div class="sidebar d-none d-md-flex">
+        <h5 class="text-center">Gestión Comercial</h5>
+        <div class="accordion" id="menuAccordion">
+            @await Component.InvokeAsync("MainMenu")
+        </div>
+    </div>
+
+    <div class="content">
+        <main role="main" class="p-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

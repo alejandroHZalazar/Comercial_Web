@@ -1,0 +1,28 @@
+﻿@page
+@model Comercial_Web.Pages.Configuracion.LogoModel
+@{
+    ViewData["Title"] = "Configuración de Logo";
+}
+
+<h4 class="mb-3">Insertar Logo</h4>
+
+<form method="post" enctype="multipart/form-data" asp-page-handler="Insertar">
+    <div class="mb-3">
+        <input type="file" asp-for="ArchivoLogo" class="form-control" />
+        <span asp-validation-for="ArchivoLogo" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">Insertar Logo</button>
+</form>
+
+@if (Model.Mensaje is not null)
+{
+    <div class="alert alert-info mt-3">@Model.Mensaje</div>
+}
+
+<h5 class="mt-4">Logo actual</h5>
+<img src="?handler=Logo" alt="Logo actual" style="max-height:200px;" />
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

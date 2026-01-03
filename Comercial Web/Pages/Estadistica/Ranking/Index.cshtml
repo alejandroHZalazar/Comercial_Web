@@ -1,0 +1,55 @@
+﻿@page
+@model Comercial_Web.Pages.Estadisticas.Ranking.IndexModel
+@{
+    ViewData["Title"] = "Ranking Ventas";
+}
+
+<div class="border rounded p-3 mb-3 bg-light">
+    <h5 class="fw-bold mb-3">FILTROS</h5>
+
+    <form method="post" class="row g-3">
+        <div class="col-md-2">
+            <label class="form-label fw-bold">Desde</label>
+            <input type="date" asp-for="Desde" class="form-control" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label fw-bold">Hasta</label>
+            <input type="date" asp-for="Hasta" class="form-control" />
+        </div>
+
+        <div class="col-12 d-flex justify-content-end align-items-center">
+            <button type="submit" formaction="?handler=RankingClientes" class="btn btn-primary">Ranking por clientes</button>
+            <button type="submit" formaction="?handler=RankingProductos" class="btn btn-outline-secondary ms-2">Ranking por productos</button>            
+        </div>
+    </form>
+</div>
+
+@if (Model.Items.Any())
+{
+    <div class="border rounded bg-white mb-3" style="max-height: 60vh; overflow-y: auto;">
+        <table class="table table-bordered table-hover mb-0">
+            <thead class="table-secondary sticky-top">
+                <tr>
+                    <th>@Model.ColCodigo</th>
+                    <th>@Model.ColNombre</th>
+                    <th class="text-end">@Model.ColValor</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Items)
+                {
+                    <tr>
+                        <td>@row.Codigo</td>
+                        <td>@row.Nombre</td>
+                        <td class="text-end">@row.Valor.ToString(Model.FormatoValor)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="alert alert-info">Sin datos para el período seleccionado.</div>
+}
+

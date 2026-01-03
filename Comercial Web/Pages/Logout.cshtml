@@ -1,0 +1,14 @@
+﻿<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">Comercial</a>
+
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <!-- Menú dinámico -->
+            @await Component.InvokeAsync("MainMenu")
+        </ul>
+
+        <span class="navbar-text text-white">
+            @User.Identity?.Name
+        </span>
+    </div>
+</nav>

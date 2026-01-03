@@ -1,0 +1,142 @@
+﻿@model Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.FormularioVm
+
+
+@if (Model.MostrarFormulario)
+{
+    <div class="card bg-light">
+        <h5 class="form-titulo-secundario px-3">@Model.TituloSecundario</h5>
+
+        <div class="card-body">
+
+            <div class="mb-3">
+                <input type="text" class="form-control" placeholder="Buscar..."
+                       oninput="filtrarModulos(this.value)" />
+            </div>
+            <div class="mb-2 d-flex gap-2">
+                <button type="button" class="btn btn-outline-secondary" onclick="seleccionarTodos()">Todos</button>
+                <button type="button" class="btn btn-outline-secondary" onclick="deseleccionarTodos()">Ninguno</button>
+            </div>
+
+
+            <form method="post" asp-page-handler="@Model.Handler">
+                @foreach (var campo in Model.Campos)
+                {
+                    <div class="mb-3 campo-formulario">
+                        <label class="form-label">@campo.Label</label>
+
+                        @switch (campo.Tipo)
+                        {
+                            case Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Select:
+                                <select name="@campo.Nombre" class="form-select">
+                                    @if (campo.Opciones != null)
+                                    {
+                                        foreach (var opt in campo.Opciones)
+                                        {
+                                            var selected = (!string.IsNullOrEmpty(campo.Valor) && opt.Value == campo.Valor) || opt.Selected;
+                                            <option value="@opt.Value" selected="@(selected ? "selected" : null)">
+                                                @opt.Text
+                                            </option>
+                                        }
+                                    }
+                                </select>
+                                break;
+
+                            case Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Textarea:
+                                <textarea name="@campo.Nombre" class="form-control">@campo.Valor</textarea>
+                                break;
+
+                            case Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.CheckboxList:
+                                <div class="mb-3 border rounded p-3 bg-white">
+                                    @foreach (var item in campo.Items!)
+                                    {
+                                        <div class="form-check permiso-row" data-nombre="@item.Nombre">
+
+                                            <input type="checkbox"
+                                                   class="form-check-input"
+                                                   name="PermisosSeleccionados"
+                                                   value="@item.Id"
+                                            @(item.Seleccionado ? "checked" : "") />
+
+                                            <label class="form-check-label">@item.Nombre</label>
+                                        </div>
+                                    }
+                                </div>
+                                <span asp-validation-for="PermisosFormulario" class="text-danger"></span>
+                                break;
+                            case Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Password:
+                                <div class="input-group">
+                                    <input type="password" name="@campo.Nombre" class="form-control" value="@campo.Valor" />
+                                    <button type="button" class="btn btn-outline-secondary"
+                                            onclick="togglePassword(this.previousElementSibling)">
+                                        👁️
+                                    </button>
+                                </div>
+                                <script>
+                                    function togglePassword(input) {
+                                        input.type = input.type === 'password' ? 'text' : 'password';
+                                    }
+                                </script>
+                                break;
+
+
+
+                            default:
+                                <input name="@campo.Nombre" class="form-control" value="@campo.Valor" />
+                                break;
+                        }
+
+                        @* mensaje de validación opcional *@
+                        @if (!string.IsNullOrWhiteSpace(campo.MensajeError))
+                        {
+                            <span class="text-danger">@campo.MensajeError</span>
+                        }
+                    </div>
+                }
+
+
+                @if (Model.Handler == "GuardarEdicion" || Model.Handler == "Editar")
+
+                {
+                    <input type="hidden" name="Id" value="@Model.Id" />
+                }
+
+                <!-- campos -->
+                <div class="d-flex gap-2 botones-formulario">
+                    <button type="submit" class="btn btn-primary">Grabar</button>
+                    <a class="btn btn-secondary" href="@Model.UrlCancelar">Cancelar</a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function seleccionarTodos() {
+            document.querySelectorAll('.permiso-row input[type="checkbox"]').forEach(cb => cb.checked = true);
+        }
+
+        function deseleccionarTodos() {
+            document.querySelectorAll('.permiso-row input[type="checkbox"]').forEach(cb => cb.checked = false);
+        }
+
+        function filtrarModulos(texto) {
+            document.querySelectorAll('.permiso-row').forEach(row => {
+                const nombre = row.dataset.nombre.toLowerCase();
+                row.style.display = nombre.includes(texto.toLowerCase()) ? '' : 'none';
+            });
+        }
+
+        // Forzar mayúsculas en el campo nombre
+        document.addEventListener('DOMContentLoaded', () => {
+            const input = document.querySelector('input[name="Descripcion"]');
+            if (input) {
+                input.addEventListener('input', () => {
+                    input.value = input.value.toUpperCase();
+                });
+            }
+        });
+    </script>
+    }

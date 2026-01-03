@@ -1,0 +1,59 @@
+﻿@page
+@model Comercial_Web.Pages.Configuracion.Rubros.IndexModel
+@{
+    ViewData["Title"] = "ABM Rubros";
+}
+
+<div class="card mb-4">
+    <div class="card-header fw-semibold mb-3">
+        Rubros
+    </div>
+
+    @* Formulario genérico *@
+    @if (Model.MostrarFormulario)
+    {
+        @await Html.PartialAsync("_FormularioConfiguracion",
+                new Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.FormularioVm
+    {
+        Id = Model.Id,
+        TituloPrincipal = "Rubros",
+        TituloSecundario = Model.Id.HasValue ? "Editar Rubro" : "Agregar Rubro",
+        Handler = Model.Id.HasValue ? "GuardarEdicion" : "GuardarNuevo",
+        UrlCancelar = Url.Page("Index"),
+        MostrarFormulario = Model.MostrarFormulario,
+        Campos = new List<Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.CampoVm>
+    {
+    new()
+    {
+    Nombre = "Descripcion",
+    Label = "Descripción",
+    Tipo = Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Texto,
+    Valor = Model.Descripcion
+    }
+    }
+    })
+    }
+
+    @* Botón Agregar *@
+    <form method="post" asp-page-handler="Nuevo" class="ms-3 mb-3">
+        <button type="submit" class="btn btn-success">Agregar</button>
+    </form>
+
+    @* Grilla genérica *@
+    <div class="card-body p-0">
+        @await Html.PartialAsync("_GrillaConfiguracion",
+                 new Comercial_Web.Pages.Shared.Components.GrillaConfiguracion.GrillaVm
+        {
+            Columnas = new List<string> { "Id", "Descripción" },
+            Filas = Model.Items.Select(r => new Comercial_Web.Pages.Shared.Components.GrillaConfiguracion.FilaVm
+            {
+                Id = r.Id,
+                Valores = new List<string> { r.Id.ToString(), r.Descripcion }
+            }).ToList()
+        })
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

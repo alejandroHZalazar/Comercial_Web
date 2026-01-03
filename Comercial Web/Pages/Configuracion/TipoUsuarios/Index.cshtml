@@ -1,0 +1,107 @@
+﻿@page
+@model Comercial_Web.Pages.Configuracion.TipoUsuarios.IndexModel
+@{
+    ViewData["Title"] = "ABM Tipo de Usuarios y Permisos";
+}
+
+<div class="card mb-4">
+    <div class="card-header fw-semibold mb-3">
+        Tipos de Usuarios
+    </div>
+
+@* Formulario genérico *@
+    @if (Model.MostrarFormulario)
+    { 
+
+
+        @await Html.PartialAsync("_FormularioConfiguracion",
+                new Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.FormularioVm
+        {
+            Id = Model.Id,
+            TituloPrincipal = "Tipos de Usuarios",
+            TituloSecundario = Model.Id.HasValue ? "Editar Tipo de Usuario" : "Nuevo Tipo de Usuario",
+            Handler = Model.Id.HasValue ? "GuardarEdicion" : "GuardarNuevo",
+            UrlCancelar = Url.Page("Index"),
+            MostrarFormulario = Model.MostrarFormulario,
+            Campos = new List<Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.CampoVm>
+            {
+                new()
+                {
+                    Nombre = "Descripcion",
+                    Label = "Nombre",
+                    Tipo = Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Texto,
+                    Valor = Model.Descripcion
+                },
+                new()
+                {
+                    Nombre = "PermisosFormulario",
+                    Label = "Permisos",
+                    Tipo = Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.CheckboxList,
+                    Items = Model.PermisosFormulario.Select(p => new Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.CheckboxItemVm
+                    {
+                        Id = p.Id,
+                        Nombre = p.Nombre,
+                        Seleccionado = p.Seleccionado
+                    }).ToList()
+                }
+            }
+            ,PermisosFormulario = Model.PermisosFormulario
+                .Select(p => new Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.CheckboxItemVm
+                {
+                    Id = p.Id,
+                    Nombre = p.Nombre,
+                    Seleccionado = p.Seleccionado
+                })
+                .ToList()
+
+        })
+    }
+    @* Botón Agregar *@
+    <form method="post" asp-page-handler="Nuevo" class="ms-3 mb-3">
+        <button type="submit" class="btn btn-success">Nuevo Tipo de Usuario</button>
+    </form>
+
+    @* Grilla genérica *@
+    <div class="card-body p-0">
+        @await Html.PartialAsync("_GrillaConfiguracion",
+                 new Comercial_Web.Pages.Shared.Components.GrillaConfiguracion.GrillaVm
+        {
+            Columnas = new List<string> { "Id", "Nombre" },
+            Filas = Model.Items.Select(t => new Comercial_Web.Pages.Shared.Components.GrillaConfiguracion.FilaVm
+            {
+                Id = t.Id,
+                Valores = new List<string> { t.Id.ToString(), t.Descripcion }
+            }).ToList()
+        })
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function seleccionarTodos() {
+            document.querySelectorAll('.permiso-row input[type="checkbox"]').forEach(cb => cb.checked = true);
+        }
+
+        function deseleccionarTodos() {
+            document.querySelectorAll('.permiso-row input[type="checkbox"]').forEach(cb => cb.checked = false);
+        }
+
+        function filtrarModulos(texto) {
+            document.querySelectorAll('.permiso-row').forEach(row => {
+                const nombre = row.dataset.nombre.toLowerCase();
+                row.style.display = nombre.includes(texto.toLowerCase()) ? '' : 'none';
+            });
+        }
+
+        // Forzar mayúsculas en el campo nombre
+        document.addEventListener('DOMContentLoaded', () => {
+            const input = document.querySelector('input[name="Descripcion"]');
+            if (input) {
+                input.addEventListener('input', () => {
+                    input.value = input.value.toUpperCase();
+                });
+            }
+        });
+    </script>
+}

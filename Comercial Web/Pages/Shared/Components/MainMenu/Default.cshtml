@@ -1,0 +1,46 @@
+﻿@model List<MenuItemVm>
+
+@{
+    var index = 0;
+}
+
+@foreach (var menu in Model)
+{
+    var collapseId = $"collapse{index}";
+    var headingId = $"heading{index}";
+    index++;
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="@headingId">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="false" aria-controls="@collapseId">
+                @menu.Descripcion
+            </button>
+        </h2>
+        <div id="@collapseId" class="accordion-collapse collapse" aria-labelledby="@headingId" data-bs-parent="#menuAccordion">
+            <div class="accordion-body">
+                @if (menu.Hijos != null && menu.Hijos.Any())
+                {
+                    <ul class="list-unstyled">
+                        @foreach (var sub in menu.Hijos)
+                        {
+                            <li>
+                                <a href="@sub.Url" class="d-flex align-items-center text-decoration-none text-dark mb-1">
+                                    <img src="/icons/@(string.IsNullOrEmpty(sub.Icono) ? "generic.png" : sub.Icono)"
+                                         class="icono" alt="icono" />
+                                    @sub.Descripcion
+                                </a>
+
+
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <a href="@menu.Url" class="d-block text-decoration-none text-primary mb-1">
+                        @menu.Descripcion
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+}

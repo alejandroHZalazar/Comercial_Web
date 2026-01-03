@@ -1,0 +1,7 @@
+ Categorias de Productos
+ Nota de Venta en ticketera
+ Facturacion por post
+ Facturacion Electronica
+ Pago por billeteras virtuales
+ 
+ 

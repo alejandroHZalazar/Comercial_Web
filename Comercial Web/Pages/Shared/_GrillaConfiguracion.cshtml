@@ -1,0 +1,43 @@
+﻿@model Comercial_Web.Pages.Shared.Components.GrillaConfiguracion.GrillaVm
+
+<div class="card shadow-sm mb-4">
+    <table class="table table-striped mb-0">
+        <thead>
+            <tr>
+                @foreach (var col in Model.Columnas)
+                {
+                    <th>@col</th>
+                }
+                <th></th> <!-- columna para acciones -->
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var fila in Model.Filas)
+            {
+                <tr>
+                    @foreach (var celda in fila.Valores)
+                    {
+                        <td>@celda</td>
+                    }
+                    <td>
+                        <a class="btn btn-outline-primary btn-sm"
+                           asp-page-handler="Editar"
+                           asp-route-id="@fila.Id">
+                            Editar
+                        </a>
+
+                        <form method="post"
+                              asp-page-handler="Eliminar"
+                              asp-route-id="@fila.Id"
+                              class="d-inline">
+                            <button type="submit"
+                                    class="btn btn-outline-danger btn-sm">
+                                Eliminar
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

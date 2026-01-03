@@ -1,0 +1,54 @@
+﻿@page
+@model Comercial_Web.Pages.Configuracion.CondicionIva.IndexModel
+@{
+    ViewData["Title"] = "ABM Condición IVA";
+}
+
+
+<div class="card mb-4">
+    <div class="card-header fw-semibold mb-3">
+        Condiciones IVA
+    </div>
+
+    @if (Model.MostrarFormulario)
+    {       
+
+        @await Html.PartialAsync("_FormularioConfiguracion", new Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.FormularioVm
+        {
+            Id = Model.Id,
+            TituloPrincipal = "Condiciones de IVA",
+            TituloSecundario = Model.Id.HasValue ? "Editar Condición IVA" : "Agregar Condición IVA",
+            Handler = Model.Id.HasValue ? "Editar" : "Agregar",
+            UrlCancelar = Url.Page("Index"),
+            MostrarFormulario = Model.MostrarFormulario,
+            Campos = new List<Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.CampoVm> {
+            new() { Nombre="Descripcion", Label="Descripción", Valor=Model.Descripcion },
+            new() { Nombre="Abrev", Label="Abreviatura", Valor=Model.Abrev },
+            new() { Nombre="Letra", Label="Letra", Valor=Model.Letra }
+            }
+        })
+
+    }
+
+    <form method="post" asp-page-handler="Nuevo" class="ms-3">
+        <button type="submit" class="btn btn-success mb-3">Agregar</button>
+    </form>
+
+    <div class="card-body p-0">
+        @await Html.PartialAsync("_GrillaConfiguracion", new Comercial_Web.Pages.Shared.Components.GrillaConfiguracion.GrillaVm
+        {
+            Columnas = new List<string> { "Id", "Descripción", "Abrev", "Letra" },
+            Filas = Model.Items.Select(c => new Comercial_Web.Pages.Shared.Components.GrillaConfiguracion.FilaVm
+            {
+                Id = c.Id,
+                Valores = new List<string> { c.Id.ToString(), c.Descripcion, c.Abrev, c.Letra }
+            }).ToList()
+        })
+        
+    </div>
+</div>
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

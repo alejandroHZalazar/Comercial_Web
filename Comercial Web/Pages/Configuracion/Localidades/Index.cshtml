@@ -1,0 +1,74 @@
+﻿@page
+@model Comercial_Web.Pages.Configuracion.Localidades.IndexModel
+@{
+    ViewData["Title"] = "ABM Localidades";
+}
+
+<div class="card mb-4">
+    <div class="card-header fw-semibold mb-3">
+        Localidades
+    </div>
+
+    @if (Model.MostrarFormulario)
+    {
+        @await Html.PartialAsync("_FormularioConfiguracion",
+                new Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.FormularioVm
+    {
+        Id = Model.Id,
+        TituloPrincipal = "Localidades",
+        TituloSecundario = Model.Id.HasValue ? "Editar Localidad" : "Nueva Localidad",
+        Handler = Model.Id.HasValue ? "GuardarEdicion" : "GuardarNuevo",
+        UrlCancelar = Url.Page("Index"),
+        MostrarFormulario = Model.MostrarFormulario,
+        Campos = new List<Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.CampoVm>
+    {
+    new()
+    {
+    Nombre = "Nombre",
+    Label = "Nombre",
+    Tipo = Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Texto,
+    Valor = Model.Nombre
+    },
+    new()
+    {
+    Nombre = "FkProvincia",
+    Label = "Provincia",
+    Tipo = Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Select,
+    Valor = Model.FkProvincia.HasValue ? Model.FkProvincia.Value.ToString() : null,
+    Opciones = Model.Provincias // IEnumerable<SelectListItem>
+    }
+    }
+    })
+    }
+
+    <form method="post" asp-page-handler="Filtrar" class="ms-3 mb-3">
+        <div class="row g-2 align-items-end">
+            <div class="col-auto">
+                <select asp-for="FiltroProvinciaId" asp-items="Model.Provincias" class="form-select" style="width: 250px;"></select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-success" asp-page-handler="Nuevo" formnovalidate>Agregar</button>
+            </div>
+        </div>
+    </form>
+
+    <div class="card-body p-0">
+        @await Html.PartialAsync("_GrillaConfiguracion",
+                 new Comercial_Web.Pages.Shared.Components.GrillaConfiguracion.GrillaVm
+        {
+            Columnas = new List<string> { "Id", "Nombre" },
+            Filas = Model.Items.Select(l => new Comercial_Web.Pages.Shared.Components.GrillaConfiguracion.FilaVm
+            {
+                Id = l.Id,
+                Valores = new List<string> { l.Id.ToString(), l.Nombre }
+            }).ToList()
+        })
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
