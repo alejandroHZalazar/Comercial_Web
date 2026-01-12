@@ -4,45 +4,69 @@
     ViewData["Title"] = "ABM Usuarios";
 }
 
-<form method="post" asp-page-handler="Nuevo" class="mb-3">
-    <button type="submit" class="btn btn-success">Agregar Usuario</button>
-</form>
+<div class="card shadow-lg border-0 rounded-3 mt-4">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h3 class="mb-0">Usuarios</h3>
+        <form method="post" asp-page-handler="Nuevo" class="mb-0">
+            <button type="submit" class="btn btn-light btn-sm">
+                <i class="bi bi-person-plus"></i> Agregar Usuario
+            </button>
+        </form>
+    </div>
 
-@if (Model.MostrarFormulario)
-{ 
-    @await Html.PartialAsync("_FormularioConfiguracion",
-                        new Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.FormularioVm
+    <div class="card-body">
+        @if (Model.MostrarFormulario)
         {
-            Id = Model.Id,
-            TituloPrincipal = "Usuarios",
-            TituloSecundario = Model.Id.HasValue ? "Editar Usuario" : "Nuevo Usuario",
-            Handler = Model.Id.HasValue ? "GuardarEdicion" : "GuardarNuevo",
-            UrlCancelar = Url.Page("Index"),
-            MostrarFormulario = Model.MostrarFormulario,
-                            Campos = new List<Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.CampoVm>
+            <div class="mb-4">
+                @await Html.PartialAsync("_FormularioConfiguracion",
+                         new Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.FormularioVm
             {
-                new() { Nombre = "Nombre", Label = "Nombre", Tipo = Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Texto, Valor = Model.Nombre },
-                new() { Nombre = "TipoUsuarioId", Label = "Tipo", Tipo = Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Select, Valor = Model.TipoUsuarioId.HasValue ? Model.TipoUsuarioId.Value.ToString() : null, Opciones = Model.TiposUsuario },
-                new() { Nombre = "Contraseña", Label = "Contraseña", Tipo = Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Password, Valor = Model.Contraseña },
-                new() { Nombre = "RepitaContraseña", Label = "Repita Contraseña", Tipo = Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Password, Valor = Model.RepitaContraseña }
+                Id = Model.Id,
+                TituloPrincipal = "Usuarios",
+                TituloSecundario = Model.Id.HasValue ? "Editar Usuario" : "Nuevo Usuario",
+                Handler = Model.Id.HasValue ? "GuardarEdicion" : "GuardarNuevo",
+                UrlCancelar = Url.Page("Index"),
+                MostrarFormulario = Model.MostrarFormulario,
+                Campos = new List<Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.CampoVm>
+            {
+            new() { Nombre = "Nombre", Label = "Nombre", Tipo = Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Texto, Valor = Model.Nombre },
+            new() { Nombre = "TipoUsuarioId", Label = "Tipo", Tipo = Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Select, Valor = Model.TipoUsuarioId.HasValue ? Model.TipoUsuarioId.Value.ToString() : null, Opciones = Model.TiposUsuario },
+            new() { Nombre = "Contraseña", Label = "Contraseña", Tipo = Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Password, Valor = Model.Contraseña },
+            new() { Nombre = "RepitaContraseña", Label = "Repita Contraseña", Tipo = Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Password, Valor = Model.RepitaContraseña }
             }
-        })
-}
+            })
+            </div>
+        }
 
-@await Html.PartialAsync("_GrillaConfiguracion",
-            new Comercial_Web.Pages.Shared.Components.GrillaConfiguracion.GrillaVm
-    {
-        Columnas = new List<string> { "Id", "Nombre", "Tipo" },
+        <!-- Grilla con scroll limitado -->
+        
+        <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+            @await Html.PartialAsync("_GrillaConfiguracion",
+                     new Comercial_Web.Pages.Shared.Components.GrillaConfiguracion.GrillaVm
+            {
+                Columnas = new List<string> { "Id", "Nombre", "Tipo" }, // sin "Acciones"
                 Filas = Model.Items.Select(u => new Comercial_Web.Pages.Shared.Components.GrillaConfiguracion.FilaVm
-        {
-            Id = u.Id,
-            Valores = new List<string> { u.Id.ToString(), u.Nombre ?? "", u.TipoDescripcion ?? "" }
-        }).ToList()
-    })
+                {
+                    Id = u.Id,
+                    Valores = new List<string> { u.Id.ToString(), u.Nombre ?? "", u.TipoDescripcion ?? "" }
+                }).ToList()
+            })
+        </div>
+
+    </div>
+   
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-       
+        // Delegación de eventos para eliminar fila
+        document.querySelector(".table").addEventListener("click", function (e) {
+            if (e.target && e.target.classList.contains("eliminar-link")) {
+                const fila = e.target.closest("tr");
+                fila.remove();
+                console.log("Usuario eliminado de la grilla");
+            }
+        });
     </script>
 }

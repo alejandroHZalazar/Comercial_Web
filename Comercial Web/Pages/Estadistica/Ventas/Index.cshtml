@@ -6,128 +6,146 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
 <!-- Filtros -->
-<div class="border rounded p-3 mb-3 bg-light">
-    <h5 class="fw-bold mb-3">FILTROS</h5>
-    <form method="post" asp-page-handler="Buscar">
-        <div class="row g-3">
+<div class="card mb-4 rounded shadow-sm">
+    <div class="card-header fw-semibold bg-light border-bottom">
+        FILTROS
+    </div>
+    <div class="card-body p-4">
+        <form method="post" asp-page-handler="Buscar" class="row g-3 align-items-end">
             <div class="col-md-2">
                 <label class="form-label fw-bold">Desde</label>
-                <input type="date" asp-for="Desde" class="form-control" />
+                <input type="date" asp-for="Desde" class="form-control form-control-sm" />
             </div>
             <div class="col-md-2">
                 <label class="form-label fw-bold">Hasta</label>
-                <input type="date" asp-for="Hasta" class="form-control" />
+                <input type="date" asp-for="Hasta" class="form-control form-control-sm" />
             </div>
             <div class="col-md-3">
                 <label class="form-label fw-bold">Cliente</label>
-                <select asp-for="ClienteId" asp-items="Model.Clientes" class="form-select"></select>
+                <select asp-for="ClienteId" asp-items="Model.Clientes" class="form-select form-select-sm"></select>
             </div>
             <div class="col-md-3">
                 <label class="form-label fw-bold">Vendedor</label>
-                <select asp-for="VendedorId" asp-items="Model.Vendedores" class="form-select"></select>
+                <select asp-for="VendedorId" asp-items="Model.Vendedores" class="form-select form-select-sm"></select>
             </div>
             <div class="col-md-2">
                 <label class="form-label fw-bold">Proveedor</label>
-                <select asp-for="ProveedorId" asp-items="Model.Proveedores" class="form-select"></select>
+                <select asp-for="ProveedorId" asp-items="Model.Proveedores" class="form-select form-select-sm"></select>
             </div>
 
             <!-- Botones alineados a la derecha -->
-            <div class="col-12 d-flex justify-content-end">
-                <button type="submit" class="btn btn-primary">Buscar</button>
+            <div class="col-12 d-flex justify-content-end gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-search"></i> Buscar
+                </button>
 
                 <!-- Botón de imprimir con ícono -->
-                <div class="dropdown ms-2">
-                    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownImprimir" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="dropdownImprimir" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-printer"></i> Imprimir
                     </button>
-                    <ul class="dropdown-menu" aria-labelledby="dropdownImprimir">
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownImprimir">
                         <li><a class="dropdown-item" href="javascript:void(0)" onclick="imprimirFiltrado('PDF')">PDF</a></li>
                         <li><a class="dropdown-item" href="javascript:void(0)" onclick="imprimirFiltrado('EXCEL')">Excel</a></li>
                         <li><a class="dropdown-item" href="javascript:void(0)" onclick="imprimirFiltrado('WORDOPENXML')">Word</a></li>
                     </ul>
                 </div>
-
             </div>
-        </div>
-    </form>
+        </form>
+    </div>
 </div>
-
 
 @if (Model.Ventas.Any())
 {
     <!-- Grilla -->
-    <div class="border rounded bg-white mb-3" style="max-height: 50vh; overflow-y: auto;">
-        <table class="table table-bordered table-hover mb-0">
-            <thead class="table-secondary sticky-top">
-                <tr>
-                    <th>Nro</th>
-                    <th>Fecha</th>
-                    <th>Cliente</th>
-                    <th>Vendedor</th>
-                    <th>IVA</th>
-                    <th>Desc/Rec</th>
-                    <th>Total c/IVA</th>
-                    <th>Total s/IVA</th>
-                    <th>Costo</th>
-                    <th>% Com.</th>
-                    <th>Comisión</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var v in Model.Ventas)
-                {
-                    <tr>
-                        <td>@v.Nro</td>
-                        <td>@v.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
-                        <td>@v.Cliente</td>
-                        <td>@v.Vendedor</td>
-                        <td>@v.IVA.ToString("N2")</td>
-                        <td>@v.Desc_Rec.ToString("N2")</td>
-                        <td>@v.TotalCIVA.ToString("N2")</td>
-                        <td>@v.totalSIVA.ToString("N2")</td>
-                        <td>@v.Costo.ToString("N2")</td>
-                        <td>@v.P_Com.ToString("N2")</td>
-                        <td>@v.Comision.ToString("N2")</td>
-                        <td>
-                            <a href="javascript:void(0)" onclick="cargarDetalle(@v.Nro)">Ver detalle</a>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-
-        </table>
+    <div class="card mb-4 rounded shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 50vh; overflow-y: auto;">
+                <table class="table table-bordered table-hover table-sm mb-0">
+                    <thead class="table-secondary sticky-top">
+                        <tr>
+                            <th>Nro</th>
+                            <th>Fecha</th>
+                            <th>Cliente</th>
+                            <th>Vendedor</th>
+                            <th>IVA</th>
+                            <th>Desc/Rec</th>
+                            <th>Total c/IVA</th>
+                            <th>Total s/IVA</th>
+                            <th>Costo</th>
+                            <th>% Com.</th>
+                            <th>Comisión</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var v in Model.Ventas)
+                        {
+                            <tr>
+                                <td>@v.Nro</td>
+                                <td>@v.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@v.Cliente</td>
+                                <td>@v.Vendedor</td>
+                                <td>@v.IVA.ToString("N2")</td>
+                                <td>@v.Desc_Rec.ToString("N2")</td>
+                                <td>@v.TotalCIVA.ToString("N2")</td>
+                                <td>@v.totalSIVA.ToString("N2")</td>
+                                <td>@v.Costo.ToString("N2")</td>
+                                <td>@v.P_Com.ToString("N2")</td>
+                                <td>@v.Comision.ToString("N2")</td>
+                                <td>
+                                    <a href="javascript:void(0)" onclick="cargarDetalle(@v.Nro)" class="text-decoration-none">
+                                        <i class="bi bi-eye"></i> Ver detalle
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <!-- Totalizadores -->
-    <div class="border rounded p-3 bg-secondary bg-opacity-10">
-        <div class="row g-3">
-            <div class="col-md-3">
-                <label class="form-label fw-bold">Cantidad</label>
-                <input type="text" class="form-control" value="@Model.Cantidad" readonly />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label fw-bold">Tot. Venta s/IVA</label>
-                <input type="text" class="form-control" value="@Model.TotVentaSinIva.ToString("N2")" readonly />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label fw-bold">Tot. Costo</label>
-                <input type="text" class="form-control" value="@Model.TotCosto.ToString("N2")" readonly />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label fw-bold">Tot. Comisión</label>
-                <input type="text" class="form-control" value="@Model.TotComision.ToString("N2")" readonly />
+    <div class="card mb-4 rounded shadow-sm">
+        <div class="card-header fw-semibold bg-light border-bottom">
+            Totales
+        </div>
+        <div class="card-body p-4 bg-secondary bg-opacity-10">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Cantidad</label>
+                    <input type="text" class="form-control form-control-sm text-end" value="@Model.Cantidad" readonly />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Tot. Venta s/IVA</label>
+                    <input type="text" class="form-control form-control-sm text-end" value="@Model.TotVentaSinIva.ToString("N2")" readonly />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Tot. Costo</label>
+                    <input type="text" class="form-control form-control-sm text-end" value="@Model.TotCosto.ToString("N2")" readonly />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Tot. Comisión</label>
+                    <input type="text" class="form-control form-control-sm text-end" value="@Model.TotComision.ToString("N2")" readonly />
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Contenedor único para el detalle -->
     <div id="detalle" class="mt-3"></div>
-
+}
+else
+{
+    <div class="alert alert-info rounded shadow-sm">
+        <i class="bi bi-info-circle"></i> Sin datos para el período seleccionado.
+    </div>
 }
 
 <script>
     function cargarDetalle(id) {
-            fetch('/Estadistica/Ventas?handler=Detalle&id=' + id)
+        fetch('/Estadistica/Ventas?handler=Detalle&id=' + id)
             .then(r => r.text())
             .then(html => {
                 document.getElementById('detalle').innerHTML = html;
@@ -150,7 +168,5 @@
             + `&proveedorId=${encodeURIComponent(proveedorId)}`;
 
         window.open(url, '_blank');
-     }
-
+    }
 </script>
-

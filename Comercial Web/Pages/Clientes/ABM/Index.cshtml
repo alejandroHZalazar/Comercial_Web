@@ -1,0 +1,303 @@
+﻿@page
+@model Comercial_Web.Pages.Clientes.ABM.IndexModel
+@{
+    ViewData["Title"] = "Administración de Clientes";
+}
+
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+
+<input type="hidden"
+       id="antiForgeryToken"
+       value="@Antiforgery.GetAndStoreTokens(HttpContext).RequestToken" />
+
+<div class="card shadow-lg border-0 rounded-3 mt-4">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h3 class="mb-0">Clientes</h3>      
+        <button type="button" class="btn btn-light btn-sm mb-0" onclick="abrirModalNuevo()">
+            <i class="bi bi-person-plus"></i> Agregar Cliente
+        </button>
+
+    </div>
+
+    <div class="card-body">
+        <!-- Filtro de búsqueda -->
+        <div class="row mb-3">
+            <div class="col-auto">
+                <label for="TipoBusqueda" class="form-label visually-hidden">Tipo</label>
+                <select id="TipoBusqueda" class="form-select form-select-sm">
+                    <option value="0">Nombre Comercial</option>
+                    <option value="1">Razón Social</option>
+                    <option value="2">CUIL</option>
+                    <option value="3">Localidad</option>
+                    <option value="4">Zona</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="text" id="txtBusqueda" class="form-control form-control-sm" placeholder="Buscar cliente..." />
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-sm btn-primary" onclick="buscarClientes()">
+                    <i class="bi bi-search"></i> Buscar
+                </button>
+            </div>
+        </div>
+
+
+        <!-- División en dos mitades -->
+        <div class="row">
+            <!-- Grilla -->
+            <div class="col-md-6">
+                <div class="table-responsive" style="max-height: 700px; overflow-y: auto;">
+                    <table class="table table-striped table-hover" id="tablaClientes">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre Comercial</th>
+                                <th>Razón Social</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cliente in Model.Clientes)
+                            {
+                                <tr onclick="mostrarDetalle(@cliente.Id)">
+                                    <td>@cliente.Id</td>
+                                    <td>@cliente.NombreComercial</td>
+                                    <td>@cliente.RazonSocial</td>
+                                    <td>
+                                        <button class="btn btn-outline-danger btn-sm" onclick="eliminarCliente(event, @cliente.Id)">
+                                            Eliminar
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Panel de detalles -->
+            <div class="col-md-6">
+                <div class="border rounded p-3 bg-light" id="panelDetalle">  
+                    <input type="hidden" id="IdClienteSeleccionado" name="Id" />
+                    <div id="detalleContenido">                        
+                        <p class="text-muted">Seleccione un cliente para ver sus datos.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botón Editar -->
+        <div class="d-flex justify-content-end mt-3">
+            <button type="button" class="btn btn-primary" onclick="abrirModalEditar(document.getElementById('IdClienteSeleccionado').value)">                
+                <i class="bi bi-pencil-square"></i> Editar
+            </button>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal para Agregar/Editar Cliente -->
+<div class="modal fade" id="clienteModal" tabindex="-1" aria-labelledby="clienteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-3">
+            <div class="card">               
+                <div class="card-header bg-primary text-white d-flex align-items-center justify-content-between">
+                    <h5 class="modal-title mb-0" id="clienteModalLabel">Cliente</h5>
+                    <button type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar">
+                    </button>
+                </div>
+                <div class="card-body">
+                    <form id="clienteForm" method="post" asp-page-handler="Guardar">
+                        <input type="hidden" id="ClienteId" name="Cliente.Id" />
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nombre Comercial</label>
+                                <input type="text" class="form-control" name="Cliente.NombreComercial" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Razón Social</label>
+                                <input type="text" class="form-control" name="Cliente.RazonSocial"/>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">CUIL</label>
+                                <input type="text" class="form-control" name="Cliente.Cuil" />
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">Dirección</label>
+                                <input type="text" class="form-control" name="Cliente.Direccion" required/>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" name="Cliente.Email" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Teléfono</label>
+                                <input type="text" class="form-control" name="Cliente.Telefono" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Celular</label>
+                                <input type="text" class="form-control" name="Cliente.Celular" />
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Contacto</label>
+                                <input type="text" class="form-control" name="Cliente.Contacto" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Condición IVA</label>
+                                <select class="form-select" name="Cliente.FkCondIva" asp-items="Model.CondicionIvas"></select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Vendedor</label>
+                                <select class="form-select" name="Cliente.FkVendedor" asp-items="Model.Vendedores"></select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Localidad</label>
+                                <select class="form-select" name="Cliente.FkLocalidad" asp-items="Model.Localidades"></select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Zona</label>
+                                <select class="form-select" name="Cliente.FkZona" asp-items="Model.Zonas"></select>
+                            </div>                            
+                        </div>
+
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-success me-2">Guardar</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById("TipoBusqueda").selectedIndex = @ViewData["FiltroDefecto"];
+
+    function mostrarDetalle(id) {
+        fetch(`/Clientes/ABM/Index?handler=Detalle&id=${id}`)
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById("detalleContenido").innerHTML = html;
+                document.getElementById("IdClienteSeleccionado").value = id;
+            });
+    }
+
+               function eliminarCliente(event, id) {
+        event.stopPropagation();
+
+        if (!confirm("¿Está seguro que desea eliminar este cliente?")) return;
+
+        const token = document.getElementById("antiForgeryToken").value;
+
+        fetch(`/Clientes/ABM?handler=Eliminar`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "RequestVerificationToken": token
+            },
+            body: `id=${encodeURIComponent(id)}`
+        })
+        .then(r => {
+            if (!r.ok) throw new Error("Error al eliminar");
+            return r.json();
+        })
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        })
+        .catch(err => console.error(err));
+    }
+
+
+
+
+
+    async function buscarClientes() {
+        const tipo = parseInt(document.getElementById("TipoBusqueda").value);
+        const valor = document.getElementById("txtBusqueda").value.trim();
+
+        if (!valor) return;
+
+        const response = await fetch(`/Clientes/ABM/Index?handler=BuscarClientes&tipo=${tipo}&valor=${encodeURIComponent(valor)}`);
+        const html = await response.text();
+
+        const tbody = document.querySelector("#tablaClientes tbody");
+        tbody.innerHTML = html;
+
+        // Si solo hay un resultado, mostrar detalle automáticamente
+        const filas = tbody.querySelectorAll("tr");
+        if (filas.length === 1) {
+            const id = filas[0].querySelector("td").innerText;
+            mostrarDetalle(id);
+        }
+    }
+
+        // Abrir modal en modo "Nuevo"
+        function abrirModalNuevo() {
+        document.getElementById("clienteForm").reset();
+        document.getElementById("ClienteId").value = 0;
+        document.getElementById("clienteModalLabel").innerText = "Agregar Cliente";
+        new bootstrap.Modal(document.getElementById("clienteModal")).show();
+    }
+
+
+    // Abrir modal en modo "Editar"
+       async function abrirModalEditar(id) {
+        // Pedimos los datos del cliente en JSON
+        const response = await fetch(`/Clientes/ABM?handler=Cliente&id=${id}`);
+        if (!response.ok) {
+            alert("No se pudo obtener el cliente");
+            return;
+        }
+        const cliente = await response.json();
+
+        // Rellenamos los campos del formulario
+        document.getElementById("ClienteId").value = cliente.id;
+        document.querySelector("input[name='Cliente.NombreComercial']").value = cliente.nombreComercial ?? "";
+        document.querySelector("input[name='Cliente.RazonSocial']").value = cliente.razonSocial ?? "";
+        document.querySelector("input[name='Cliente.Cuil']").value = cliente.cuil ?? "";
+        document.querySelector("input[name='Cliente.Direccion']").value = cliente.direccion ?? "";
+        document.querySelector("input[name='Cliente.Email']").value = cliente.email ?? "";
+        document.querySelector("input[name='Cliente.Telefono']").value = cliente.telefono ?? "";
+        document.querySelector("input[name='Cliente.Celular']").value = cliente.celular ?? "";
+        document.querySelector("input[name='Cliente.Contacto']").value = cliente.contacto ?? "";
+
+        document.querySelector("select[name='Cliente.FkCondIva']").value = cliente.fkCondIva ?? "";
+        document.querySelector("select[name='Cliente.FkVendedor']").value = cliente.fkVendedor ?? "";
+        document.querySelector("select[name='Cliente.FkLocalidad']").value = cliente.fkLocalidad ?? "";
+        document.querySelector("select[name='Cliente.FkZona']").value = cliente.fkZona ?? "";
+
+        // Cambiamos el título del modal
+        document.getElementById("clienteModalLabel").innerText = "Editar Cliente";
+
+        // Mostramos el modal
+        new bootstrap.Modal(document.getElementById("clienteModal")).show();
+    }
+
+
+
+
+</script>

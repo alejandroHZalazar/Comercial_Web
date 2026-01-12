@@ -1,4 +1,5 @@
 ﻿using Application.Interfaces;
+using Domain.DTO;
 using Domain.Entities;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -103,5 +104,20 @@ namespace Infrastructure.Services
             existente.Baja = true;
             await _context.SaveChangesAsync();
         }
+
+        public async Task<List<ProveedorCabeceraDto>> TraerCabeceraAsync()
+        {
+            return await _context.Proveedores
+                .Where(p => p.Baja == false)
+                .OrderBy(p => p.NombreComercial)
+                .Select(p => new ProveedorCabeceraDto
+                {
+                    Id = p.Id,
+                    NombreComercial = p.NombreComercial?? "",
+                    Direccion = p.Direccion ?? ""
+                })
+                .ToListAsync();
+        }
+
     }
 }

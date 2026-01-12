@@ -7,60 +7,71 @@
 
 <div class="row">
     <!-- Grilla de proveedores -->
-    <div class="col-md-6 border-end pe-4">
-        <h5 class="fw-bold mb-3">Listado de Proveedores</h5>
-        <table class="table table-bordered table-hover table-striped">
-            <thead class="table-secondary">
-                <tr>
-                    <th>Cod</th>
-                    <th>Proveedor</th>
-                    <th>Dirección</th>
-                    <th style="width: 40px;"></th> <!-- columna para editar -->
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var p in Model.Proveedores)
-                {
-                    <tr onclick="cargarDetalle(@p.Id)">
-                        <td>@p.Id</td>
-                        <td>@p.NombreComercial</td>
-                        <td>@p.Direccion</td>
-                        <td class="text-center">
-                            <a href="javascript:void(0)" onclick="abrirModalEditar(@p.Id)" title="Editar">
-                                <i class="bi bi-pencil-square"></i>
-                            </a>
-                        </td>
-
-                    </tr>
-                }
-            </tbody>
-        </table>
-        <div class="mt-3">
-            <button class="btn btn-success" onclick="abrirModalAgregar()">
-                <i class="bi bi-plus-circle"></i> Agregar
-            </button>
+    <div class="col-md-6">
+        <div class="card mb-4 rounded shadow-sm h-100">
+            <div class="card-header fw-semibold bg-light border-bottom">
+                Listado de Proveedores
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
+                    <table class="table table-bordered table-hover table-striped table-sm mb-0">
+                        <thead class="table-secondary sticky-top">
+                            <tr>
+                                <th>Cod</th>
+                                <th>Proveedor</th>
+                                <th>Dirección</th>
+                                <th style="width: 40px;"></th> <!-- columna para editar -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in Model.Proveedores)
+                            {
+                                <tr onclick="cargarDetalle(@p.Id)">
+                                    <td>@p.Id</td>
+                                    <td>@p.NombreComercial</td>
+                                    <td>@p.Direccion</td>
+                                    <td class="text-center">
+                                        <a href="javascript:void(0)" onclick="abrirModalEditar(@p.Id)" title="Editar" class="text-decoration-none">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-light text-end">
+                <button class="btn btn-success" onclick="abrirModalAgregar()">
+                    <i class="bi bi-plus-circle"></i> Agregar
+                </button>
+            </div>
         </div>
-
     </div>
 
-
-
-    <div class="col-md-6 ps-4" id="panelDetalle">
-        <p class="text-muted">Seleccione un proveedor para ver sus datos.</p>       
+    <!-- Panel detalle -->
+    <div class="col-md-6">
+        <div class="card mb-4 rounded shadow-sm h-100">
+            <div class="card-header fw-semibold bg-light border-bottom">
+                Detalle del Proveedor
+            </div>
+            <div class="card-body" id="panelDetalle">
+                <p class="text-muted">Seleccione un proveedor para ver sus datos.</p>
+            </div>
+        </div>
     </div>
 </div>
 
 <!-- Modal -->
 <div id="modalProveedor" class="modal fade" tabindex="-1">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content" id="modalContent">
+        <div class="modal-content rounded shadow-sm" id="modalContent">
             <!-- Se carga por AJAX -->
         </div>
     </div>
 </div>
 
 <script>
-       
     function cargarDetalle(id) {
         fetch(`/Proveedores/ABM?handler=Detalle&id=${id}`)
             .then(r => r.text())
@@ -68,8 +79,6 @@
                 document.getElementById('panelDetalle').innerHTML = html;
             });
     }
-
-
 
     function abrirModalAgregar() {
         fetch(`/Proveedores/ABM?handler=FormModal`)

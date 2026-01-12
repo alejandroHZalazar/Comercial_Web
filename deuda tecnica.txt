@@ -2,6 +2,7 @@
  Nota de Venta en ticketera
  Facturacion por post
  Facturacion Electronica
+ lógica de pagos
  Pago por billeteras virtuales
  
  

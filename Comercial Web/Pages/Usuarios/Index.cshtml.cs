@@ -3,6 +3,7 @@ using Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using static Domain.DTO.UsuarioDTO;
 
 namespace Comercial_Web.Pages.Usuarios
 {
@@ -17,7 +18,7 @@ namespace Comercial_Web.Pages.Usuarios
             _tipoUsuarioService = tipoUsuarioService;
         }
 
-        public List<UsuarioGridItem> Items { get; private set; } = new();
+        public List<UsuarioGridABMItem> Items { get; private set; } = new();
         public List<SelectListItem> TiposUsuario { get; private set; } = new();
 
         [BindProperty] public int? Id { get; set; }
@@ -97,14 +98,9 @@ namespace Comercial_Web.Pages.Usuarios
 
         private async Task CargarGrillaAsync()
         {
-            var usuarios = await _usuarioService.GetAllAsync();
+            Items = await _usuarioService.GetUsuarioGrillaABM();
             // Si necesitás la descripción del tipo, podés resolverla con un join o servicio de tipos.
-            Items = usuarios.Select(u => new UsuarioGridItem
-            {
-                Id = u.Id,
-                Nombre = u.Nombre ?? "",
-                TipoDescripcion = u.Tipo?.ToString() ?? "" // reemplazar por descripción real si la tenés
-            }).ToList();
+            
         }
 
         private async Task CargarTiposAsync()
@@ -171,14 +167,7 @@ namespace Comercial_Web.Pages.Usuarios
             }
 
             return true;
-        }
-
-        public class UsuarioGridItem
-        {
-            public int Id { get; set; }
-            public string Nombre { get; set; } = string.Empty;
-            public string TipoDescripcion { get; set; } = string.Empty;
-        }
+        }      
 
         public class TipoUsuarioItem
         {

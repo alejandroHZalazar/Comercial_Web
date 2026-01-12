@@ -1,55 +1,65 @@
 ﻿@model Domain.Entities.Proveedore
 
-<form method="post" asp-page-handler="Guardar">
-    <div class="modal-header">
-        <h5 class="modal-title">@((Model.Id == 0) ? "Agregar Proveedor" : "Editar Proveedor")</h5>
+<form method="post" asp-page-handler="Guardar" class="needs-validation" novalidate>
+    <!-- Header -->
+    <div class="modal-header bg-light border-bottom">
+        <h5 class="modal-title fw-semibold">
+            <i class="bi bi-building"></i>
+            @((Model.Id == 0) ? "Agregar Proveedor" : "Editar Proveedor")
+        </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
     </div>
 
-    <div class="modal-body">
+    <!-- Body -->
+    <div class="modal-body p-4">
         <input type="hidden" asp-for="Id" />
 
         <div class="row g-3">
             <div class="col-md-6">
                 <label class="form-label fw-bold">Nombre Comercial</label>
-                <input type="text" asp-for="NombreComercial" class="form-control" />
+                <input type="text" asp-for="NombreComercial" class="form-control form-control-sm" />
             </div>
             <div class="col-md-6">
                 <label class="form-label fw-bold">CUIL</label>
-                <input type="text" asp-for="Cuil" class="form-control" />
+                <input type="text" asp-for="Cuil" class="form-control form-control-sm" />
             </div>
 
             <div class="col-md-12">
                 <label class="form-label fw-bold">Dirección</label>
-                <input type="text" asp-for="Direccion" class="form-control" />
+                <input type="text" asp-for="Direccion" class="form-control form-control-sm" />
             </div>
 
             <div class="col-md-6">
                 <label class="form-label fw-bold">Email</label>
-                <input type="email" asp-for="Email" class="form-control" />
+                <input type="email" asp-for="Email" class="form-control form-control-sm" />
             </div>
             <div class="col-md-3">
                 <label class="form-label fw-bold">Teléfono</label>
-                <input type="text" asp-for="Telefono" class="form-control" />
+                <input type="text" asp-for="Telefono" class="form-control form-control-sm" />
             </div>
             <div class="col-md-3">
                 <label class="form-label fw-bold">Celular</label>
-                <input type="text" asp-for="Celular" class="form-control" />
+                <input type="text" asp-for="Celular" class="form-control form-control-sm" />
             </div>
 
             <div class="col-md-3">
                 <label class="form-label fw-bold">Ganancia (%)</label>
-                <input type="number" asp-for="Ganancia" class="form-control" step="0.01" />
+                <input type="number" asp-for="Ganancia" class="form-control form-control-sm text-end" step="0.01" />
             </div>
             <div class="col-md-3">
                 <label class="form-label fw-bold">Descuento (%)</label>
-                <input type="number" asp-for="Descuento" class="form-control" step="0.01" />
+                <input type="number" asp-for="Descuento" class="form-control form-control-sm text-end" step="0.01" />
             </div>
         </div>
     </div>
 
-    <div class="modal-footer">
-        <button type="submit" class="btn btn-primary">Guardar</button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+    <!-- Footer -->
+    <div class="modal-footer bg-light border-top">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> Guardar
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle"></i> Cancelar
+        </button>
     </div>
 </form>

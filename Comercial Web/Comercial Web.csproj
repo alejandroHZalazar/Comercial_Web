@@ -8,6 +8,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Pages\Proveedores\OrdenesCompra\_ProductoEncontrado.cshtml.cs" />
+    <Compile Remove="Pages\Proveedores\OrdenesCompra\_ProductosProveedor.cshtml.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="Pages\Proveedores\OrdenesCompra\_ProductoEncontrado.cshtml" />
+    <Content Remove="Pages\Proveedores\OrdenesCompra\_ProductosProveedor.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

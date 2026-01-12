@@ -1,0 +1,994 @@
+﻿@page
+@model Comercial_Web.Pages.Proveedores.OrdenesCompra.IndexModel
+@{
+    ViewData["Title"] = "Orden de Compra";
+}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+
+<div class="card mb-4 p-4 rounded shadow-sm">
+    <div class="card-header fw-semibold bg-light border-bottom mb-3">
+        Orden de Compra
+    </div>
+
+    <form method="post">
+        <div class="row mb-3 px-2">
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Proveedor</label>
+                <select asp-for="ProveedorId" asp-items="Model.Proveedores" class="form-select form-select-sm" id="ProveedorId">
+                    <option value="">-- Seleccione --</option>
+                </select>
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button type="button" class="btn btn-success" onclick="confirmarProveedor()" title="Confirmar proveedor">
+                    <i class="fas fa-play"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="panelProductos" class="px-2">
+            <p class="text-muted">Seleccione un proveedor para ver sus productos.</p>
+        </div>
+
+        <fieldset id="fieldsetPrincipal" disabled>
+            <div class="row mb-3 px-2 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">IVA</label>
+                    <select asp-for="IvaId" asp-items="Model.Ivas" class="form-select form-select-sm" disabled="@(!Model.Cargado)" onchange="recalcularTotales()"></select>
+                </div>
+                <div class="col-md-4 ms-auto d-flex justify-content-end gap-2">
+                    <button id="btnStockProductos" type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalStockProductos">
+                        Stock Productos
+                    </button>
+                    <button id="btnCantMinima" type="button" class="btn btn-outline-primary btn-sm">
+                        Debajo Cant. Mínima
+                    </button>
+                </div>
+            </div>
+
+            <div class="row mb-3 px-2 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Filtro</label>
+                    <select asp-for="TipoBusqueda" id="TipoBusqueda" class="form-select form-select-sm">
+                        <option value="1">Cod. Proveedor</option>
+                        <option value="2">Descripción</option>
+                        <option value="3">Cod. Interno</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Valor Filtro</label>
+                    <input type="text" id="txtFiltro" class="form-control form-control-sm" onkeydown="buscarProductoEnter(event)" />
+                </div>
+                <div class="col-md-5 d-flex align-items-center">
+                    <label id="lblresultadobusqueda" class="ms-2 small text-muted"></label>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <div class="w-100">
+                        <label class="form-label fw-bold">Cantidad</label>
+                        <input type="number" id="txtCantidad" class="form-control form-control-sm text-end" step="@Model.CantidadStep" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-3 px-2 g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label fw-bold">Búsqueda descripción</label>
+                    <input type="text" id="txtDesc" class="form-control form-control-sm" oninput="filtrarDescripcion(this.value)" autocomplete="off" />
+                    <div id="lbDesc" class="list-group position-absolute w-100" style="z-index: 1000; display: none;"></div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Descuento</label>
+                    <input type="number" asp-for="Descuento" id="txtDescuento" class="form-control form-control-sm text-end" maxlength="3" min="0" max="999" pattern="[0-9]{1,3}" disabled />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Recargo</label>
+                    <input type="number" asp-for="Recargo" id="txtRecargo" class="form-control form-control-sm text-end" maxlength="3" min="0" max="999" pattern="[0-9]{1,3}" disabled />
+                </div>
+            </div>
+
+            <div class="bg-light border rounded p-3 mb-3">
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table id="tablaDetalles" class="table table-bordered table-striped table-sm mb-0">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th>Cód. Barras</th>
+                                <th>Cód. Proveedor</th>
+                                <th>Descripción</th>
+                                <th>Stock</th>
+                                <th>Cant. Mínima</th>
+                                <th class="text-end">Precio Sin IVA</th>
+                                <th class="text-end">Precio Con IVA</th>
+                                <th>Pedido</th>
+                                <th>Subtotal</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </fieldset>
+
+        <div class="row mb-3 align-items-center">
+            <!-- Progreso (invisible, alineado a la izquierda) -->
+            <div class="col-md-6 d-none">
+                <label class="form-label fw-bold">Progreso</label>
+                <div class="progress">
+                    <div class="progress-bar" style="width: 0%;" role="progressbar"></div>
+                </div>
+            </div>
+
+            <!-- Total (alineado a la derecha) -->
+            <div class="row mb-3">
+                <div class="col-12 d-flex justify-content-end">
+                    <div style="width: 200px;">
+                        <label class="form-label fw-bold">Total</label>
+                        <input type="text" class="form-control form-control-sm text-end" id="txtTotal" value="0" readonly />
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="text-end px-2">
+            <button type="submit" onclick="grabarOrden()" class="btn btn-success" id="btnGrabar" disabled>Grabar</button>
+        </div>
+    </form>
+</div>
+
+<div class="modal fade" id="modalStockProductos" tabindex="-1" aria-labelledby="modalStockProductosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content rounded shadow-sm">
+
+            <!-- Header -->
+            <div class="modal-header bg-secondary text-white">
+                <h5 class="modal-title fw-bold" id="modalStockProductosLabel">Productos a Pedir</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+
+            <!-- Body -->
+            <div class="modal-body p-0">
+
+                <!-- Filtros -->
+                <div class="bg-light border-bottom p-4">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Desde</label>
+                            <input type="date" id="dtpDesde" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Hasta</label>
+                            <input type="date" id="dtpHasta" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button id="btnBuscarStock" type="button" class="btn btn-outline-secondary w-100">
+                                <i class="bi bi-search"></i> Buscar
+                            </button>
+                        </div>
+                        <div class="col-md-4 d-flex justify-content-end align-items-end">
+                            <div class="dropdown ms-auto">
+                                <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdownImprimirStock" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-printer"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownImprimirStock">
+                                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="imprimirProductos('PDF')">PDF</a></li>
+                                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="imprimirProductos('EXCEL')">Excel</a></li>
+                                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="imprimirProductos('WORDOPENXML')">Word</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grilla -->
+                <div class="bg-white border-bottom p-4">
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table id="tablaStockProductos" class="table table-bordered table-sm mb-0">
+                            <thead class="table-secondary">
+                                <tr>
+                                    <th>Cód. Prov</th>
+                                    <th>Descripción</th>
+                                    <th class="text-end">Stock</th>
+                                    <th class="text-end">C_Min</th>
+                                    <th class="text-end">Ingreso</th>
+                                    <th class="text-end">Ventas</th>
+                                    <th class="text-end">Cantidad</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- filas dinámicas -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Totales -->
+                <div class="bg-light border-bottom p-4">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Cant. Prod</label>
+                            <input type="text" id="txtCantProd" class="form-control form-control-sm text-end" readonly />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Tot. Precio Prov.</label>
+                            <input type="text" id="txtTotProv" class="form-control form-control-sm text-end" readonly />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Tot. Precio Lista</label>
+                            <input type="text" id="txtTotLista" class="form-control form-control-sm text-end" readonly />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Tot. Precio Costo</label>
+                            <input type="text" id="txtTotCosto" class="form-control form-control-sm text-end fw-bold" readonly />
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer bg-light px-4">
+                <button type="button" class="btn btn-success" id="btnAceptarStock">Aceptar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+<!-- Modal Pop UP Guardar Bootstrap -->
+<div class="modal fade" id="resultadoModal" tabindex="-1" aria-labelledby="resultadoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resultadoModalLabel">Orden de compra</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p>La orden de compra se grabó correctamente.</p>
+            </div>
+            <div class="modal-footer">
+                <button id="btnAceptar" type="button" class="btn btn-primary">Aceptar</button>
+
+                <!-- Dropdown de impresión -->
+                <div class="dropdown">
+                    <button class="btn btn-success dropdown-toggle" type="button" id="dropdownImprimir" data-bs-toggle="dropdown" aria-expanded="false">
+                        Imprimir
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownImprimir">
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="imprimirOrden('pdf')">PDF</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="imprimirOrden('excel')">Excel</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="imprimirOrden('wordopenxml')">Word</a></li>
+                    </ul>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+
+    let productoActual = null;
+    let productosProveedor = []; // se carga desde el servidor
+    let proveedorConfirmado = false;
+
+            document.getElementById("btnCantMinima").addEventListener("click", function () {
+                 const proveedorId = document.getElementById("ProveedorId").value;
+
+                    fetch(`?handler=CantMinima&proveedorId=${proveedorId}`)
+                        .then(r => r.json())
+                        .then(productos => {
+                            const tbody = document.querySelector("#tablaDetalles tbody");
+                            tbody.innerHTML = "";
+
+                            productos.forEach(p => {
+                                    const valorIVA = parseFloat(document.getElementById("IvaId").value) || 0;
+                                    const precioSinIva = parseFloat(p.precio);
+                                    const precioConIvaRaw = precioSinIva * (1 + valorIVA / 100);
+                                    const precioConIva = precioConIvaRaw.toFixed(2);
+                                    const subtotal = (p.pedido * precioConIvaRaw).toFixed(2);
+                               const fila = `
+                                <tr>
+                                     <td>${p.codBarras}</td>
+                                    <td>${p.codProveedor}</td>
+                                    <td>${p.descripcion}</td>
+                                    <td class="text-end">${p.cantidad}</td>
+                                    <td class="text-end">${p.cantidadMinima}</td>
+                                    <td class="text-end precio-siniva-cell">${precioSinIva}</td>
+                                    <td class="text-end precio-coniva-cell">${precioConIva}</td>
+                                    <td class="text-end">
+                                        <input type="number"
+                                               value="${p.pedido}"
+                                               class="form-control form-control-sm text-end pedido-input"
+                                               style="width:80px;" />
+                                    </td>
+                                    <td class="text-end subtotal-cell">${subtotal}</td>
+                                    <td>
+                                       <a href="javascript:void(0)" class="eliminar-link">Eliminar</a>
+                                    </td>
+                                    <td style="display:none;" class="producto-id-cell">${p.id}</td>
+                                    <td style="display:none;" class="precio-original-cell">${p.precio}</td>
+
+                                </tr>`;
+
+                                tbody.insertAdjacentHTML("beforeend", fila);
+                            });
+
+                            recalcularTotales();
+                        });
+             });
+
+        document.addEventListener("input", function(e) {
+            if (e.target.classList.contains("pedido-input")) {
+                const fila = e.target.closest("tr");
+                const precioConIva  = parseFloat(fila.querySelector(".precio-coniva-cell").textContent);
+                const pedido = parseFloat(e.target.value) || 0;
+                const subtotalCell = fila.querySelector(".subtotal-cell");
+                subtotalCell.textContent = (pedido * precioConIva ).toFixed(2);
+                recalcularTotales();
+            }
+        });
+
+           function recalcularTotales() {
+        const ivaSelect = document.getElementById("IvaId");
+        const valorIVA = parseFloat(ivaSelect.value) || 0;
+        const descuento = parseFloat(document.getElementById("txtDescuento").value) || 0;
+        const recargo = parseFloat(document.getElementById("txtRecargo").value) || 0;
+
+        const tbody = document.querySelector("#tablaDetalles tbody");
+        let total = 0;
+
+        tbody.querySelectorAll("tr").forEach(tr => {
+            const precioSinIvaBase = parseFloat(tr.querySelector(".precio-original-cell").textContent) || 0;
+            const pedido = parseFloat(tr.querySelector(".pedido-input").value) || 0;
+
+            let precioSinIvaAjustado = precioSinIvaBase;
+            if (descuento > 0) {
+                precioSinIvaAjustado = Number((precioSinIvaBase * (1 - descuento / 100)).toFixed(2));
+            } else if (recargo > 0) {
+                precioSinIvaAjustado = Number((precioSinIvaBase * (1 + recargo / 100)).toFixed(2));
+            }
+
+            //const precioConIvaRaw = precioSinIvaAjustado * (1 + valorIVA / 100);
+            //const subtotalRaw = pedido * precioConIvaRaw;
+
+            const precioConIvaRaw = Number((precioSinIvaAjustado * (1 + valorIVA / 100)).toFixed(2));
+            const subtotalRaw = Number((pedido * precioConIvaRaw).toFixed(2));
+
+            // actualizar celdas (formateo solo para mostrar)
+            tr.querySelector(".precio-siniva-cell").textContent = precioSinIvaAjustado.toFixed(2);
+            tr.querySelector(".precio-coniva-cell").textContent = precioConIvaRaw.toFixed(2);
+            tr.querySelector(".subtotal-cell").textContent = subtotalRaw.toFixed(2);
+
+            // acumular como número
+            total += subtotalRaw;
+        });
+
+        // ✅ aplicar formato local: miles con punto y decimales con coma
+        const totalFormateado = total.toLocaleString("es-AR", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+
+        const totalInput = document.getElementById("txtTotal");
+        if (totalInput) {
+            totalInput.value = totalFormateado;
+        }
+    }
+
+
+
+    function seleccionarProveedor(id) {
+
+        if (id) {
+            fetch(`/OrdenesCompra/CrearOrden?handler=Productos&proveedorId=${id}`)
+                .then(r => r.text())
+                .then(html => {
+                    document.getElementById('panelProductos').innerHTML = html;
+                });
+                const tbody = document.querySelector("#tablaDetalles tbody");
+                            tbody.innerHTML = ""
+
+
+        }
+    }
+
+        function reemplazarPuntoPorComa(e) {
+        if (e.key === ".") {
+            e.preventDefault();
+            const input = e.target;
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            input.value = input.value.substring(0, start) + "," + input.value.substring(end);
+            input.setSelectionRange(start + 1, start + 1);
+        }
+    }
+
+        function buscarProductoEnter(e) {
+        if (e.key === "Enter" && e.target.value.trim() !== "") {
+            e.preventDefault();
+
+            const filtro = e.target.value.trim();
+            const tipoBusqueda = document.querySelector("select[name='TipoBusqueda']").value;
+            const proveedorId = document.getElementById("ProveedorId").value;
+
+            fetch(`?handler=BuscarProducto&filtro=${encodeURIComponent(filtro)}&tipoBusqueda=${tipoBusqueda}&proveedorId=${proveedorId}`)
+                .then(r => r.json())
+                .then(data => {
+                    const filtroInput = document.getElementById("txtFiltro");
+                    const cantidadInput = document.getElementById("txtCantidad");
+                    const descripcionInput = document.getElementById("lblresultadobusqueda");
+
+                    if (!data.encontrado) {
+                        descripcionInput.textContent = data.mensaje;
+                        descripcionInput.classList.remove("text-success");
+                        descripcionInput.classList.add("text-danger");
+                        filtroInput.focus();
+                        productoActual = null;
+
+                    } else {
+                        descripcionInput.textContent = data.descripcion;
+                        descripcionInput.classList.remove("text-danger");
+                        descripcionInput.classList.add("text-success");
+                        cantidadInput.focus();
+                        cantidadInput.select();
+                        productoActual = data;
+
+                    }
+                });
+
+            e.target.value = "";
+        }
+    }
+
+    document.getElementById("txtCantidad").addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            console.log("Enter detectado en Cantidad");
+
+            const cantidad = parseFloat(e.target.value);
+            console.log("Producto actual:", productoActual, "Cantidad:", cantidad);
+
+            if (!productoActual || isNaN(cantidad) || cantidad <= 0) {
+                console.warn("No hay producto válido o cantidad incorrecta");
+                return;
+            }
+
+            const tbody = document.querySelector("#tablaDetalles tbody");
+            const filtroInput = document.getElementById("txtFiltro");
+
+            // 🔎 Buscar si ya existe el producto en la grilla
+            let filaExistente = null;
+            tbody.querySelectorAll("tr").forEach(tr => {
+                const codProveedorCell = tr.children[1]?.textContent;
+                const codBarrasCell = tr.children[0]?.textContent;
+
+                if (codProveedorCell === productoActual.codProveedor || codBarrasCell === productoActual.codBarras) {
+                    filaExistente = tr;
+                }
+            });
+
+
+
+            if (filaExistente) {
+                // ✅ Si existe, sumar cantidad y recalcular subtotal
+                const pedidoInput = filaExistente.querySelector(".pedido-input");
+                const pedidoActual = parseFloat(pedidoInput.value) || 0;
+                const nuevoPedido = pedidoActual + cantidad;
+                pedidoInput.value = nuevoPedido;
+
+                const precioConIVA = parseFloat(filaExistente.querySelector(".precio-coniva-cell").textContent) || 0;
+                filaExistente.querySelector(".subtotal-cell").textContent = (nuevoPedido * precioConIVA).toFixed(2);
+                recalcularTotales();
+            } else {
+                // ➕ Si no existe, insertar nueva fila
+                const valorIVA = parseFloat(document.getElementById("IvaId").value) || 0;
+                const precioSinIva = parseFloat(productoActual.precio);
+                const precioConIvaRaw = precioSinIva * (1 + valorIVA / 100);
+                const precioConIva = precioConIvaRaw.toFixed(2);
+                const subtotal = (cantidad * precioConIvaRaw).toFixed(2);
+
+                const fila = `
+                    <tr>
+                        <td>${productoActual.codBarras}</td>
+                        <td>${productoActual.codProveedor}</td>
+                        <td>${productoActual.descripcion}</td>
+                        <td class="text-end">${productoActual.cantidad}</td>
+                        <td class="text-end">${productoActual.cantidadMinima}</td>
+                        <td class="text-end precio-siniva-cell">${precioSinIva}</td>
+                        <td class="text-end precio-coniva-cell">${precioConIva}</td>
+                        <td class="text-end">
+                            <input type="number"
+                                   value="${cantidad}"
+                                   class="form-control form-control-sm text-end pedido-input"
+                                   style="width:80px;" />
+                        </td>
+                        <td class="text-end subtotal-cell">${subtotal}</td>
+                        <td>
+                            <a href="javascript:void(0)" class="eliminar-link">Eliminar</a>
+                        </td>
+                        <td style="display:none;" class="producto-id-cell">${productoActual.id}</td>
+                        <td style="display:none;" class="precio-original-cell">${productoActual.precio}</td>
+
+                    </tr>`;
+                tbody.insertAdjacentHTML("beforeend", fila);
+                recalcularTotales();
+            }
+
+            // limpiar campos
+            document.getElementById("txtFiltro").value = "";
+            document.getElementById("lblresultadobusqueda").textContent = "";
+            document.getElementById("txtCantidad").value = "";
+            productoActual = null;
+            filtroInput.focus();
+        }
+    });
+        function filtrarDescripcion(texto) {
+                const lb = document.getElementById("lbDesc");
+                lb.innerHTML = "";
+
+                if (texto.trim().length === 0) {
+                    lb.style.display = "none";
+                    return;
+                }
+
+                const result = productosProveedor.filter(desc =>
+                    desc.toUpperCase().includes(texto.trim().toUpperCase())
+                );
+
+                if (result.length > 0) {
+                           result.forEach(desc => {
+                                const item = document.createElement("a");
+                                item.className = "list-group-item list-group-item-action";
+                                item.textContent = desc;
+                                item.tabIndex = 0; // 🔑 permite recibir foco con teclado
+                                item.onclick = () => prepararProducto(null, desc);
+                                item.ondblclick = () => buscarPorDescripcion(desc);
+
+
+                                // manejar flechas dentro de cada item
+                                item.addEventListener("keydown", function(e) {
+                                        if (e.key === "Enter") {
+                                            e.preventDefault();
+                                            buscarPorDescripcion(desc);
+                                        }
+                                        if (e.key === "ArrowDown") {
+                                            e.preventDefault();
+                                            if (this.nextElementSibling) {
+                                                this.nextElementSibling.focus();
+                                            }
+                                        }
+                                        if (e.key === "ArrowUp") {
+                                            e.preventDefault();
+                                            if (this.previousElementSibling) {
+                                                this.previousElementSibling.focus();
+                                            } else {
+                                                // si no hay anterior, volver al input txtDesc
+                                                document.getElementById("txtDesc").focus();
+                                            }
+                                        }
+                                        if (e.key === "Enter") {
+                                            this.click(); // seleccionar con Enter
+                                        }
+                                });
+
+                                lb.appendChild(item);
+                            });
+
+
+                            lb.style.display = "block";
+                } else {
+                    lb.style.display = "none";
+                }
+        }
+
+           document.getElementById("txtDesc").addEventListener("keydown", function(e) {
+                if (e.key === "ArrowDown") {
+                    const lb = document.getElementById("lbDesc");
+                    if (lb.children.length > 0) {
+                        e.preventDefault(); // evita que el cursor se mueva dentro del input
+                        lb.children[0].focus(); // pone el foco en el primer elemento de la lista
+                    }
+                }
+            });
+
+
+    document.getElementById("lbDesc").addEventListener("keydown", function(e) {
+        if (e.key === "Backspace") {
+            document.getElementById("txtDesc").focus();
+        }
+        if (e.key === "Enter" && e.target) {
+            prepararProducto(e.target.dataset.id, e.target.textContent);
+        }
+    });
+
+        function prepararProducto(id, descripcion) {
+        fetch(`/OrdenesCompra/CrearOrden?handler=PrepararProducto&descripcion=${encodeURIComponent(descripcion)}&proveedorId=${proveedorSeleccionado}`)
+            .then(r => r.text())
+            .then(html => {
+                document.getElementById("panelProductoSeleccionado").innerHTML = html;
+                document.getElementById("txtDesc").value = "";
+                document.getElementById("lbDesc").style.display = "none";
+            });
+    }
+
+
+    function confirmarProveedor() {
+        const proveedorId = document.getElementById("ProveedorId").value;
+
+        if (!proveedorId) {
+            alert("Seleccione un proveedor primero.");
+            return;
+        }
+
+        // habilitar controles la primera vez
+        if (!window.proveedorConfirmado) {
+            document.querySelectorAll("fieldset, input, select, button").forEach(el => {
+                el.disabled = false;
+            });
+            window.proveedorConfirmado = true;
+        }
+
+        // limpiar campos
+        document.getElementById("txtFiltro").value = "";
+        document.getElementById("txtDesc").value = "";
+        document.getElementById("lbDesc").innerHTML = "";
+        document.getElementById("lbDesc").style.display = "none";
+        document.querySelector("input[name='Descuento']").value = 0;
+        document.querySelector("input[name='Recargo']").value = 0;
+        const tbody = document.querySelector("table tbody");
+        if (tbody) tbody.innerHTML = "";
+
+        // cargar solo descripciones
+        fetch(`?handler=Productos&proveedorId=${proveedorId}`)
+            .then(r => r.json())
+            .then(data => {
+                productosProveedor = data;
+
+                // ✅ al terminar, poner el foco en txtFiltro
+                const filtroInput = document.getElementById("txtFiltro");
+                if (filtroInput) {
+                    filtroInput.focus();
+                    filtroInput.select(); // opcional: selecciona el contenido
+                }
+            });
+    }
+
+    function buscarPorDescripcion(descripcion) {
+        const proveedorId = document.getElementById("ProveedorId").value;
+
+        fetch(`?handler=BuscarPorDescripcion&descripcion=${encodeURIComponent(descripcion)}&proveedorId=${proveedorId}`)
+            .then(r => r.json())
+            .then(data => {
+                const cantidadInput = document.getElementById("txtCantidad");
+                const descripcionInput = document.getElementById("lblresultadobusqueda");
+
+                if (!data.encontrado) {
+                    descripcionInput.textContent = data.mensaje;
+                    descripcionInput.classList.remove("text-success");
+                    descripcionInput.classList.add("text-danger");
+                    productoActual = null;
+                } else {
+                    descripcionInput.textContent = data.descripcion;
+                    descripcionInput.classList.remove("text-danger");
+                    descripcionInput.classList.add("text-success");
+                    productoActual = data; // 🔑 guardar producto
+                    cantidadInput.focus();
+                    cantidadInput.select();
+                }
+            });
+
+        // limpiar sugerencias
+        document.getElementById("lbDesc").style.display = "none";
+        document.getElementById("txtDesc").value = "";
+    }
+
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const dtpDesde = document.getElementById("dtpDesde");
+        const dtpHasta = document.getElementById("dtpHasta");
+        const tablaBody = document.querySelector("#tablaStockProductos tbody");
+
+        // Inicializar fechas al abrir modal
+        document.getElementById("modalStockProductos").addEventListener("show.bs.modal", function () {
+            const hoy = new Date();
+            const desde = new Date();
+            desde.setDate(hoy.getDate() - 90);
+
+            dtpHasta.value = hoy.toISOString().split("T")[0];
+            dtpDesde.value = desde.toISOString().split("T")[0];
+
+            cargarProductos();
+        });
+
+        // Botón Buscar
+        document.getElementById("btnBuscarStock").addEventListener("click", function () {
+            cargarProductos();
+        });
+
+        // Función para cargar productos desde backend
+        async function cargarProductos() {
+            const proveedorId = document.getElementById("ProveedorId").value; // lee el combo
+            const desde = dtpDesde.value;
+            const hasta = dtpHasta.value;
+
+            tablaBody.innerHTML = "<tr><td colspan='7' class='text-center text-muted'>Cargando...</td></tr>";
+
+            try {
+
+                    const response = await fetch(`?handler=ProductosAPedir&proveedorId=${proveedorId}&desde=${desde}&hasta=${hasta}`);
+                    const productos = await response.json();
+
+
+                if (!productos || productos.length === 0) {
+                    tablaBody.innerHTML = "<tr><td colspan='7' class='text-center text-danger'>No se encontraron productos.</td></tr>";
+                    return;
+                }
+
+                tablaBody.innerHTML = "";
+                productos.forEach(p => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td>${p.codProveedor}</td>
+                        <td>${p.descripcion}</td>
+                        <td class="text-end">${p.stock}</td>
+                        <td class="text-end">${p.cantidadMinima}</td>
+                        <td class="text-end">${p.ingreso}</td>
+                        <td class="text-end">${p.ventas}</td>
+                        <td>
+                                 <input type="number"
+                                 class="form-control form-control-sm text-end cantidad-input"
+                                 value="${p.cantidad}"
+                                 data-id="${p.productoId}"
+                                 data-prov="${p.precioProveedor}"
+                                 data-lista="${p.precioLista}"
+                                 data-costo="${p.costo}"
+                                 data-barras="${p.codBarras}" />
+                        </td>
+
+                    `;
+                    tablaBody.appendChild(tr);
+                });
+
+                recalcularTotalesModal();
+                // Escuchar cambios en cantidad
+                document.querySelectorAll(".cantidad-input").forEach(input => {
+                    input.addEventListener("input", recalcularTotalesModal);
+                });
+
+            } catch (error) {
+                tablaBody.innerHTML = "<tr><td colspan='7' class='text-center text-danger'>Error al cargar productos.</td></tr>";
+                console.error("Error:", error);
+            }
+        }
+
+        // Función para recalcular totales
+        function recalcularTotalesModal() {
+            let cantProd = 0, totProv = 0, totLista = 0, totCosto = 0;
+
+            document.querySelectorAll(".cantidad-input").forEach(input => {
+                const cantidad = parseFloat(input.value) || 0;
+                const precioProv = parseFloat(input.dataset.prov) || 0;
+                const precioLista = parseFloat(input.dataset.lista) || 0;
+                const costo = parseFloat(input.dataset.costo) || 0;
+
+                if (cantidad > 0) cantProd++;
+                totProv += precioProv * cantidad;
+                totLista += precioLista * cantidad;
+                totCosto += costo * cantidad;
+            });
+
+            document.getElementById("txtCantProd").value = cantProd;
+            document.getElementById("txtTotProv").value = totProv.toFixed(2);
+            document.getElementById("txtTotLista").value = totLista.toFixed(2);
+            document.getElementById("txtTotCosto").value = totCosto.toFixed(2);
+        }
+
+        // Botón Aceptar
+        document.getElementById("btnAceptarStock").addEventListener("click", function () {
+            // Aquí podés tomar las cantidades y pasarlas a tu grilla principal
+            const modal = bootstrap.Modal.getInstance(document.getElementById("modalStockProductos"));
+            modal.hide();
+        });
+    });
+
+        function imprimirProductos(formato) {
+        const desde = document.getElementById("dtpDesde").value;
+        const hasta = document.getElementById("dtpHasta").value;
+        const proveedorId = document.getElementById("ProveedorId").value;
+
+        const url = `?handler=ImprimirStockProductos`
+            + `&formato=${formato}`
+            + `&desde=${encodeURIComponent(desde)}`
+            + `&hasta=${encodeURIComponent(hasta)}`
+            + `&proveedorId=${encodeURIComponent(proveedorId)}`;
+
+        window.open(url, '_blank');
+    }
+
+
+    document.addEventListener("DOMContentLoaded", function () {
+            const tablaDetallesBody = document.querySelector("#tablaDetalles tbody");
+            const tablaStockBody = document.querySelector("#tablaStockProductos tbody");
+
+
+            document.getElementById("btnAceptarStock").addEventListener("click", function () {
+                // 1. Limpiar tablaDetalles
+                tablaDetallesBody.innerHTML = "";
+
+                // 2. Recorrer filas del modal
+                tablaStockBody.querySelectorAll("tr").forEach(tr => {
+                    const cantidadInput = tr.querySelector(".cantidad-input");
+                    if (!cantidadInput) return;
+
+                    const cantidad = parseFloat(cantidadInput.value) || 0;
+                    if (cantidad <= 0) return; // solo productos con cantidad > 0
+
+                    // Obtener valores visibles
+                    const codProv = tr.children[0].textContent.trim();
+                    const descripcion = tr.children[1].textContent.trim();
+                    const stock = tr.children[2].textContent.trim();
+                    const cmin = tr.children[3].textContent.trim();
+
+                    // Obtener valores ocultos desde data-* en el input
+                    const codBarras = cantidadInput.dataset.barras || "";
+                    const precioSinIVA = parseFloat(cantidadInput.dataset.prov) || 0;
+                    const valorIVA = parseFloat(document.getElementById("IvaId").value) || 0;
+
+                    const precioConIvaRaw = precioSinIVA * (1 + valorIVA / 100);
+                    const subtotalRaw = cantidad * precioConIvaRaw;
+                    const id = parseInt(cantidadInput.dataset.id) || 0;
+
+                    // 3. Crear nueva fila en tablaDetalles
+                    const nuevaFila = document.createElement("tr");
+                    nuevaFila.innerHTML = `
+                        <td>${codBarras}</td>
+                        <td>${codProv}</td>
+                        <td>${descripcion}</td>
+                        <td class="text-end">${stock}</td>
+                        <td class="text-end">${cmin}</td>
+                        <td class="text-end precio-siniva-cell">${precioSinIVA.toFixed(2)}</td>
+                        <td class="text-end precio-coniva-cell">${precioConIvaRaw.toFixed(2)}</td>
+                        <td class="text-end">
+                            <input type="number"
+                                   value="${cantidad}"
+                                   class="form-control form-control-sm text-end pedido-input"
+                                   style="width:80px;" />
+                        </td>
+                        <td class="text-end subtotal-cell">${subtotalRaw.toFixed(2)}</td>
+                        <td>
+                            <a href="javascript:void(0)" class="eliminar-link">Eliminar</a>
+                        </td>
+                        <td style="display:none;" class="producto-id-cell">${id}</td>
+                        <td style="display:none;" class="precio-original-cell">${precioSinIVA}</td>
+                    `;
+                    tablaDetallesBody.appendChild(nuevaFila);
+                });
+                recalcularTotales();
+                // 4. Cerrar modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById("modalStockProductos"));
+                modal.hide();
+            });
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+        const descuentoInput = document.getElementById("txtDescuento");
+        const recargoInput = document.getElementById("txtRecargo");
+
+        // Evento para descuento
+        descuentoInput.addEventListener("input", function () {
+            const descuento = parseInt(descuentoInput.value) || 0;
+            if (descuento > 0) {
+                recargoInput.value = 0;
+            }
+             recalcularTotales();
+        });
+
+        // Evento para recargo
+        recargoInput.addEventListener("input", function () {
+            const recargo = parseInt(recargoInput.value) || 0;
+            if (recargo > 0) {
+                descuentoInput.value = 0;
+            }
+            recalcularTotales();
+        });
+    });
+
+        function obtenerDetalles() {
+            const detalles = [];
+            document.querySelectorAll("#tablaDetalles tbody tr").forEach(tr => {
+                const pedido = parseFloat(tr.querySelector(".pedido-input").value) || 0;
+                if (pedido > 0) {
+                    detalles.push({
+                        FkProducto: parseInt(tr.querySelector(".producto-id-cell").textContent),
+                        CodBarras: tr.cells[0].textContent,
+                        CodProveedor: tr.cells[1].textContent,
+                        Descripcion: tr.cells[2].textContent,
+                        PrecioProveedor: parseFloat(tr.querySelector(".precio-siniva-cell").textContent),
+                        Cantidad: pedido,                       
+                        Subtotal: parseFloat(tr.querySelector(".subtotal-cell").textContent),
+                        FkColor: 0 // si aplica
+                    });
+                }
+            });
+            return detalles;
+        }
+
+        async function grabarOrden() {
+              const detalles = obtenerDetalles();
+                if (detalles.length === 0) {
+                    alert("Debe ingresar al menos un pedido válido.");
+                    return;
+                }
+
+                    const btnGrabar = document.getElementById("btnGrabar");
+                    btnGrabar.disabled = true;
+
+                    document.querySelector(".progress-bar").style.width = "0%";
+
+            const response = await fetch("/Proveedores/OrdenesCompra?handler=Grabar", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    proveedorId: parseInt(document.getElementById("ProveedorId").value),
+                    total: parseFloat(document.getElementById("txtTotal").value.replace(".", "").replace(",", ".")),
+                    iva: parseFloat(document.getElementById("IvaId").value),
+                    recargo: parseFloat(document.getElementById("txtRecargo").value),
+                    descuento: parseFloat(document.getElementById("txtDescuento").value),
+                    detalles: obtenerDetalles()
+                })
+            });
+
+            console.log("Status:", response.status);
+
+
+                const data = await response.json();
+                console.log("Respuesta:", data);
+
+
+               if (response.ok && data.success) {
+        window.ultimaOrdenId = data.id; // guardar id globalmente
+
+        const modal = new bootstrap.Modal(document.getElementById('resultadoModal'));
+        modal.show();
+
+        document.getElementById("btnAceptar").onclick = function () {
+            window.location.reload();
+        };
+    }
+     else {
+                alert("Error al grabar la orden de compra.");
+            }
+
+            btnGrabar.disabled = false;
+        }
+            function imprimirOrden(formato) {
+        const id = window.ultimaOrdenId; // guardamos el id al grabar
+        if (!id) {
+            alert("No se encontró el ID de la orden.");
+            return;
+        }
+        const url = `/Proveedores/OrdenesCompra?handler=ImprimirOrdenCompra&id=${id}&formato=${formato}`;
+        window.open(url, "_blank");
+
+        // refrescar después de abrir el reporte
+        window.location.reload();
+    }
+
+        document.querySelector("#tablaDetalles").addEventListener("click", function (e) {
+        if (e.target && e.target.classList.contains("eliminar-link")) {
+            // eliminar la fila
+            const fila = e.target.closest("tr");
+            fila.remove();
+
+            // invocar recalcularTotales
+            recalcularTotales();
+        }
+    });
+
+
+
+</script>

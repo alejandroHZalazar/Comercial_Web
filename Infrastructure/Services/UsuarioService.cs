@@ -5,6 +5,7 @@ using System;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
+using static Domain.DTO.UsuarioDTO;
 
 public class UsuarioService : IUsuarioService
 {
@@ -75,5 +76,21 @@ public class UsuarioService : IUsuarioService
         var bytes = Encoding.UTF8.GetBytes(password);
         var hash = sha256.ComputeHash(bytes);
         return Convert.ToBase64String(hash);
+    }
+
+    public async Task<List<UsuarioGridABMItem>> GetUsuarioGrillaABM()
+    {
+        var query = await (
+            from u in _context.Usuarios
+            join t in _context.TipoUsuarios on u.Tipo equals t.Id
+            where u.Baja == false
+            select new UsuarioGridABMItem
+            {
+                Id = u.Id,
+                Nombre = u.Nombre,
+                TipoDescripcion = t.Descripcion
+            }).ToListAsync();
+
+        return query;
     }
 }

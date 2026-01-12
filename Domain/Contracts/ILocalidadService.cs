@@ -8,4 +8,5 @@ public interface ILocalidadService
     Task CreateAsync(Localidade loc);
     Task UpdateAsync(Localidade loc);
     Task DeleteAsync(int id);
+    Task<List<Localidade>> GetAllAsync();
 }

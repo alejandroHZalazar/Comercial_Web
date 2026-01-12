@@ -11,6 +11,10 @@ namespace Domain.Contracts
     {
         Task<Parametro?> GetLogoAsync();
         Task UpdateLogoAsync(string nombreArchivo, byte[] imagen);
+        Task<int> ObtenerIndiceBusquedaNotaPedidoAsync();
+        Task<int> ObtenerCantidadDecimalesProductosAsync();
+        Task<int> ObtenerCantidadDecimalesStockAsync();
+        Task<string> ObtenerValorAsync(string unModulo, string unParametro);
     }
 
 }

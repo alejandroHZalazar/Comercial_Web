@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Domain.Contracts;
 using Infrastructure.Services;
 using Application.Interfaces;
+using Application.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,6 +46,8 @@ builder.Services.AddScoped<IClienteService, ClienteService>();
 builder.Services.AddScoped<IProveedorService, ProveedorService>();
 builder.Services.AddScoped<IVentasEstadisticasService, VentasEstadisticasService>();
 builder.Services.AddScoped<IVentasRankingService, VentasRankingService>();
+builder.Services.AddScoped<IProductoService, ProductoService>();
+builder.Services.AddScoped<IOrdenCompraService, OrdenCompraService>();
 
 // Add services to the container.
 builder.Services.AddRazorPages();

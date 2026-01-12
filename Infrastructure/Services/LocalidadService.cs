@@ -31,6 +31,16 @@ public class LocalidadService : ILocalidadService
         return await query.OrderBy(l => l.Nombre).ToListAsync();
     }
 
+    public async Task<List<Localidade>> GetAllAsync()
+    {
+        return await _context.Localidades
+            .Where(l => l.Baja != true)
+            .OrderBy(l => l.Nombre)
+            .ToListAsync();
+
+    }
+       
+
     public async Task<Localidade?> GetByIdAsync(int id)
     {
         return await _context.Localidades

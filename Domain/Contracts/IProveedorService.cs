@@ -1,4 +1,6 @@
-﻿using Domain.Entities;
+﻿using Domain.DTO;
+using Domain.Entities;
+using System.Threading.Tasks;
 
 namespace Application.Interfaces
 {
@@ -9,5 +11,7 @@ namespace Application.Interfaces
         Task<int> CreateAsync(string nombreComercial, string? cuil, string? direccion, string? email, string? telefono, string? celular, decimal ganancia, decimal descuento);
         Task UpdateAsync(int id, string nombreComercial, string? cuil, string? direccion, string? email, string? telefono, string? celular, decimal ganancia, decimal descuento);
         Task DeleteAsync(int id); // baja lógica
+        Task<List<ProveedorCabeceraDto>> TraerCabeceraAsync();
+
     }
 }

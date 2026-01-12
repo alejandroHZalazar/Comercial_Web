@@ -1,4 +1,5 @@
-﻿using Domain.Entities;
+﻿using Domain.DTO;
+using Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,5 +17,9 @@ namespace Domain.Contracts
         Task<long> CrearOrdenAsync(OrdenCompra orden, List<OrdenCompraDetalle> detalles);
         Task ActualizarOrdenAsync(OrdenCompra orden, List<OrdenCompraDetalle> detalles);
         Task EliminarOrdenAsync(long id); // baja lógica o eliminación física
+        Task<List<ProductoAPedirOCDto>> TraerListaProdAPedirAsync(int proveedorId, DateTime desde, DateTime hasta);
+        Task<List<ProductoAPedirImprimirOCDto>> TraerListaProdAPedirImprimirAsync(int proveedorId, DateTime desde, DateTime hasta);
+        Task<long> GrabarOrdenCompraAsync(int proveedorId, decimal total, decimal iva, decimal recargo, decimal descuento, List<OrdenCompraDetalle> detalles, IProgress<int> progreso, CancellationToken ct);
+        Task<List<OrdenCompraPrint>> OrdenCompraImprimirAsync(int id);
     }
 }

@@ -45,5 +45,46 @@ namespace Infrastructure.Services
 
             await _context.SaveChangesAsync();
         }
+
+        public async Task<int> ObtenerIndiceBusquedaNotaPedidoAsync()
+        {
+            var valor = await _context.Parametros
+                .Where(p => p.Modulo == "notaPedido" && p.Parametro1 == "indiceBusqueda")
+                .Select(p => p.Valor)
+                .FirstOrDefaultAsync();
+
+            return int.TryParse(valor, out var indice) ? indice : 0;
+        }
+
+        public async Task<int> ObtenerCantidadDecimalesProductosAsync()
+        {
+            var valor = await _context.Parametros
+                .Where(p => p.Modulo == "productos" && p.Parametro1 == "decimales")
+                .Select(p => p.Valor)
+                .FirstOrDefaultAsync();
+
+            return int.TryParse(valor, out var indice) ? indice : 0;
+        }
+
+        public async Task<int> ObtenerCantidadDecimalesStockAsync()
+        {
+            var valor = await _context.Parametros
+                .Where(p => p.Modulo == "productos" && p.Parametro1 == "decimalesCant")
+                .Select(p => p.Valor)
+                .FirstOrDefaultAsync();
+
+            return int.TryParse(valor, out var indice) ? indice : 0;
+        }
+
+        public async Task<string> ObtenerValorAsync(string unModulo, string unParametro)
+        {
+            var valor = await _context.Parametros
+                .Where(p => p.Modulo == unModulo && p.Parametro1 == unParametro)
+                .Select(p => p.Valor)
+                .FirstOrDefaultAsync();
+
+            return valor ?? "";
+        }
+
     }
 }
