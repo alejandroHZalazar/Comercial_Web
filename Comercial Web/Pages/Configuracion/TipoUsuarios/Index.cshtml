@@ -1,19 +1,19 @@
-﻿@page
+@page
 @model Comercial_Web.Pages.Configuracion.TipoUsuarios.IndexModel
 @{
     ViewData["Title"] = "ABM Tipo de Usuarios y Permisos";
 }
 
-<div class="card mb-4">
-    <div class="card-header fw-semibold mb-3">
-        Tipos de Usuarios
+<div class="card shadow-sm mb-4">
+    <div class="card-header fw-semibold bg-light border-bottom d-flex align-items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="me-2" viewBox="0 0 16 16" style="vertical-align:-3px;">
+            <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-.25.006-.51.025-.78.07-.965.327-1.85.83-2.582q.09-.132.186-.26A6 6 0 0 0 5.7 9.1 7 7 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5"/>
+        </svg>
+        Tipos de Usuarios y Permisos
     </div>
 
-@* Formulario genérico *@
     @if (Model.MostrarFormulario)
-    { 
-
-
+    {
         @await Html.PartialAsync("_FormularioConfiguracion",
                 new Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.FormularioVm
         {
@@ -44,8 +44,8 @@
                         Seleccionado = p.Seleccionado
                     }).ToList()
                 }
-            }
-            ,PermisosFormulario = Model.PermisosFormulario
+            },
+            PermisosFormulario = Model.PermisosFormulario
                 .Select(p => new Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.CheckboxItemVm
                 {
                     Id = p.Id,
@@ -53,15 +53,20 @@
                     Seleccionado = p.Seleccionado
                 })
                 .ToList()
-
         })
     }
-    @* Botón Agregar *@
-    <form method="post" asp-page-handler="Nuevo" class="ms-3 mb-3">
-        <button type="submit" class="btn btn-success">Nuevo Tipo de Usuario</button>
-    </form>
 
-    @* Grilla genérica *@
+    <div class="ms-3 mt-3 mb-3">
+        <form method="post" asp-page-handler="Nuevo" class="d-inline">
+            <button type="submit" class="btn btn-success shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-2px;">
+                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/>
+                </svg>
+                Nuevo Tipo de Usuario
+            </button>
+        </form>
+    </div>
+
     <div class="card-body p-0">
         @await Html.PartialAsync("_GrillaConfiguracion",
                  new Comercial_Web.Pages.Shared.Components.GrillaConfiguracion.GrillaVm
@@ -94,7 +99,6 @@
             });
         }
 
-        // Forzar mayúsculas en el campo nombre
         document.addEventListener('DOMContentLoaded', () => {
             const input = document.querySelector('input[name="Descripcion"]');
             if (input) {

@@ -94,14 +94,60 @@
             flex-direction: column;
         }
 
-            .content main {
-                background-color: white;
+        /* En pantallas menores a md (768px), el sidebar se oculta, quitar el margin */
+        @@media (max-width: 767.98px) {
+            .content {
+                margin-left: 0;
+            }
+
+            .sidebar {
+                position: fixed;
+                z-index: 1050;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.4);
+                z-index: 1040;
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
+        }
+
+        .btn-menu-toggle {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 1060;
+            background-color: #e0e0e0;
+            border: 1px solid #bbb;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+            .content main {               
                 padding: 20px;
                 border-radius: 8px;
                 box-shadow: 0 0 10px rgba(0,0,0,0.1);
                 flex: 1;
                 overflow-y: auto;
             }
+
 
         .icono {
             width: 18px;
@@ -114,7 +160,13 @@
     </style>
 </head>
 <body>
-    <div class="sidebar d-none d-md-flex">
+    <!-- Botón hamburguesa solo visible en móvil -->
+    <button class="btn-menu-toggle d-md-none" id="menuToggle" aria-label="Abrir menú">&#9776;</button>
+
+    <!-- Overlay para cerrar el menú en móvil -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="sidebar d-md-flex" id="sidebarMenu">
         <h5 class="text-center">Gestión Comercial</h5>
         <div class="accordion" id="menuAccordion">
             @await Component.InvokeAsync("MainMenu")
@@ -131,5 +183,28 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
+    <script>
+        (function () {
+            var toggle = document.getElementById('menuToggle');
+            var sidebar = document.getElementById('sidebarMenu');
+            var overlay = document.getElementById('sidebarOverlay');
+
+            function openMenu() {
+                sidebar.classList.add('show');
+                overlay.classList.add('show');
+            }
+
+            function closeMenu() {
+                sidebar.classList.remove('show');
+                overlay.classList.remove('show');
+            }
+
+            toggle.addEventListener('click', function () {
+                sidebar.classList.contains('show') ? closeMenu() : openMenu();
+            });
+
+            overlay.addEventListener('click', closeMenu);
+        })();
+    </script>
 </body>
 </html>

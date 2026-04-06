@@ -9,6 +9,8 @@ using Domain.Contracts;
 using Infrastructure.Services;
 using Application.Interfaces;
 using Application.Services;
+using Microsoft.AspNetCore.Localization;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,11 +50,36 @@ builder.Services.AddScoped<IVentasEstadisticasService, VentasEstadisticasService
 builder.Services.AddScoped<IVentasRankingService, VentasRankingService>();
 builder.Services.AddScoped<IProductoService, ProductoService>();
 builder.Services.AddScoped<IOrdenCompraService, OrdenCompraService>();
+builder.Services.AddScoped<IIngresoProductosService, IngresoProductosService>();
+builder.Services.AddScoped<IConceptoCajaService, ConceptoCajaService>();
+builder.Services.AddScoped<IMedioPagoService, MedioPagoService>();
+builder.Services.AddScoped<IPlanPagoService, PlanPagoService>();
+builder.Services.AddScoped<IDocumentoTipoService, DocumentoTipoService>();
+builder.Services.AddScoped<IVentasExportarService, VentasExportarService>();
+builder.Services.AddScoped<IDashboardVentasService, DashboardVentasService>();
+builder.Services.AddScoped<IDashboardProveedorService, DashboardProveedorService>();
+builder.Services.AddScoped<IDashboardClienteService,  DashboardClienteService>();
+builder.Services.AddScoped<IAltaMasivaProductosService, AltaMasivaProductosService>();
+builder.Services.AddScoped<IListaPreciosService, ListaPreciosService>();
+builder.Services.AddScoped<IGestionStockService, GestionStockService>();
+builder.Services.AddScoped<IMovimientosProductosService, MovimientosProductosService>();
 
 // Add services to the container.
 builder.Services.AddRazorPages();
 
 var app = builder.Build();
+
+// Configurar cultura por defecto
+var defaultCulture = new CultureInfo("es-AR"); // o "es-ES"
+var localizationOptions = new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new RequestCulture(defaultCulture),
+    SupportedCultures = new List<CultureInfo> { defaultCulture },
+    SupportedUICultures = new List<CultureInfo> { defaultCulture }
+};
+
+app.UseRequestLocalization(localizationOptions);
+
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

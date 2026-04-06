@@ -19,6 +19,14 @@ namespace Infrastructure.Services
             _context = context;
         }
 
+        public async Task<List<Parametro>> GetAllAsync()
+        {
+            return await _context.Parametros
+                .OrderBy(p => p.Modulo)
+                .ThenBy(p => p.Parametro1)
+                .ToListAsync();
+        }
+
         public async Task<Parametro?> GetLogoAsync()
         {
             return await _context.Parametros
@@ -63,7 +71,7 @@ namespace Infrastructure.Services
                 .Select(p => p.Valor)
                 .FirstOrDefaultAsync();
 
-            return int.TryParse(valor, out var indice) ? indice : 0;
+            return int.TryParse(valor, out var indice) ? indice : 2;
         }
 
         public async Task<int> ObtenerCantidadDecimalesStockAsync()
@@ -73,7 +81,7 @@ namespace Infrastructure.Services
                 .Select(p => p.Valor)
                 .FirstOrDefaultAsync();
 
-            return int.TryParse(valor, out var indice) ? indice : 0;
+            return int.TryParse(valor, out var indice) ? indice : 2;
         }
 
         public async Task<string> ObtenerValorAsync(string unModulo, string unParametro)
@@ -84,6 +92,25 @@ namespace Infrastructure.Services
                 .FirstOrDefaultAsync();
 
             return valor ?? "";
+        }
+
+        public async Task ActualizarValorAsync(string unModulo, string unParametro, string nuevoValor)
+        {
+            var parametro = await _context.Parametros
+                .FirstOrDefaultAsync(p => p.Modulo == unModulo && p.Parametro1 == unParametro);
+
+            if (parametro is null)
+            {
+                parametro = new Parametro
+                {
+                    Modulo = unModulo,
+                    Parametro1 = unParametro
+                };
+                _context.Parametros.Add(parametro);
+            }
+
+            parametro.Valor = nuevoValor;
+            await _context.SaveChangesAsync();
         }
 
     }

@@ -376,5 +376,143 @@ namespace Application.Services
 
             return query;
         }
+
+        public async Task<ProductoLineaOCDto?> TraerPorIdOCAsync(int id)
+        {
+            var query = from p in _context.Productos
+                        join pr in _context.PreciosProveedores
+                            on p.Id equals pr.FkProducto into precios
+                        join s in _context.StockProductos on p.Id equals s.FkProducto
+                        from pr in precios.DefaultIfEmpty()
+                        where p.Id == id
+                              && p.Baja != true
+                        select new ProductoLineaOCDto
+                        {
+                            Id = p.Id,
+                            CodBarras = p.CodBarras,
+                            CodProveedor = p.CodProveedor,
+                            Descripcion = p.Descripcion,
+                            Cantidad = s.Cantidad,
+                            CantidadMinima = s.CantidadMinima ?? 0,
+                            PrecioProveedor = pr.Precio ?? 0m
+                        };
+
+            return await query.FirstOrDefaultAsync();
+        }
+
+        public async Task<ProductoLineaOCDto?> BuscarPorCodProveedorOCAsync(string codProveedor, int proveedorId)
+        {
+            var codigo = codProveedor?.Trim();
+
+            var query = from p in _context.Productos
+                        join pr in _context.PreciosProveedores
+                            on p.Id equals pr.FkProducto into precios
+                        join s in _context.StockProductos on p.Id equals s.FkProducto
+                        from pr in precios.DefaultIfEmpty()
+                        where p.CodProveedor == codigo
+                              && p.Baja != true
+                              && p.FkProveedor == proveedorId
+                        select new ProductoLineaOCDto
+                        {
+                            Id = p.Id,
+                            CodBarras = p.CodBarras,
+                            CodProveedor = p.CodProveedor,
+                            Descripcion = p.Descripcion,
+                            Cantidad = s.Cantidad,
+                            CantidadMinima = s.CantidadMinima ?? 0,
+                            PrecioProveedor = pr.Precio ?? 0m
+                        };
+
+            return await query.FirstOrDefaultAsync();
+        }
+
+        public async Task<ProductoLineaOCDto?> BuscarPorCodBarrasOCAsync(string codBarras, int proveedorId)
+        {
+            var query = from p in _context.Productos
+                        join pr in _context.PreciosProveedores
+                            on p.Id equals pr.FkProducto into precios
+                        join s in _context.StockProductos on p.Id equals s.FkProducto
+                        from pr in precios.DefaultIfEmpty()
+                        where p.CodBarras == codBarras
+                              && p.Baja != true
+                              && p.FkProveedor == proveedorId
+                        select new ProductoLineaOCDto
+                        {
+                            Id = p.Id,
+                            CodBarras = p.CodBarras,
+                            CodProveedor = p.CodProveedor,
+                            Descripcion = p.Descripcion,
+                            Cantidad = s.Cantidad,
+                            CantidadMinima = s.CantidadMinima ?? 0,
+                            PrecioProveedor = pr.Precio ?? 0m
+                        };
+
+            return await query.FirstOrDefaultAsync();
+        }
+
+        public async Task<ProductoLineaOCDto?> BuscarPorDescripcionExactaAsync(string descripcion, int proveedorId)
+        {
+
+            var query = from p in _context.Productos
+                        join pr in _context.PreciosProveedores
+                            on p.Id equals pr.FkProducto into precios
+                        join s in _context.StockProductos on p.Id equals s.FkProducto
+                        from pr in precios.DefaultIfEmpty()
+                        where p.Descripcion == descripcion
+                              && p.Baja != true
+                              && p.FkProveedor == proveedorId
+                        select new ProductoLineaOCDto
+                        {
+                            Id = p.Id,
+                            CodBarras = p.CodBarras,
+                            CodProveedor = p.CodProveedor,
+                            Descripcion = p.Descripcion,
+                            Cantidad = s.Cantidad,
+                            CantidadMinima = s.CantidadMinima ?? 0,
+                            PrecioProveedor = pr.Precio ?? 0m
+                        };
+
+            return await query.FirstOrDefaultAsync();
+        }
+
+        public async Task<ProductoLineaOCDto?> TraerProductoParaEditarAsync(int productoId)
+        {
+            return await _context.Productos
+                .Where(p => p.Id == productoId && p.Baja != true)
+                .Select(p => new ProductoLineaOCDto
+                {
+                    Id = p.Id,
+                    CodBarras = p.CodBarras,
+                    CodProveedor = p.CodProveedor,
+                    Descripcion = p.Descripcion,
+                    Cantidad = 0, // stock actual si lo tenés
+                    CantidadMinima = 0, // si lo tenés en otra tabla
+                    PrecioProveedor = 0 // si lo tenés en otra tabla
+                })
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<List<ProductoCantMinimaDto>> TraerCantMinPorProveedorAsync(int proveedorId)
+        {
+            return await (from p in _context.Productos
+                          join s in _context.StockProductos on p.Id equals s.FkProducto
+                          join pp in _context.PreciosProveedores on p.Id equals pp.FkProducto
+                          where p.FkProveedor == proveedorId
+                                && s.Cantidad <= s.CantidadMinima
+                                && p.Baja != true
+                          select new ProductoCantMinimaDto
+                          {
+                              CodBarras = p.CodBarras ?? "",
+                              CodProveedor = p.CodProveedor ?? "",
+                              Descripcion = p.Descripcion ?? "",
+                              Cantidad = s.Cantidad ?? 0,
+                              CantidadMinima = s.CantidadMinima ?? 0,
+                              Precio = pp.Precio ?? 0,
+                              Pedido = (s.CantidadMinima ?? 0) - (s.Cantidad ?? 0) + 1,
+                              Id = p.Id
+                          })
+                          .ToListAsync();
+        }
+
     }
 }

@@ -10,21 +10,17 @@ namespace Domain.Contracts
 {
     public interface IProductoService
     {
-        Task<List<Producto>> TraerTodosAsync();
-        Task<ProductoLineaOCDto?> TraerPorIdOCAsync(int id);
-        Task<ProductoLineaOCDto?> BuscarPorCodProveedorOCAsync(string codProveedor, int proveedorId);
-        Task<ProductoLineaOCDto?> BuscarPorCodBarrasOCAsync(string codBarras, int proveedorId);
+        Task<List<Producto>> TraerTodosAsync();        
         Task<List<Producto>> BuscarPorDescripcionAsync(string descripcion);
-        Task<int> CrearAsync(Producto producto);
-        Task ActualizarAsync(Producto producto);
-        Task EliminarAsync(int id); // baja lógica
-        Task<int> ObtenerDecimalesAsync();         // para precios
-        Task<int> ObtenerDecimalesStockAsync();    // para cantidades
-        Task<List<ProductoDto>> TraerProductosProveedorAsync(int proveedorId);       
-        Task<ProductoLineaOCDto?> TraerProductoParaEditarAsync(int productoId);
-        Task<ProductoLineaOCDto?> BuscarPorDescripcionExactaAsync(string descripcion, int proveedorId);
-        Task<List<ProductoCantMinimaDto>> TraerCantMinPorProveedorAsync(int proveedorId);
-
+        Task CrearAsync(ProductoDetallesDTO vm);
+        Task ActualizarAsync(ProductoDetallesDTO producto);
+        Task EliminarAsync(int id); // baja lógica       
+        Task<List<ProductoDto>> TraerProductosProveedorAsync(int proveedorId); 
+        Task<List<Producto>> GetByCodProveedorProveedorAsync(string codProveedor, int proveedorId);
+        Task<List<Producto>> GetByCodBarrasProveedorAsync(string codBarra, int proveedorId);
+        Task<List<Producto>> GetByCodProveedorAsync(string codProveedor);
+        Task<List<Producto>> GetByCodBarrasAsync(string codBarra);
+        Task<ProductoDetallesDTO> traerDetalleAsync(int id, int decCant, int decStock);
 
     }
 

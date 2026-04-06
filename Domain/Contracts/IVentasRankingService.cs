@@ -6,6 +6,8 @@ namespace Domain.Contracts
     {
         Task<List<RankingItemDto>> TraerVentasRankingProductosAsync(DateTime desde, DateTime hasta);
         Task<List<RankingItemDto>> TraerVentasRankingClientesAsync(DateTime desde, DateTime hasta);
+        Task<List<RankingClienteDetalleDto>> TraerRankingClientesDetalleAsync(DateTime desde, DateTime hasta, List<int>? proveedorIds);
+        Task<List<RankingProductoDetalleDto>> TraerRankingProductosDetalleAsync(DateTime desde, DateTime hasta, List<int>? proveedorIds);
     }
 
 }

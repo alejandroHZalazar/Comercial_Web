@@ -3,8 +3,14 @@
 
 @if (Model.MostrarFormulario)
 {
-    <div class="card bg-light">
-        <h5 class="form-titulo-secundario px-3">@Model.TituloSecundario</h5>
+    <div class="card shadow-sm mb-3 mx-3">
+        <div class="card-header fw-semibold bg-primary bg-opacity-10 border-bottom d-flex align-items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2 text-primary" viewBox="0 0 16 16" style="vertical-align:-2px;">
+                <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
+                <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z"/>
+            </svg>
+            @Model.TituloSecundario
+        </div>
 
         <div class="card-body">
 
@@ -13,8 +19,18 @@
                        oninput="filtrarModulos(this.value)" />
             </div>
             <div class="mb-2 d-flex gap-2">
-                <button type="button" class="btn btn-outline-secondary" onclick="seleccionarTodos()">Todos</button>
-                <button type="button" class="btn btn-outline-secondary" onclick="deseleccionarTodos()">Ninguno</button>
+                <button type="button" class="btn btn-success btn-sm fw-semibold shadow-sm px-3" onclick="seleccionarTodos()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-2px;">
+                        <path d="M2.5 0a2.5 2.5 0 0 0-2.5 2.5v11A2.5 2.5 0 0 0 2.5 16h11a2.5 2.5 0 0 0 2.5-2.5v-11A2.5 2.5 0 0 0 13.5 0zm7.354 5.646 1.5 1.5a.5.5 0 0 1 0 .708l-5 5a.5.5 0 0 1-.708 0l-2.5-2.5a.5.5 0 0 1 .708-.708L6 11.793l4.646-4.647a.5.5 0 0 1 .708 0z"/>
+                    </svg>
+                    Todos
+                </button>
+                <button type="button" class="btn btn-danger btn-sm fw-semibold shadow-sm px-3" onclick="deseleccionarTodos()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-2px;">
+                        <path d="M2.5 0A2.5 2.5 0 0 0 0 2.5v11A2.5 2.5 0 0 0 2.5 16h11a2.5 2.5 0 0 0 2.5-2.5v-11A2.5 2.5 0 0 0 13.5 0zm4.354 5.354 1.146 1.146 1.146-1.146a.5.5 0 0 1 .708.708L9.207 7.207l1.147 1.146a.5.5 0 0 1-.708.708L8.5 7.914 7.354 9.061a.5.5 0 0 1-.708-.708L7.793 7.207 6.646 6.061a.5.5 0 1 1 .708-.708z"/>
+                    </svg>
+                    Ninguno
+                </button>
             </div>
 
 
@@ -49,7 +65,7 @@
                                 <div class="mb-3 border rounded p-3 bg-white">
                                     @foreach (var item in campo.Items!)
                                     {
-                                        <div class="form-check permiso-row" data-nombre="@item.Nombre">
+                                        <div class="form-check permiso-row @(item.Id == 1 || item.Id % 100 == 0 ? "mt-2" : "")" data-nombre="@item.Nombre">
 
                                             <input type="checkbox"
                                                    class="form-check-input"
@@ -57,7 +73,7 @@
                                                    value="@item.Id"
                                             @(item.Seleccionado ? "checked" : "") />
 
-                                            <label class="form-check-label">@item.Nombre</label>
+                                            <label class="form-check-label @(item.Id == 1 || item.Id % 100 == 0 ? "fw-bold" : "")">@item.Nombre</label>
                                         </div>
                                     }
                                 </div>
@@ -102,8 +118,18 @@
 
                 <!-- campos -->
                 <div class="d-flex gap-2 botones-formulario">
-                    <button type="submit" class="btn btn-primary">Grabar</button>
-                    <a class="btn btn-secondary" href="@Model.UrlCancelar">Cancelar</a>
+                    <button type="submit" class="btn btn-primary shadow-sm fw-semibold">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-2px;">
+                            <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z"/>
+                        </svg>
+                        Grabar
+                    </button>
+                    <a class="btn btn-secondary shadow-sm" href="@Model.UrlCancelar">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-2px;">
+                            <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
+                        </svg>
+                        Cancelar
+                    </a>
                 </div>
 
             </form>

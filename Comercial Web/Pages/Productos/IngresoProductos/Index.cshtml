@@ -1,0 +1,1049 @@
+@page
+@model Comercial_Web.Pages.Productos.IngresoProductos.IndexModel
+@{
+    ViewData["Title"] = "Ingreso de Productos";
+}
+
+<style>
+    /* ---- HEADER ---- */
+    .page-header {
+        background: linear-gradient(135deg, #1a2a4a 0%, #2d4a7a 100%);
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+        color: #fff;
+    }
+    .page-header h4 { margin: 0; font-weight: 700; letter-spacing: .3px; }
+
+    /* ---- MAIN CARD ---- */
+    .main-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,.08);
+        overflow: visible;   /* visible para que el autocomplete no quede recortado */
+        margin-bottom: 1.5rem;
+    }
+    .main-card-header {
+        background: #f8f9fc;
+        border-bottom: 1px solid #e3e6f0;
+        padding: .85rem 1.25rem;
+        display: flex; align-items: center; justify-content: space-between;
+        border-radius: 12px 12px 0 0;  /* reemplaza el clip de overflow:hidden */
+    }
+    .main-card-header h6 { margin: 0; font-weight: 700; color: #2d3748; font-size: .95rem; }
+    .main-card-body { padding: 1.25rem; }
+
+    /* ---- SECTION CARD ---- */
+    .section-card {
+        border: 1px solid #e3e6f0;
+        border-radius: 10px;
+        overflow: visible;   /* visible para que el autocomplete no quede recortado */
+        margin-bottom: 1rem;
+    }
+    .section-card-header {
+        background: linear-gradient(90deg,#f0f4ff 0%,#f8f9fc 100%);
+        border-bottom: 1px solid #e3e6f0;
+        padding: .55rem 1rem;
+        display: flex; align-items: center; gap: .45rem;
+        border-radius: 9px 9px 0 0;   /* reemplaza el clip de overflow:hidden */
+    }
+    .section-card-header span {
+        font-weight: 700; font-size: .75rem;
+        text-transform: uppercase; letter-spacing: .5px; color: #4e73df;
+    }
+    .section-card-body { padding: .85rem 1rem; }
+
+    /* ---- FORM LABELS ---- */
+    .form-label { margin-bottom: 3px; font-size: .82rem; font-weight: 600; color: #4a5568; }
+
+    /* ---- BUTTONS ---- */
+    .btn-ip {
+        border: none; border-radius: 8px;
+        padding: .38rem .9rem; font-size: .82rem; font-weight: 600;
+        display: inline-flex; align-items: center; gap: .4rem;
+        cursor: pointer; transition: all .18s; white-space: nowrap;
+    }
+    .btn-ip svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .btn-ip-primary  { background: #4e73df; color: #fff; }
+    .btn-ip-primary:hover  { background: #3a5bc7; color: #fff; }
+    .btn-ip-success  { background: #1cc88a; color: #fff; }
+    .btn-ip-success:hover  { background: #17a673; color: #fff; }
+    .btn-ip-danger   { background: #fdecea; color: #e74a3b; border: 1px solid #f5c6c3; }
+    .btn-ip-danger:hover   { background: #e74a3b; color: #fff; border-color: #e74a3b; }
+    .btn-ip-outline  { background: #fff; color: #4e73df; border: 1.5px solid #4e73df; }
+    .btn-ip-outline:hover  { background: #4e73df; color: #fff; }
+    .btn-ip-teal     { background: #36b9cc; color: #fff; }
+    .btn-ip-teal:hover     { background: #258391; color: #fff; }
+    .btn-ip-secondary { background: #858796; color: #fff; }
+    .btn-ip-secondary:hover { background: #6a6b7a; color: #fff; }
+
+    /* ---- TABLA DETALLE ---- */
+    .ing-table { width: 100%; border-collapse: collapse; }
+    .ing-table thead tr { background: linear-gradient(90deg,#1a2a4a 0%,#2d4a7a 100%); }
+    .ing-table th {
+        padding: .55rem .7rem;
+        font-size: .69rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .4px;
+        color: #fff; white-space: nowrap;
+    }
+    .ing-table td {
+        padding: .45rem .7rem; font-size: .82rem;
+        color: #2d3748; border-bottom: 1px solid #f0f0f0;
+        vertical-align: middle;
+    }
+    .ing-table tbody tr:hover { background: #f8f9ff; }
+    .ing-table tbody tr:last-child td { border-bottom: none; }
+
+    /* ---- TABLA MODAL ---- */
+    .modal-table { width: 100%; border-collapse: collapse; }
+    .modal-table thead tr { background: linear-gradient(90deg,#1a2a4a 0%,#2d4a7a 100%); }
+    .modal-table th {
+        padding: .5rem .65rem;
+        font-size: .68rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .4px;
+        color: #fff; white-space: nowrap;
+    }
+    .modal-table td {
+        padding: .4rem .65rem; font-size: .81rem;
+        color: #2d3748; border-bottom: 1px solid #f0f0f0;
+        vertical-align: middle;
+    }
+    .modal-table tbody tr { cursor: pointer; }
+    .modal-table tbody tr:hover { background: #f0f5ff; }
+    .modal-table tbody tr.table-active { background: #dde8ff !important; }
+
+    /* ---- MODAL HEADER ---- */
+    .modal-header-custom {
+        background: linear-gradient(135deg,#1a2a4a 0%,#2d4a7a 100%);
+        color: #fff; border: none; padding: .9rem 1.25rem;
+    }
+    .modal-header-custom .modal-title { font-weight: 700; font-size: .95rem; }
+
+    /* ---- PANEL AUTOCOMPLETE ---- */
+    #panelResultados .list-group-item {
+        font-size: .83rem; padding: .42rem .75rem;
+        border-color: #e3e6f0; cursor: pointer;
+    }
+    #panelResultados .list-group-item:hover,
+    #panelResultados .list-group-item.active {
+        background: #4e73df; color: #fff; border-color: #4e73df;
+    }
+
+    /* ---- TOTALES BAR ---- */
+    .totales-bar {
+        background: #f8f9fc;
+        border-top: 1px solid #e3e6f0;
+        padding: .75rem 1rem;
+    }
+    .total-label {
+        font-size: .72rem; font-weight: 700;
+        color: #6c757d; text-transform: uppercase;
+        letter-spacing: .4px; margin-bottom: .2rem;
+    }
+
+    /* ---- DESCRIPCION LABEL ---- */
+    #descripcionLabel {
+        font-size: .82rem; font-weight: 600;
+        color: #1cc88a; padding: .2rem .65rem;
+        background: #e6f9f2; border-radius: 20px;
+        border: 1px solid #b2eeda;
+    }
+
+    /* ---- DISABLED FIELDSET ---- */
+    fieldset[disabled] { opacity: 0.55; pointer-events: none; }
+
+    /* ---- TOAST ---- */
+    .toast-container { z-index: 1090; }
+
+    /* ---- INLINE CONFIRM ---- */
+    .inline-confirm {
+        background: #fdecea; border: 1px solid #f5c6c3;
+        border-radius: 8px; padding: .45rem .75rem;
+        display: flex; align-items: center; gap: .5rem;
+        font-size: .82rem; font-weight: 600; color: #e74a3b;
+    }
+</style>
+
+@* ---- PAGE HEADER ---- *@
+<div class="page-header d-flex align-items-center gap-3">
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5zM2 5h12v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5z"/>
+    </svg>
+    <div>
+        <h4>Ingreso de Productos</h4>
+        <small class="opacity-75">Recepción de mercadería y actualización de stock</small>
+    </div>
+</div>
+
+@* ---- MAIN CARD ---- *@
+<div class="main-card">
+
+    <div class="main-card-header">
+        <h6>
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="#4e73df" viewBox="0 0 16 16" class="me-1">
+                <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5zM2 5h12v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5z"/>
+            </svg>
+            Nuevo Ingreso
+        </h6>
+        <button type="button" class="btn-ip btn-ip-secondary" style="padding:.3rem .7rem;font-size:.78rem;" onclick="window.history.back()">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+            </svg>
+            Volver
+        </button>
+    </div>
+
+    <div class="main-card-body">
+        <form id="productoIngresoForm" method="post" asp-page-handler="Guardar">
+
+            @* ---- Datos del comprobante ---- *@
+            <div class="section-card">
+                <div class="section-card-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#4e73df" viewBox="0 0 16 16">
+                        <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-5.784 6A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/>
+                    </svg>
+                    <span>Datos del Comprobante</span>
+                </div>
+                <div class="section-card-body">
+                    <div class="row align-items-end g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Proveedor</label>
+                            <select class="form-select form-select-sm" id="ProveedorSelect" name="Producto.FkProveedor">
+                                @foreach (var p in Model.Proveedores)
+                                {
+                                    <option value="@p.Id" data-ganancia="@p.Ganancia" data-descuento="@p.Descuento">
+                                        @p.NombreComercial
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-auto">
+                            <label class="form-label">&nbsp;</label>
+                            <div>
+                                <button type="button" id="btnSeleccionarProveedor" class="btn-ip btn-ip-primary">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                    </svg>
+                                    Seleccionar
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Fecha de Carga</label>
+                            <input type="date" class="form-control form-control-sm" id="FechaCarga" name="Producto.FechaCarga"
+                                   value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col">
+                            <label class="form-label">Nro. Comprobante</label>
+                            <input type="text" class="form-control form-control-sm" id="NroComprobante" name="Producto.NroComprobante" />
+                        </div>
+                        <div class="col-auto">
+                            <label class="form-label">IVA</label>
+                            <select class="form-select form-select-sm" id="IvaSelect" name="Producto.FkIva" style="width:auto;">
+                                @foreach (var iva in Model.IvaProcentajes)
+                                {
+                                    <option value="@iva.Id" data-valor="@iva.Valor">@iva.Valor %</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* ---- Búsqueda por filtros ---- *@
+            <fieldset id="fsFiltros" disabled>
+                <div class="section-card">
+                    <div class="section-card-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#4e73df" viewBox="0 0 16 16">
+                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+                        </svg>
+                        <span>Búsqueda de Productos</span>
+                    </div>
+                    <div class="section-card-body">
+                        <div class="row align-items-end g-3 mb-3">
+                            <div class="col-md-2">
+                                <label class="form-label">Tipo de búsqueda</label>
+                                <select asp-for="TipoBusqueda" class="form-select form-select-sm" id="TipoBusqueda" name="Filtro.TipoBusqueda">
+                                    <option value="1">Cód. Proveedor</option>
+                                    <option value="2">Cód. Barras</option>
+                                    <option value="3">Cód. Interno</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Valor filtro</label>
+                                <input type="text" class="form-control form-control-sm" id="ValorFiltro" name="Filtro.Valor" autocomplete="off" />
+                            </div>
+                            <div class="col-auto">
+                                <label id="descripcionLabel" class="d-none"></label>
+                            </div>
+                            <div class="col-auto ms-auto">
+                                <label class="form-label">&nbsp;</label>
+                                <div>
+                                    <button type="button" class="btn-ip btn-ip-teal"
+                                            data-bs-toggle="modal" data-bs-target="#notaPedidoModal">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/>
+                                            <path d="M7 5.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm-1.496-.854a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 1 1 .708-.708l.146.147 1.146-1.147a.5.5 0 0 1 .708 0zM7 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm-1.496-.854a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 0 1 .708-.708l.146.147 1.146-1.147a.5.5 0 0 1 .708 0z"/>
+                                        </svg>
+                                        Cargar Nota de Pedido
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row align-items-end g-3">
+                            <div class="col-6 position-relative">
+                                <label class="form-label">Búsqueda por descripción</label>
+                                <input type="text" class="form-control form-control-sm" id="BusquedaDescripcion" autocomplete="off" />
+                                <div id="panelResultados"
+                                     class="list-group position-absolute w-100 shadow d-none"
+                                     style="z-index:9999;max-height:220px;overflow-y:auto;top:100%;left:0;"></div>
+                            </div>
+                            <div class="col-auto">
+                                <label class="form-label">Cantidad</label>
+                                <input type="number" class="form-control form-control-sm text-end"
+                                       style="width:90px;" id="Cantidad" name="Filtro.Cantidad" />
+                            </div>
+                            <div class="col-auto">
+                                <label class="form-label">&nbsp;</label>
+                                <div>
+                                    <button type="button" id="btnCargar" class="btn-ip btn-ip-success">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                                        </svg>
+                                        Cargar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+
+            @* ---- Detalle ---- *@
+            <fieldset id="fsDetalle" disabled>
+                <div class="section-card" style="margin-bottom:0;">
+                    <div class="section-card-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#4e73df" viewBox="0 0 16 16">
+                            <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2z"/>
+                            <path d="M4.5 5.5A.5.5 0 0 1 5 5h7a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0 2A.5.5 0 0 1 5 7h7a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0 2A.5.5 0 0 1 5 9h4a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5z"/>
+                        </svg>
+                        <span>Detalle del Ingreso</span>
+                    </div>
+                    <div style="max-height:360px;overflow-y:auto;">
+                        <table class="ing-table" id="tablaDetalle">
+                            <thead>
+                                <tr>
+                                    <th>Cód. Barras</th>
+                                    <th>Cód. Prov.</th>
+                                    <th>Descripción</th>
+                                    <th class="text-end">Stock</th>
+                                    <th class="text-end">C.Mín</th>
+                                    <th class="text-end">Costo</th>
+                                    <th class="text-end">P. Lista</th>
+                                    <th class="text-end">P.Prov S/IVA</th>
+                                    <th class="text-end">P.Prov C/IVA</th>
+                                    <th class="text-end">Cantidad</th>
+                                    <th class="text-end">Subtotal</th>
+                                    <th class="d-none">CostoOrig</th>
+                                    <th class="d-none">Id</th>
+                                    <th class="d-none">NtaPedido</th>
+                                    <th class="d-none">Linea</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="totales-bar">
+                        <div class="d-flex align-items-center gap-3 flex-wrap">
+                            <div class="flex-grow-1" style="min-width:160px;">
+                                <div class="total-label">Progreso</div>
+                                <div class="progress" style="height:16px;border-radius:8px;">
+                                    <div class="progress-bar bg-success" style="width:0%;border-radius:8px;"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="total-label">Total General</div>
+                                <input type="text" class="form-control form-control-sm text-end fw-bold"
+                                       id="TotalGeneral" style="width:150px;font-size:.9rem;" readonly>
+                            </div>
+                            <div>
+                                <div class="total-label invisible">x</div>
+                                <button type="submit" class="btn-ip btn-ip-success" style="padding:.45rem 1.4rem;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9.5a1 1 0 0 0-1 1v7.293l2.646-2.647a.5.5 0 0 1 .708.708l-3.5 3.5a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L7.5 9.293V2a2 2 0 0 1 2-2H14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h2.5a.5.5 0 0 1 0 1H2z"/>
+                                    </svg>
+                                    Guardar Ingreso
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+
+        </form>
+    </div>
+</div>
+
+@* ====================================================================
+   MODAL NOTA DE PEDIDO
+   ==================================================================== *@
+<div class="modal fade" id="notaPedidoModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width:1200px;">
+        <div class="modal-content" style="border:none;border-radius:14px;overflow:hidden;">
+
+            <div class="modal-header modal-header-custom">
+                <div class="d-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/>
+                        <path d="M7 5.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm-1.496-.854a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 1 1 .708-.708l.146.147 1.146-1.147a.5.5 0 0 1 .708 0zM7 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm-1.496-.854a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 0 1 .708-.708l.146.147 1.146-1.147a.5.5 0 0 1 .708 0z"/>
+                    </svg>
+                    <h6 class="modal-title mb-0">Cargar Nota de Pedido</h6>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+
+            <div class="modal-body p-3" style="background:#f8f9fc;">
+
+                <div class="d-flex align-items-center gap-2 mb-3 p-2"
+                     style="background:#fff;border-radius:8px;border:1px solid #e3e6f0;">
+                    <span style="font-size:.82rem;color:#6c757d;font-weight:600;">Proveedor:</span>
+                    <span id="ProveedorSeleccionado" class="fw-bold" style="color:#2d3748;font-size:.88rem;"></span>
+                </div>
+
+                @* Rango de fechas *@
+                <div class="section-card">
+                    <div class="section-card-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="#4e73df" viewBox="0 0 16 16">
+                            <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+                        </svg>
+                        <span>Rango de Búsqueda</span>
+                    </div>
+                    <div class="section-card-body">
+                        <div class="row align-items-end g-3">
+                            <div class="col-auto">
+                                <label class="form-label">Desde</label>
+                                <input type="date" class="form-control form-control-sm" id="FechaDesde"
+                                       value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                            </div>
+                            <div class="col-auto">
+                                <label class="form-label">Hasta</label>
+                                <input type="date" class="form-control form-control-sm" id="FechaHasta"
+                                       value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                            </div>
+                            <div class="col-auto">
+                                <label class="form-label">&nbsp;</label>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn-ip btn-ip-primary" id="btnBuscarModal">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.44 1.406a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+                                        </svg>
+                                        Buscar
+                                    </button>
+                                    <div class="dropdown">
+                                        <button class="btn-ip btn-ip-outline dropdown-toggle" type="button"
+                                                id="dropdownImprimirNP" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                                <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                                                <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>
+                                            </svg>
+                                            Imprimir
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="dropdownImprimirNP">
+                                            <li>
+                                                <a class="dropdown-item" href="javascript:void(0)" onclick="imprimirProductos('PDF')">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#e74a3b" viewBox="0 0 16 16" class="me-2">
+                                                        <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                                                    </svg> PDF
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="javascript:void(0)" onclick="imprimirProductos('EXCEL')">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#1cc88a" viewBox="0 0 16 16" class="me-2">
+                                                        <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                                                    </svg> Excel
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="javascript:void(0)" onclick="imprimirProductos('WORDOPENXML')">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#4e73df" viewBox="0 0 16 16" class="me-2">
+                                                        <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                                                    </svg> Word
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @* Notas de Pedidos *@
+                <div class="section-card">
+                    <div class="section-card-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="#4e73df" viewBox="0 0 16 16">
+                            <path d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/>
+                            <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3z"/>
+                        </svg>
+                        <span>Notas de Pedidos</span>
+                    </div>
+                    <div style="max-height:200px;overflow-y:auto;">
+                        <table class="modal-table" id="tablaCabecera">
+                            <thead>
+                                <tr>
+                                    <th>Nro. Nota</th>
+                                    <th>Proveedor</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                @* Detalle OC *@
+                <div class="section-card" style="margin-bottom:0;">
+                    <div class="section-card-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="#4e73df" viewBox="0 0 16 16">
+                            <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2z"/>
+                        </svg>
+                        <span>Detalle del Pedido Seleccionado</span>
+                    </div>
+                    <div style="max-height:220px;overflow-y:auto;">
+                        <table class="modal-table" id="tablaDetalleOC">
+                            <thead>
+                                <tr>
+                                    <th>Cód. Barras</th>
+                                    <th>Cód. Prov.</th>
+                                    <th>Descripción</th>
+                                    <th class="text-end">Stock</th>
+                                    <th class="text-end">C.Mín</th>
+                                    <th class="text-end">Costo</th>
+                                    <th class="text-end">P. Lista</th>
+                                    <th class="text-end">P.Prov S/IVA</th>
+                                    <th class="text-end">P.Prov C/IVA</th>
+                                    <th class="text-end">Cantidad</th>
+                                    <th class="text-end">Subtotal</th>
+                                    <th class="d-none">CostoOrig</th>
+                                    <th class="d-none">Id</th>
+                                    <th class="d-none">NtaPedido</th>
+                                    <th class="d-none">Linea</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="modal-footer" style="background:#f8f9fc;border-top:1px solid #e3e6f0;padding:.75rem 1rem;">
+                <div class="d-flex align-items-center w-100 gap-2 flex-wrap">
+                    <div>
+                        <div class="total-label">Costo Actual</div>
+                        <input type="text" class="form-control form-control-sm text-end fw-bold"
+                               id="CostoActual" style="width:140px;" readonly>
+                    </div>
+
+                    <div id="wrapEliminar" class="d-flex align-items-center gap-2">
+                        <button type="button" id="btnEliminarPedido" class="btn-ip btn-ip-danger">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                            </svg>
+                            Eliminar Pedido
+                        </button>
+                        @* Confirmación inline — se muestra al hacer clic en Eliminar *@
+                        <div id="confirmarEliminarInline" class="inline-confirm d-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                            </svg>
+                            ¿Confirmar eliminación?
+                            <button type="button" id="btnConfirmarEliminar" class="btn-ip btn-ip-danger" style="padding:.25rem .65rem;font-size:.78rem;">Sí</button>
+                            <button type="button" id="btnCancelarEliminar" class="btn-ip btn-ip-secondary" style="padding:.25rem .65rem;font-size:.78rem;">No</button>
+                        </div>
+                    </div>
+
+                    <div class="ms-auto d-flex gap-2">
+                        <button type="button" id="btnCargarModal" class="btn-ip btn-ip-success" data-bs-dismiss="modal">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/>
+                            </svg>
+                            Cargar al Detalle
+                        </button>
+                        <button type="button" class="btn-ip btn-ip-secondary" data-bs-dismiss="modal">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854z"/>
+                            </svg>
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@* ====================================================================
+   TOAST
+   ==================================================================== *@
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="toastIP" class="toast align-items-center border-0 text-white" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body fw-semibold" id="toastIPMsg"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    let productosProveedor = [];
+    let resultadosActuales = [];
+    let indexActivo = -1;
+    const input = document.getElementById("BusquedaDescripcion");
+    const panel = document.getElementById("panelResultados");
+    const fieldsetDetalle = document.getElementById("fsDetalle");
+    const fieldsetFiltros = document.getElementById('fsFiltros');
+    let productoSeleccionadoId = null;
+    let productoSeleccionado = null;
+    const inputValorFiltro = document.getElementById("ValorFiltro");
+    const selectTipoBusqueda = document.getElementById("TipoBusqueda");
+    const labelDescripcion = document.getElementById("descripcionLabel");
+    const inputCantidad = document.getElementById("Cantidad");
+    const btnCargar = document.getElementById("btnCargar");
+    const tablaBody = document.querySelector("#tablaDetalle tbody");
+    const modal = document.getElementById('notaPedidoModal');
+    let ordenCompraSeleccionadaId = null;
+
+    // ---- Toast helper ----
+    function mostrarToastIP(msg, exito = true) {
+        const el = document.getElementById('toastIP');
+        el.classList.remove('bg-success', 'bg-danger');
+        el.classList.add(exito ? 'bg-success' : 'bg-danger');
+        document.getElementById('toastIPMsg').textContent = msg;
+        new bootstrap.Toast(el, { delay: 3500 }).show();
+    }
+
+    inputValorFiltro.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter") return;
+        e.preventDefault();
+        const valor = inputValorFiltro.value.trim();
+        if (!valor) return;
+        buscarProducto(valor, selectTipoBusqueda.value);
+    });
+
+    function buscarProducto(valor, tipoBusqueda) {
+        let resultado = null;
+        switch (tipoBusqueda) {
+            case "1": resultado = productosProveedor.find(p => p.codProv === valor);   break;
+            case "2": resultado = productosProveedor.find(p => p.codBarras === valor); break;
+            case "3": resultado = productosProveedor.find(p => p.id === valor);        break;
+        }
+        if (!resultado) {
+            labelDescripcion.classList.add("d-none");
+            productoSeleccionadoId = null;
+            return;
+        }
+        productoSeleccionado  = resultado;
+        productoSeleccionadoId = resultado.id;
+        labelDescripcion.textContent = resultado.descripcion;
+        labelDescripcion.classList.remove("d-none");
+        inputCantidad.focus();
+        inputCantidad.select();
+    }
+
+    document.getElementById("btnSeleccionarProveedor").addEventListener("click", () => {
+        const proveedorSelect = document.getElementById("ProveedorSelect");
+        const proveedorId     = proveedorSelect.value;
+        if (!proveedorId) return;
+
+        fetch(`/Productos/IngresoProductos?handler=ProductosPorProveedor&proveedorId=${proveedorId}`)
+            .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
+            .then(t  => JSON.parse(t))
+            .then(data => {
+                productosProveedor = data;
+                fieldsetDetalle.disabled = false;
+                fieldsetFiltros.disabled = false;
+                document.getElementById("ValorFiltro").focus();
+            })
+            .catch(err => { console.error(err); mostrarToastIP("Error al cargar productos del proveedor", false); });
+    });
+
+    input.addEventListener("input", () => {
+        const texto = input.value.trim().toLowerCase();
+        if (texto.length === 0) { panel.classList.add("d-none"); return; }
+        resultadosActuales = productosProveedor.filter(p => p.descripcion.toLowerCase().includes(texto));
+        mostrarResultados(resultadosActuales);
+    });
+
+    function mostrarResultados(items) {
+        panel.innerHTML = "";
+        indexActivo = -1;
+        if (!items || items.length === 0) { panel.classList.add("d-none"); return; }
+        items.forEach((p, i) => {
+            const item = document.createElement("button");
+            item.type = "button";
+            item.className = "list-group-item list-group-item-action";
+            item.textContent = p.descripcion;
+            item.dataset.index = i;
+            item.addEventListener("click", () => seleccionarProducto(p));
+            panel.appendChild(item);
+        });
+        panel.classList.remove("d-none");
+    }
+
+    input.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown" && resultadosActuales.length > 0) {
+            e.preventDefault();
+            indexActivo = 0;
+            enfocarItem(indexActivo);
+        }
+    });
+
+    panel.addEventListener("keydown", (e) => {
+        const items = panel.querySelectorAll(".list-group-item");
+        if (!items.length) return;
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            if (indexActivo < items.length - 1) { indexActivo++; enfocarItem(indexActivo); }
+        }
+        if (e.key === "ArrowUp") {
+            e.preventDefault();
+            if (indexActivo === 0) { panel.classList.add("d-none"); input.focus(); return; }
+            indexActivo--;
+            enfocarItem(indexActivo);
+        }
+        if (e.key === "Enter")  { e.preventDefault(); seleccionarProducto(resultadosActuales[indexActivo]); }
+        if (e.key === "Escape") { panel.classList.add("d-none"); input.focus(); }
+    });
+
+    function enfocarItem(index) {
+        const items = panel.querySelectorAll(".list-group-item");
+        if (!items[index]) return;
+        items.forEach(i => i.classList.remove("active"));
+        items[index].classList.add("active");
+        items[index].focus();
+    }
+
+    function seleccionarProducto(producto) {
+        productoSeleccionadoId = producto.id;
+        labelDescripcion.textContent = producto.descripcion;
+        labelDescripcion.classList.remove("d-none");
+        input.value = "";
+        panel.classList.add("d-none");
+        indexActivo = -1;
+        setTimeout(() => { inputCantidad.focus(); inputCantidad.select(); }, 0);
+    }
+
+    inputCantidad.addEventListener("keydown", e => {
+        if (e.key === "Enter") { e.preventDefault(); cargarProducto(); }
+    });
+
+    btnCargar.addEventListener("click", () => { cargarProducto(); });
+
+    function cargarProducto() {
+        const cantidad = parseFloat(inputCantidad.value);
+        if (!productoSeleccionadoId) return;
+        if (!cantidad || cantidad <= 0) return;
+        const producto = productosProveedor.find(p => p.id === productoSeleccionadoId);
+        if (!producto) return;
+
+        const filaExistente = tablaBody.querySelector(`tr[data-producto-id="${producto.id}"]`);
+        if (filaExistente) {
+            const inputCantidadFila = filaExistente.querySelector(".cantidad-input");
+            inputCantidadFila.value = (parseFloat(inputCantidadFila.value) || 0) + cantidad;
+            recalcularFila(filaExistente);
+        } else {
+            const tr = document.createElement("tr");
+            tr.dataset.productoId = producto.id;
+            tr.innerHTML = `
+                <td>${producto.codBarras}</td>
+                <td>${producto.codProv}</td>
+                <td>${producto.descripcion}</td>
+                <td class="text-end">${producto.stock}</td>
+                <td class="text-end">${producto.cmin}</td>
+                <td class="text-end">${producto.costo}</td>
+                <td class="text-end">${producto.precio}</td>
+                <td class="text-end">${producto.precProveedor}</td>
+                <td class="text-end">0</td>
+                <td>
+                    <input type="number" class="form-control form-control-sm text-end cantidad-input"
+                           min="1" value="${cantidad}" style="width:80px">
+                </td>
+                <td class="td-subtotal text-end">0</td>
+                <td class="d-none">${producto.precProveedor}</td>
+                <td class="d-none">${producto.id}</td>
+                <td class="d-none">0</td>
+                <td class="d-none">0</td>`;
+            tablaBody.appendChild(tr);
+            recalcularFila(tr);
+        }
+
+        inputValorFiltro.value = "";
+        productoSeleccionadoId = null;
+        labelDescripcion.classList.add("d-none");
+        inputCantidad.value = "";
+        inputValorFiltro.focus();
+    }
+
+    document.addEventListener("input", (e) => {
+        if (!e.target.classList.contains("cantidad-input")) return;
+        recalcularFila(e.target.closest("tr"));
+    });
+
+    function recalcularFila(tr) {
+        const cantidad      = parseFloat(tr.querySelector(".cantidad-input")?.value) || 0;
+        const precioBaseRaw = tr.children[11]?.innerText || "0";
+        const precioBase    = parseFloat(precioBaseRaw.replace(",", ".")) || 0;
+        let precioProveedorSinIva = precioBase;
+
+        tr.children[7].innerText = precioProveedorSinIva.toFixed(2);
+
+        const ivaSelect = document.getElementById("IvaSelect");
+        let   ivaRaw    = ivaSelect.options[ivaSelect.selectedIndex].dataset.valor || "0";
+        const iva       = parseFloat(ivaRaw.replace(",", ".")) || 0;
+        const precioProveedorConIva = precioProveedorSinIva * (1 + iva / 100);
+
+        tr.children[8].innerText = precioProveedorConIva.toFixed(2);
+        tr.querySelector(".td-subtotal").innerText = (cantidad * precioProveedorConIva.toFixed(2)).toFixed(2);
+
+        recalcularTotalGeneral();
+    }
+
+    function recalcularTotalGeneral() {
+        let total = 0;
+        document.querySelectorAll(".td-subtotal").forEach(td => { total += Number(td.innerText.trim()) || 0; });
+        const totalInput = document.getElementById("TotalGeneral");
+        if (!totalInput) return;
+        totalInput.value = total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const ivaSelect = document.getElementById("IvaSelect");
+        if (ivaSelect) {
+            ivaSelect.addEventListener("change", () => {
+                document.querySelectorAll("#tablaDetalle tbody tr").forEach(tr => recalcularFila(tr));
+            });
+        }
+    });
+
+    document.querySelector('[data-bs-target="#notaPedidoModal"]').addEventListener('click', function () {
+        const proveedorSelect = document.getElementById("ProveedorSelect");
+        document.getElementById("ProveedorSeleccionado").textContent = proveedorSelect.selectedOptions[0].text;
+        cargarNotasPedido(proveedorSelect.value);
+        // Ocultar confirmación inline si quedó abierta
+        document.getElementById('confirmarEliminarInline').classList.add('d-none');
+    });
+
+    function cargarNotasPedido(proveedorId) {
+        document.querySelector('#tablaDetalleOC tbody').innerHTML = "";
+        fetch(`/Productos/IngresoProductos?handler=OrdenCompraProveedor&proveedorId=${proveedorId}`)
+            .then(r => r.json())
+            .then(data => llenarTablaCabecera(data))
+            .catch(err => console.error(err));
+    }
+
+    function llenarTablaCabecera(notas) {
+        const tbody = document.querySelector('#tablaCabecera tbody');
+        tbody.innerHTML = '';
+        if (notas.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3" style="font-size:.83rem;">No hay notas de pedido pendientes</td></tr>`;
+            return;
+        }
+        notas.forEach(n => {
+            const tr = document.createElement('tr');
+            tr.dataset.id = n.id;
+            tr.innerHTML = `
+                <td>${n.id}</td>
+                <td>${n.proveedor}</td>
+                <td>${new Date(n.fecha).toLocaleDateString('es-AR')}</td>
+                <td>${n.procesado ? 'Procesado' : 'Pendiente'}</td>
+                <td class="text-end">${Number(n.total).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    document.querySelector("#tablaCabecera tbody").addEventListener("click", function (e) {
+        const fila = e.target.closest("tr");
+        if (!fila || !fila.dataset.id) return;
+        // Resaltar fila seleccionada
+        document.querySelectorAll('#tablaCabecera tbody tr').forEach(r => r.classList.remove('table-active'));
+        fila.classList.add('table-active');
+        ordenCompraSeleccionadaId = fila.dataset.id;
+        fetch(`/Productos/IngresoProductos?handler=OrdenCompraDetalle&ordenId=${ordenCompraSeleccionadaId}`)
+            .then(r => r.json())
+            .then(data => cargarDetalle(data));
+    });
+
+    function cargarDetalle(detalle) {
+        const tbodyDetalle  = document.querySelector('#tablaDetalleOC tbody');
+        const txtCostoActual = document.getElementById('CostoActual');
+        tbodyDetalle.innerHTML = '';
+        let total = 0;
+        if (!detalle || detalle.length === 0) {
+            tbodyDetalle.innerHTML = `<tr><td colspan="11" class="text-center text-muted py-3" style="font-size:.83rem;">No hay detalle del pedido</td></tr>`;
+            txtCostoActual.value = '0.00';
+            return;
+        }
+        detalle.forEach(d => {
+            const subtotal = parseFloat(d.subtotal) || 0;
+            total += subtotal;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${d.codBarras}</td>
+                <td>${d.codProveedor}</td>
+                <td>${d.descripcion}</td>
+                <td class="text-end">${d.stock}</td>
+                <td class="text-end">${d.cMin}</td>
+                <td class="text-end">${d.costo}</td>
+                <td class="text-end">${d.pLista}</td>
+                <td class="text-end">${d.pProveedorSinIva}</td>
+                <td class="text-end">${d.pProveedorConIva}</td>
+                <td class="text-end">${d.cantidad}</td>
+                <td class="text-end fw-bold">${subtotal.toFixed(2)}</td>`;
+            tbodyDetalle.appendChild(tr);
+        });
+        txtCostoActual.value = total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function imprimirProductos(formato) {
+        if (!ordenCompraSeleccionadaId) {
+            mostrarToastIP("Debe seleccionar una orden para imprimir", false);
+            return;
+        }
+        window.open(`/Productos/IngresoProductos?handler=ImprimirOrdenCompra&id=${ordenCompraSeleccionadaId}&formato=${formato}`, "_blank");
+    }
+
+    // ---- Eliminar pedido con confirmación inline ----
+    document.getElementById("btnEliminarPedido").addEventListener("click", () => {
+        if (!ordenCompraSeleccionadaId) {
+            mostrarToastIP("Debe seleccionar una Nota de Pedido", false);
+            return;
+        }
+        document.getElementById('confirmarEliminarInline').classList.remove('d-none');
+        document.getElementById('btnEliminarPedido').classList.add('d-none');
+    });
+
+    document.getElementById("btnCancelarEliminar").addEventListener("click", () => {
+        document.getElementById('confirmarEliminarInline').classList.add('d-none');
+        document.getElementById('btnEliminarPedido').classList.remove('d-none');
+    });
+
+    document.getElementById("btnConfirmarEliminar").addEventListener("click", () => {
+        document.getElementById('confirmarEliminarInline').classList.add('d-none');
+        document.getElementById('btnEliminarPedido').classList.remove('d-none');
+
+        fetch(`/Productos/IngresoProductos?handler=EliminarNP&notaId=${ordenCompraSeleccionadaId}`)
+            .then(r => { if (!r.ok) throw new Error("Error al eliminar"); return r.json(); })
+            .then(resp => {
+                if (resp.success) {
+                    ordenCompraSeleccionadaId = null;
+                    mostrarToastIP("Nota de pedido eliminada correctamente");
+                    const proveedorId = document.getElementById("ProveedorSelect").value;
+                    if (proveedorId) cargarNotasPedido(proveedorId);
+                    document.querySelector('#tablaDetalleOC tbody').innerHTML = "";
+                    document.getElementById('CostoActual').value = "";
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                mostrarToastIP("No se pudo eliminar la Nota de Pedido", false);
+            });
+    });
+
+    document.getElementById("btnBuscarModal").addEventListener("click", () => {
+        const proveedorId = document.getElementById("ProveedorSelect").value;
+        const desde       = document.getElementById("FechaDesde").value;
+        const hasta       = document.getElementById("FechaHasta").value;
+        document.querySelector('#tablaDetalleOC tbody').innerHTML = "";
+        fetch(`/Productos/IngresoProductos?handler=OrdenCompraProveedorFecha&proveedorId=${proveedorId}&desde=${desde}&hasta=${hasta}`)
+            .then(r => r.json())
+            .then(data => llenarTablaCabecera(data))
+            .catch(err => console.error(err));
+    });
+
+    document.getElementById("btnCargarModal").addEventListener("click", () => {
+        if (!ordenCompraSeleccionadaId) {
+            mostrarToastIP("Debe seleccionar una Nota de Pedido", false);
+            return;
+        }
+        tablaBody.innerHTML = '';
+        fetch(`/Productos/IngresoProductos?handler=OrdenCompraDetalle&ordenId=${ordenCompraSeleccionadaId}`)
+            .then(r => r.json())
+            .then(data => cargarOrdenCompraAlBody(data));
+    });
+
+    function cargarOrdenCompraAlBody(detalleNP) {
+        detalleNP.forEach(d => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${d.codBarras}</td>
+                <td>${d.codProveedor}</td>
+                <td>${d.descripcion}</td>
+                <td class="text-end">${d.stock}</td>
+                <td class="text-end">${d.cMin}</td>
+                <td class="text-end">${d.costo}</td>
+                <td class="text-end">${d.pLista}</td>
+                <td class="text-end">${d.pProveedorSinIva}</td>
+                <td class="text-end">0</td>
+                <td>
+                    <input type="number" class="form-control form-control-sm text-end cantidad-input"
+                           min="1" value="${d.cantidad}" style="width:80px">
+                </td>
+                <td class="td-subtotal text-end">0</td>
+                <td class="d-none">${d.pProveedorSinIva}</td>
+                <td class="d-none">${d.id}</td>
+                <td class="d-none">0</td>
+                <td class="d-none">0</td>`;
+            tablaBody.appendChild(tr);
+            recalcularFila(tr);
+        });
+    }
+
+    document.querySelector("#productoIngresoForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+        const btn = document.querySelector("button[type='submit']");
+        btn.disabled = true;
+
+        const filas = document.querySelectorAll("#tablaDetalle tbody tr");
+        const datos = [];
+        filas.forEach(tr => {
+            datos.push({
+                productoId:     tr.children[12].innerText,
+                cantidad:       parseFloat(tr.querySelector(".cantidad-input").value),
+                costo:          parseFloat(tr.children[5].innerText.replace(",", ".")),
+                venta:          parseFloat(tr.children[6].innerText.replace(",", ".")),
+                precioProveedor: parseFloat(tr.children[7].innerText.replace(",", ".")),
+                stockActual:    parseFloat(tr.children[3].innerText),
+                nroComprobante: document.getElementById("NroComprobante").value,
+                fechaEntrega:   document.getElementById("FechaCarga").value,
+                descripcion:    tr.children[2].innerText
+            });
+        });
+
+        fetch("?handler=Guardar", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify(datos)
+        })
+        .then(async r => {
+            if (!r.ok) { const text = await r.text(); throw new Error(text || "Error en el servidor"); }
+            return r.text();
+        })
+        .then(() => {
+            mostrarToastIP("Ingreso realizado correctamente");
+            btn.disabled = false;
+            setTimeout(() => window.location.reload(), 1800);
+        })
+        .catch(err => {
+            console.error(err);
+            mostrarToastIP("Error al guardar el ingreso: " + err.message, false);
+            btn.disabled = false;
+        });
+    });
+
+</script>

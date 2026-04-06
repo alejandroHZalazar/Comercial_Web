@@ -1,0 +1,333 @@
+@page
+@model Comercial_Web.Pages.Estadisticas.ExportarVentas.IndexModel
+@{
+    ViewData["Title"] = "Exportar Ventas";
+}
+
+@* ==================== FILTROS ==================== *@
+<div class="card mb-4 rounded shadow-sm">
+    <div class="card-header fw-semibold bg-light border-bottom d-flex align-items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="me-2" viewBox="0 0 16 16" style="vertical-align:-3px;">
+            <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5z"/>
+        </svg>
+        FILTROS
+    </div>
+    <div class="card-body p-4">
+        <form method="post" id="formFiltros">
+            <div class="row g-3 align-items-start">
+
+                @* Desde *@
+                <div class="col-md-2">
+                    <label class="form-label fw-bold mb-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-2px;">
+                            <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5"/>
+                        </svg>
+                        Desde
+                    </label>
+                    <input type="date" asp-for="Desde" class="form-control form-control-sm" />
+                </div>
+
+                @* Hasta *@
+                <div class="col-md-2">
+                    <label class="form-label fw-bold mb-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-2px;">
+                            <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5"/>
+                        </svg>
+                        Hasta
+                    </label>
+                    <input type="date" asp-for="Hasta" class="form-control form-control-sm" />
+                </div>
+
+            </div>
+
+            @* Botones *@
+            <div class="d-flex flex-wrap gap-2 mt-3">
+
+                <button type="submit" formaction="?handler=Resumen"
+                        class="btn btn-primary shadow-sm" accesskey="r" title="Ver resumen de ventas (Alt+R)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-2px;">
+                        <path d="M0 3a2 2 0 0 1 2-2h13.5a.5.5 0 0 1 0 1H15v2a1 1 0 0 1 1 1v8.5a1.5 1.5 0 0 1-1.5 1.5h-12A2.5 2.5 0 0 1 0 12.5zm1 1.732V12.5A1.5 1.5 0 0 0 2.5 14h12a.5.5 0 0 0 .5-.5V5H2a2 2 0 0 1-1-.268M1 3a1 1 0 0 0 1 1h12V2H2a1 1 0 0 0-1 1"/>
+                    </svg>
+                    Resumen
+                </button>
+
+                <button type="submit" formaction="?handler=Detalle"
+                        class="btn btn-outline-secondary shadow-sm" accesskey="d" title="Ver detalle de productos (Alt+D)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-2px;">
+                        <path d="M1.92.506a.5.5 0 0 1 .434.14L3 1.293l.646-.647a.5.5 0 0 1 .708 0L5 1.293l.646-.647a.5.5 0 0 1 .708 0L7 1.293l.646-.647a.5.5 0 0 1 .708 0L9 1.293l.646-.647a.5.5 0 0 1 .708 0l.646.647.646-.647a.5.5 0 0 1 .708 0l.646.647.646-.647a.5.5 0 0 1 .801.13l.5 1A.5.5 0 0 1 15 2v12a.5.5 0 0 1-.053.224l-.5 1a.5.5 0 0 1-.8.13L13 14.707l-.646.647a.5.5 0 0 1-.708 0L11 14.707l-.646.647a.5.5 0 0 1-.708 0L9 14.707l-.646.647a.5.5 0 0 1-.708 0L7 14.707l-.646.647a.5.5 0 0 1-.708 0L5 14.707l-.646.647a.5.5 0 0 1-.708 0L3 14.707l-.646.647a.5.5 0 0 1-.801-.13l-.5-1A.5.5 0 0 1 1 14V2a.5.5 0 0 1 .053-.224l.5-1a.5.5 0 0 1 .367-.27"/>
+                    </svg>
+                    Detalle
+                </button>
+
+            </div>
+        </form>
+    </div>
+</div>
+
+@* ==================== GRILLA RESUMEN ==================== *@
+@if (Model.TipoActivo == "Resumen")
+{
+    <div class="card mb-4 rounded shadow-sm">
+        <div class="card-header fw-semibold bg-light border-bottom d-flex align-items-center justify-content-between">
+            <span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="me-2" viewBox="0 0 16 16" style="vertical-align:-3px;">
+                    <path d="M0 3a2 2 0 0 1 2-2h13.5a.5.5 0 0 1 0 1H15v2a1 1 0 0 1 1 1v8.5a1.5 1.5 0 0 1-1.5 1.5h-12A2.5 2.5 0 0 1 0 12.5zm1 1.732V12.5A1.5 1.5 0 0 0 2.5 14h12a.5.5 0 0 0 .5-.5V5H2a2 2 0 0 1-1-.268M1 3a1 1 0 0 0 1 1h12V2H2a1 1 0 0 0-1 1"/>
+                </svg>
+                Resumen de Ventas
+                <span class="badge bg-secondary ms-2">@Model.ItemsResumen.Count registros</span>
+            </span>
+            @if (Model.ItemsResumen.Any())
+            {
+                <form method="post" asp-page-handler="ExportarResumenCsv" class="d-inline">
+                    <input type="hidden" name="Desde" value="@Model.Desde.ToString("yyyy-MM-dd")" />
+                    <input type="hidden" name="Hasta" value="@Model.Hasta.ToString("yyyy-MM-dd")" />
+                    <button type="submit" class="btn btn-success btn-sm shadow-sm" title="Exportar a CSV">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-1px;">
+                            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/>
+                            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/>
+                        </svg>
+                        Exportar CSV
+                    </button>
+                </form>
+            }
+        </div>
+
+        @if (Model.ItemsResumen.Any())
+        {
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height:60vh; overflow-y:auto;">
+                    <table class="table table-bordered table-hover table-sm mb-0 sortable-table" id="tablaResumen">
+                        <thead class="table-dark sticky-top">
+                            <tr>
+                                <th data-sort="number"  role="button">Nro <span class="sort-icon"></span></th>
+                                <th data-sort="string"  role="button">Fecha <span class="sort-icon"></span></th>
+                                <th data-sort="number" class="text-end" role="button">Total S/IVA <span class="sort-icon"></span></th>
+                                <th data-sort="number" class="text-end" role="button">Costo <span class="sort-icon"></span></th>
+                                <th data-sort="string"  role="button">Cliente <span class="sort-icon"></span></th>
+                                <th data-sort="string"  role="button">Cajero <span class="sort-icon"></span></th>
+                                <th data-sort="number" class="text-end" role="button">IVA % <span class="sort-icon"></span></th>
+                                <th data-sort="number" class="text-end" role="button">Desc % <span class="sort-icon"></span></th>
+                                <th data-sort="number" class="text-end" role="button">Rec % <span class="sort-icon"></span></th>
+                                <th data-sort="string"  role="button">Vendedor <span class="sort-icon"></span></th>
+                                <th data-sort="number" class="text-end" role="button">Comision <span class="sort-icon"></span></th>
+                                <th data-sort="number" class="text-end" role="button">Impuesto <span class="sort-icon"></span></th>
+                                <th data-sort="string"  role="button">Medio Pago 1 <span class="sort-icon"></span></th>
+                                <th data-sort="string"  role="button">Medio Pago 2 <span class="sort-icon"></span></th>
+                                <th data-sort="string"  role="button">Medio Pago 3 <span class="sort-icon"></span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model.ItemsResumen)
+                            {
+                                <tr>
+                                    <td class="fw-semibold">@r.Nro</td>
+                                    <td>@r.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td class="text-end">@r.Total.ToString("N2")</td>
+                                    <td class="text-end">@r.Costo.ToString("N2")</td>
+                                    <td>@r.Cliente</td>
+                                    <td>@r.Cajero</td>
+                                    <td class="text-end">@r.Iva.ToString("N2")</td>
+                                    <td class="text-end">@r.Descuento.ToString("N2")</td>
+                                    <td class="text-end">@r.Recargo.ToString("N2")</td>
+                                    <td>@r.Vendedor</td>
+                                    <td class="text-end">@r.Comision.ToString("N2")</td>
+                                    <td class="text-end">@r.Impuesto.ToString("N2")</td>
+                                    <td>@r.MedioPago1</td>
+                                    <td>@r.MedioPago2</td>
+                                    <td>@r.MedioPago3</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="table-secondary fw-bold">
+                            <tr>
+                                <td colspan="2">TOTALES</td>
+                                <td class="text-end">@Model.ItemsResumen.Sum(x => x.Total).ToString("N2")</td>
+                                <td class="text-end">@Model.ItemsResumen.Sum(x => x.Costo).ToString("N2")</td>
+                                <td colspan="7"></td>
+                                <td class="text-end">@Model.ItemsResumen.Sum(x => x.Impuesto).ToString("N2")</td>
+                                <td colspan="3"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card-body">
+                <div class="alert alert-info mb-0 d-flex align-items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="me-2 flex-shrink-0" viewBox="0 0 16 16">
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                        <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0"/>
+                    </svg>
+                    Sin datos para el periodo seleccionado.
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@* ==================== GRILLA DETALLE ==================== *@
+@if (Model.TipoActivo == "Detalle")
+{
+    <div class="card mb-4 rounded shadow-sm">
+        <div class="card-header fw-semibold bg-light border-bottom d-flex align-items-center justify-content-between">
+            <span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="me-2" viewBox="0 0 16 16" style="vertical-align:-3px;">
+                    <path d="M1.92.506a.5.5 0 0 1 .434.14L3 1.293l.646-.647a.5.5 0 0 1 .708 0L5 1.293l.646-.647a.5.5 0 0 1 .708 0L7 1.293l.646-.647a.5.5 0 0 1 .708 0L9 1.293l.646-.647a.5.5 0 0 1 .708 0l.646.647.646-.647a.5.5 0 0 1 .708 0l.646.647.646-.647a.5.5 0 0 1 .801.13l.5 1A.5.5 0 0 1 15 2v12a.5.5 0 0 1-.053.224l-.5 1a.5.5 0 0 1-.8.13L13 14.707l-.646.647a.5.5 0 0 1-.708 0L11 14.707l-.646.647a.5.5 0 0 1-.708 0L9 14.707l-.646.647a.5.5 0 0 1-.708 0L7 14.707l-.646.647a.5.5 0 0 1-.708 0L5 14.707l-.646.647a.5.5 0 0 1-.708 0L3 14.707l-.646.647a.5.5 0 0 1-.801-.13l-.5-1A.5.5 0 0 1 1 14V2a.5.5 0 0 1 .053-.224l.5-1a.5.5 0 0 1 .367-.27"/>
+                </svg>
+                Detalle de Ventas por Producto
+                <span class="badge bg-secondary ms-2">@Model.ItemsDetalle.Count registros</span>
+            </span>
+            @if (Model.ItemsDetalle.Any())
+            {
+                <form method="post" asp-page-handler="ExportarDetalleCsv" class="d-inline">
+                    <input type="hidden" name="Desde" value="@Model.Desde.ToString("yyyy-MM-dd")" />
+                    <input type="hidden" name="Hasta" value="@Model.Hasta.ToString("yyyy-MM-dd")" />
+                    <button type="submit" class="btn btn-success btn-sm shadow-sm" title="Exportar a CSV">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-1px;">
+                            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/>
+                            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/>
+                        </svg>
+                        Exportar CSV
+                    </button>
+                </form>
+            }
+        </div>
+
+        @if (Model.ItemsDetalle.Any())
+        {
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height:60vh; overflow-y:auto;">
+                    <table class="table table-bordered table-hover table-sm mb-0 sortable-table" id="tablaDetalle">
+                        <thead class="table-dark sticky-top">
+                            <tr>
+                                <th data-sort="number"  role="button">Venta <span class="sort-icon"></span></th>
+                                <th data-sort="string"  role="button">Fecha <span class="sort-icon"></span></th>
+                                <th data-sort="string"  role="button">Cliente <span class="sort-icon"></span></th>
+                                <th data-sort="string"  role="button">Proveedor <span class="sort-icon"></span></th>
+                                <th data-sort="string"  role="button">Cod Prov. <span class="sort-icon"></span></th>
+                                <th data-sort="string"  role="button">Producto <span class="sort-icon"></span></th>
+                                <th data-sort="number" class="text-end" role="button">Precio <span class="sort-icon"></span></th>
+                                <th data-sort="number" class="text-end" role="button">Desc <span class="sort-icon"></span></th>
+                                <th data-sort="number" class="text-end" role="button">Rec <span class="sort-icon"></span></th>
+                                <th data-sort="number" class="text-end" role="button">P. S/IVA <span class="sort-icon"></span></th>
+                                <th data-sort="number" class="text-end" role="button">Cantidad <span class="sort-icon"></span></th>
+                                <th data-sort="number" class="text-end" role="button">Costo <span class="sort-icon"></span></th>
+                                <th data-sort="number" class="text-end" role="button">Subtotal <span class="sort-icon"></span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var d in Model.ItemsDetalle)
+                            {
+                                <tr>
+                                    <td class="fw-semibold">@d.Venta</td>
+                                    <td>@d.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>@d.Cliente</td>
+                                    <td>@d.Proveedor</td>
+                                    <td>@d.CodProveedor</td>
+                                    <td class="fw-semibold">@d.Producto</td>
+                                    <td class="text-end">@d.Precio.ToString("N2")</td>
+                                    <td class="text-end">@d.Descuento.ToString("N2")</td>
+                                    <td class="text-end">@d.Recargo.ToString("N2")</td>
+                                    <td class="text-end">@d.PrecioSinIva.ToString("N2")</td>
+                                    <td class="text-end">@d.Cantidad.ToString("N2")</td>
+                                    <td class="text-end">@d.Costo.ToString("N2")</td>
+                                    <td class="text-end">@d.Subtotal.ToString("N2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="table-secondary fw-bold">
+                            <tr>
+                                <td colspan="6">TOTALES</td>
+                                <td colspan="4"></td>
+                                <td class="text-end">@Model.ItemsDetalle.Sum(x => x.Cantidad).ToString("N2")</td>
+                                <td class="text-end">@Model.ItemsDetalle.Sum(x => x.Costo).ToString("N2")</td>
+                                <td class="text-end">@Model.ItemsDetalle.Sum(x => x.Subtotal).ToString("N2")</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card-body">
+                <div class="alert alert-info mb-0 d-flex align-items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="me-2 flex-shrink-0" viewBox="0 0 16 16">
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                        <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0"/>
+                    </svg>
+                    Sin datos para el periodo seleccionado.
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@section Scripts {
+    <script>
+        // ========== Ordenamiento de grillas ==========
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.sortable-table').forEach(function (table) {
+                table.querySelectorAll('thead th[data-sort]').forEach(function (th, colIndex) {
+                    th.addEventListener('click', function () { sortTable(table, colIndex, th); });
+                });
+            });
+        });
+
+        function sortTable(table, colIndex, clickedTh) {
+            var tbody = table.querySelector('tbody');
+            if (!tbody) return;
+            var rows = Array.from(tbody.querySelectorAll('tr'));
+            if (!rows.length) return;
+
+            var sortType = clickedTh.getAttribute('data-sort') || 'string';
+            var newDir = clickedTh.getAttribute('data-dir') === 'asc' ? 'desc' : 'asc';
+
+            table.querySelectorAll('thead th[data-sort]').forEach(function (h) {
+                h.removeAttribute('data-dir');
+                var icon = h.querySelector('.sort-icon');
+                if (icon) icon.textContent = '';
+            });
+            clickedTh.setAttribute('data-dir', newDir);
+            var icon = clickedTh.querySelector('.sort-icon');
+            if (icon) icon.textContent = newDir === 'asc' ? ' \u25B2' : ' \u25BC';
+
+            function getValue(row) {
+                var cell = row.cells[colIndex];
+                if (!cell) return '';
+                var text = cell.textContent.trim();
+                if (sortType === 'number') {
+                    var clean = text.replace(/%/g, '').replace(/\./g, '').replace(',', '.').trim();
+                    var n = parseFloat(clean);
+                    return isNaN(n) ? 0 : n;
+                }
+                return text.toLowerCase();
+            }
+
+            rows.sort(function (a, b) {
+                var va = getValue(a), vb = getValue(b);
+                var r = sortType === 'number' ? va - vb : (va < vb ? -1 : va > vb ? 1 : 0);
+                return newDir === 'desc' ? -r : r;
+            });
+            rows.forEach(function (r) { tbody.appendChild(r); });
+        }
+    </script>
+
+    <style>
+        .sortable-table thead th[data-sort] {
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+            transition: background-color 0.15s;
+        }
+        .sortable-table thead th[data-sort]:hover {
+            background-color: #3a3f47;
+        }
+        .sortable-table thead th .sort-icon {
+            font-size: 0.7em;
+            opacity: 0.85;
+        }
+    </style>
+}

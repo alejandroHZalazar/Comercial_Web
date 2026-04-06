@@ -4,24 +4,63 @@
     ViewData["Title"] = "Configuración de Logo";
 }
 
-<h4 class="mb-3">Insertar Logo</h4>
-
-<form method="post" enctype="multipart/form-data" asp-page-handler="Insertar">
-    <div class="mb-3">
-        <input type="file" asp-for="ArchivoLogo" class="form-control" />
-        <span asp-validation-for="ArchivoLogo" class="text-danger"></span>
+<div class="card shadow-sm mb-4">
+    <div class="card-header fw-semibold bg-light border-bottom d-flex align-items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-3px;">
+            <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"/>
+            <path d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1z"/>
+        </svg>
+        Configuración de Logo
     </div>
-    <button type="submit" class="btn btn-primary">Insertar Logo</button>
-</form>
 
-@if (Model.Mensaje is not null)
-{
-    <div class="alert alert-info mt-3">@Model.Mensaje</div>
-}
+    <div class="card-body">
 
-<h5 class="mt-4">Logo actual</h5>
-<img src="?handler=Logo" alt="Logo actual" style="max-height:200px;" />
+        @* ---- Logo actual ---- *@
+        <div class="text-center mb-4 p-4 border rounded bg-light">
+            <h6 class="text-muted mb-3">Logo actual</h6>
+            <div class="d-inline-block border rounded p-2 bg-white shadow-sm">
+                <img src="?handler=Logo"
+                     alt="Logo actual"
+                     style="max-height: 160px; max-width: 100%;"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+                <span class="text-muted fst-italic" style="display:none;">Sin logo cargado</span>
+            </div>
+        </div>
 
+        @* ---- Mensaje ---- *@
+        @if (Model.Mensaje is not null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-2px;">
+                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                </svg>
+                @Model.Mensaje
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        }
+
+        @* ---- Formulario de carga ---- *@
+        <form method="post" enctype="multipart/form-data" asp-page-handler="Insertar">
+            <div class="mb-3">
+                <label class="form-label fw-semibold text-muted">Seleccionar nueva imagen</label>
+                <input type="file"
+                       asp-for="ArchivoLogo"
+                       class="form-control"
+                       accept="image/*" />
+                <span asp-validation-for="ArchivoLogo" class="text-danger"></span>
+                <div class="form-text">Formatos aceptados: JPG, PNG, BMP, GIF. Tamaño recomendado: 300x100 px.</div>
+            </div>
+            <button type="submit" class="btn btn-primary fw-semibold shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-2px;">
+                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/>
+                    <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708z"/>
+                </svg>
+                Insertar Logo
+            </button>
+        </form>
+
+    </div>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

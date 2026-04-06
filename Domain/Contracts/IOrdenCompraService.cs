@@ -21,5 +21,10 @@ namespace Domain.Contracts
         Task<List<ProductoAPedirImprimirOCDto>> TraerListaProdAPedirImprimirAsync(int proveedorId, DateTime desde, DateTime hasta);
         Task<long> GrabarOrdenCompraAsync(int proveedorId, decimal total, decimal iva, decimal recargo, decimal descuento, List<OrdenCompraDetalle> detalles, IProgress<int> progreso, CancellationToken ct);
         Task<List<OrdenCompraPrint>> OrdenCompraImprimirAsync(int id);
+        Task<ProductoLineaOCDto?> BuscarPorCodProveedorOCAsync(string codProveedor, int proveedorId);
+        Task<ProductoLineaOCDto?> BuscarPorCodBarrasOCAsync(string codBarras, int proveedorId);
+        Task<ProductoLineaOCDto?> TraerPorIdOCAsync(int id);
+        Task<ProductoLineaOCDto?> BuscarPorDescripcionExactaAsync(string descripcion, int proveedorId);
+        Task<List<ProductoCantMinimaDto>> TraerCantMinPorProveedorAsync(int proveedorId);
     }
 }

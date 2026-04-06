@@ -13,4 +13,12 @@ namespace Domain.DTO
         public string Direccion { get; set; } = "";
     }
 
+    public class ProovedoresSelectProductoDTO
+    {
+        public int Id { get; set; }
+        public string? NombreComercial { get; set; } = "";
+        public decimal? Ganancia { get; set; }
+        public decimal? Descuento { get; set; }
+
+    }
 }

@@ -18,6 +18,7 @@ namespace Comercial_Web.Pages.Configuracion.CondicionIva
         [BindProperty] public string Descripcion { get; set; } = string.Empty;
         [BindProperty] public string Abrev { get; set; } = string.Empty;
         [BindProperty] public string Letra { get; set; } = string.Empty;
+        [BindProperty] public string? AbrevFE { get; set; }
         [BindProperty] public bool MostrarFormulario { get; set; } = false;
 
         public async Task OnGetAsync()
@@ -27,7 +28,7 @@ namespace Comercial_Web.Pages.Configuracion.CondicionIva
 
         public async Task<IActionResult> OnPostNuevoAsync()
         {
-            // Mostrar formulario vacío para agregar
+            // Mostrar formulario vacï¿½o para agregar
             MostrarFormulario = true;
 
             // Limpiar campos
@@ -35,6 +36,7 @@ namespace Comercial_Web.Pages.Configuracion.CondicionIva
             Descripcion = string.Empty;
             Abrev = string.Empty;
             Letra = string.Empty;
+            AbrevFE = string.Empty;
 
             await CargarGrillaAsync();
             return Page();
@@ -43,14 +45,14 @@ namespace Comercial_Web.Pages.Configuracion.CondicionIva
 
         public async Task<IActionResult> OnPostAgregarAsync()
         {
-            await _service.CreateAsync(Descripcion, Abrev, Letra);
+            await _service.CreateAsync(Descripcion, Abrev, Letra, AbrevFE);
             return RedirectToPage();
         }
 
         public async Task<IActionResult> OnPostEditarAsync()
         {
             if (!Id.HasValue) return BadRequest();
-            await _service.UpdateAsync(Id.Value, Descripcion, Abrev, Letra);
+            await _service.UpdateAsync(Id.Value, Descripcion, Abrev, Letra, AbrevFE);
             return RedirectToPage();
         }
 
@@ -72,8 +74,9 @@ namespace Comercial_Web.Pages.Configuracion.CondicionIva
             Descripcion = item.Descripcion;
             Abrev = item.Abrev;
             Letra = item.Letra;
+            AbrevFE = item.AbrevFE;
 
-            // Activar formulario en modo edición
+            // Activar formulario en modo ediciï¿½n
             MostrarFormulario = true;
 
             return Page();

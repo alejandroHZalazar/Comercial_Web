@@ -5,6 +5,7 @@ using Domain.Entities;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using System;
+using static Domain.DTO.ClienteDTO;
 
 namespace Infrastructure.Services
 {
@@ -26,102 +27,32 @@ namespace Infrastructure.Services
         }
 
         #region Busquedas Ordenes de Compra
-        public async Task<ProductoLineaOCDto?> TraerPorIdOCAsync(int id)
-        {
-           var query = from p in _context.Productos
-                        join pr in _context.PreciosProveedores
-                            on p.Id equals pr.FkProducto into precios
-                        join s in _context.StockProductos on p.Id equals s.FkProducto
-                        from pr in precios.DefaultIfEmpty()
-                        where p.Id == id
-                              && p.Baja != true                              
-                        select new ProductoLineaOCDto
-                        {
-                            Id = p.Id,
-                            CodBarras = p.CodBarras,
-                            CodProveedor = p.CodProveedor,
-                            Descripcion = p.Descripcion,
-                            Cantidad = s.Cantidad,
-                            CantidadMinima = s.CantidadMinima ?? 0,
-                            PrecioProveedor = pr.Precio ?? 0m
-                        };
 
-            return await query.FirstOrDefaultAsync();
+        public async Task<List<Producto>> GetByCodProveedorAsync(string codProveedor)
+        {
+            return await _context.Productos
+                .Where(p => p.CodProveedor == codProveedor && p.Baja != true)
+                .ToListAsync();
         }
-       
-        public async Task<ProductoLineaOCDto?> BuscarPorCodProveedorOCAsync(string codProveedor, int proveedorId)
+        public async Task<List<Producto>> GetByCodProveedorProveedorAsync(string codProveedor, int proveedorId)
         {
-            var codigo = codProveedor?.Trim();
-
-            var query = from p in _context.Productos
-                        join pr in _context.PreciosProveedores
-                            on p.Id equals pr.FkProducto into precios
-                        join s in _context.StockProductos on p.Id equals s.FkProducto
-                        from pr in precios.DefaultIfEmpty()
-                        where p.CodProveedor == codigo
-                              && p.Baja != true
-                              && p.FkProveedor == proveedorId
-                        select new ProductoLineaOCDto
-                        {
-                            Id = p.Id,
-                            CodBarras = p.CodBarras,
-                            CodProveedor = p.CodProveedor,
-                            Descripcion = p.Descripcion,
-                            Cantidad = s.Cantidad,
-                            CantidadMinima = s.CantidadMinima ?? 0,
-                            PrecioProveedor = pr.Precio ?? 0m
-                        };
-
-            return await query.FirstOrDefaultAsync();
+            return await _context.Productos
+                .Where(p => p.CodProveedor == codProveedor && p.FkProveedor == proveedorId && p.Baja != true)
+                .ToListAsync();
         }
 
-        public async Task<ProductoLineaOCDto?> BuscarPorCodBarrasOCAsync(string codBarras, int proveedorId)
+        public async Task<List<Producto>> GetByCodBarrasAsync(string codBarra)
         {
-            var query = from p in _context.Productos
-                        join pr in _context.PreciosProveedores
-                            on p.Id equals pr.FkProducto into precios
-                        join s in _context.StockProductos on p.Id equals s.FkProducto
-                        from pr in precios.DefaultIfEmpty()
-                        where p.CodBarras == codBarras
-                              && p.Baja != true
-                              && p.FkProveedor == proveedorId
-                        select new ProductoLineaOCDto
-                        {
-                            Id = p.Id,
-                            CodBarras = p.CodBarras,
-                            CodProveedor = p.CodProveedor,
-                            Descripcion = p.Descripcion,
-                            Cantidad = s.Cantidad,
-                            CantidadMinima = s.CantidadMinima ?? 0,
-                            PrecioProveedor = pr.Precio ?? 0m
-                        };
-
-            return await query.FirstOrDefaultAsync();
+            return await _context.Productos
+                .Where(p => p.CodBarras == codBarra && p.Baja != true)
+                .ToListAsync();
         }
 
-        public async Task<ProductoLineaOCDto?> BuscarPorDescripcionExactaAsync(string descripcion, int proveedorId)
+        public async Task<List<Producto>> GetByCodBarrasProveedorAsync(string codBarra, int proveedorId)
         {
-
-            var query = from p in _context.Productos
-                        join pr in _context.PreciosProveedores
-                            on p.Id equals pr.FkProducto into precios
-                        join s in _context.StockProductos on p.Id equals s.FkProducto
-                        from pr in precios.DefaultIfEmpty()
-                        where p.Descripcion == descripcion
-                              && p.Baja != true
-                              && p.FkProveedor == proveedorId
-                        select new ProductoLineaOCDto
-                        {
-                            Id = p.Id,
-                            CodBarras = p.CodBarras,
-                            CodProveedor = p.CodProveedor,
-                            Descripcion = p.Descripcion,
-                            Cantidad = s.Cantidad,
-                            CantidadMinima = s.CantidadMinima ?? 0,
-                            PrecioProveedor = pr.Precio ?? 0m
-                        };
-
-            return await query.FirstOrDefaultAsync();
+            return await _context.Productos
+                .Where(p => p.CodBarras == codBarra && p.FkProveedor == proveedorId && p.Baja != true)
+                .ToListAsync();
         }
 
         #endregion
@@ -135,28 +66,90 @@ namespace Infrastructure.Services
                 .ToListAsync();
         }
 
-        public async Task<int> CrearAsync(Producto producto)
+        public async Task CrearAsync(ProductoDetallesDTO vm)
         {
-            producto.Baja = false;
+            using var tx = await _context.Database.BeginTransactionAsync();
+
+            var producto = new Producto
+            {
+                CodProveedor = vm.CodProveedor,
+                CodBarras = vm.CodBarras,
+                Descripcion = vm.Descripcion,
+                FkRubro = vm.FkRubro,
+                FkProveedor = vm.FkProveedor,
+                Iva = vm.FkIva ?? 1,
+                Baja = false
+            };
+
             _context.Productos.Add(producto);
             await _context.SaveChangesAsync();
-            return producto.Id;
+
+            _context.PreciosProductos.Add(new PreciosProducto
+            {
+                FkProducto = producto.Id,
+                Precio = vm.Precio
+            });
+
+            _context.CostosProductos.Add(new CostosProducto
+            {
+                FkProducto = producto.Id,
+                Costo = vm.Costo
+            });
+
+            _context.PreciosProveedores.Add(new PreciosProveedore
+            {
+                FkProducto = producto.Id,
+                Precio = vm.PrecioProveedor
+            });
+
+            _context.StockProductos.Add(new StockProducto
+            {
+                FkProducto = producto.Id,
+                Cantidad = vm.Cantidad,
+                CantidadMinima = vm.CantidadMinima
+            });
+
+            await _context.SaveChangesAsync();
+            await tx.CommitAsync();
         }
 
-        public async Task ActualizarAsync(Producto producto)
+
+        public async Task ActualizarAsync(ProductoDetallesDTO producto)
         {
+            using var tx = await _context.Database.BeginTransactionAsync();
+
             var existente = await _context.Productos.FirstOrDefaultAsync(p => p.Id == producto.Id);
             if (existente == null)
                 throw new InvalidOperationException($"No se encontró el producto Id={producto.Id}");
 
             existente.CodProveedor = producto.CodProveedor?.Trim();
             existente.CodBarras = producto.CodBarras?.Trim();
-            existente.FkRubro = producto.FkRubro;
-            existente.Iva = producto.Iva;
+            existente.FkRubro = producto.FkRubro;            
             existente.Descripcion = producto.Descripcion?.Trim();
             existente.FkProveedor = producto.FkProveedor;
 
+            var precioProducto = await _context.PreciosProductos.FirstOrDefaultAsync(pp => pp.FkProducto == producto.Id);
+            if (precioProducto == null)
+                throw new InvalidOperationException($"No se encontró el Precio Producto Id={producto.Id}");
+            precioProducto.Precio = producto.Precio;
+
+            var costoProducto = await _context.CostosProductos.FirstOrDefaultAsync(cp => cp.FkProducto == producto.Id);
+            if (costoProducto == null)
+                throw new InvalidOperationException($"No se encontró el Costo Producto Id={producto.Id}");
+            costoProducto.Costo = producto.Costo;
+
+            var precioProveedor = await _context.PreciosProveedores.FirstOrDefaultAsync(cp => cp.FkProducto == producto.Id);
+            if (precioProveedor == null)
+                throw new InvalidOperationException($"No se encontró el Precio Proveedor Producto Id={producto.Id}");
+            precioProveedor.Precio = producto.PrecioProveedor;
+
+            var stock = await _context.StockProductos.FirstOrDefaultAsync(cp => cp.FkProducto == producto.Id);
+            if (stock == null)
+                throw new InvalidOperationException($"No se encontró el Stock Producto Id={producto.Id}");            
+            stock.CantidadMinima = producto.CantidadMinima;
+
             await _context.SaveChangesAsync();
+            await tx.CommitAsync();
         }
 
         public async Task EliminarAsync(int id)
@@ -166,18 +159,6 @@ namespace Infrastructure.Services
 
             producto.Baja = true;
             await _context.SaveChangesAsync();
-        }
-
-        public Task<int> ObtenerDecimalesAsync()
-        {
-            // Simulación: podrías leer de tabla de parámetros
-            return Task.FromResult(2);
-        }
-
-        public Task<int> ObtenerDecimalesStockAsync()
-        {
-            // Simulación: podrías leer de tabla de parámetros
-            return Task.FromResult(0);
         }
 
         public async Task<List<ProductoDto>> TraerProductosProveedorAsync(int proveedorId)
@@ -193,46 +174,49 @@ namespace Infrastructure.Services
                 })
                 .OrderBy(p => p.Descripcion)
                 .ToListAsync();
-        }       
-
-        public async Task<ProductoLineaOCDto?> TraerProductoParaEditarAsync(int productoId)
-        {
-            return await _context.Productos
-                .Where(p => p.Id == productoId && p.Baja != true)
-                .Select(p => new ProductoLineaOCDto
-                {
-                    Id = p.Id,
-                    CodBarras = p.CodBarras,
-                    CodProveedor = p.CodProveedor,
-                    Descripcion = p.Descripcion,
-                    Cantidad = 0, // stock actual si lo tenés
-                    CantidadMinima = 0, // si lo tenés en otra tabla
-                    PrecioProveedor = 0 // si lo tenés en otra tabla
-                })
-                .FirstOrDefaultAsync();
-        }        
-
-        public async Task<List<ProductoCantMinimaDto>> TraerCantMinPorProveedorAsync(int proveedorId)
-        {
-            return await (from p in _context.Productos
-                          join s in _context.StockProductos on p.Id equals s.FkProducto
-                          join pp in _context.PreciosProveedores on p.Id equals pp.FkProducto
-                          where p.FkProveedor == proveedorId
-                                && s.Cantidad <= s.CantidadMinima
-                                && p.Baja != true
-                          select new ProductoCantMinimaDto
-                          {
-                              CodBarras = p.CodBarras ?? "",
-                              CodProveedor = p.CodProveedor ?? "",
-                              Descripcion = p.Descripcion ?? "",
-                              Cantidad = s.Cantidad ?? 0,
-                              CantidadMinima = s.CantidadMinima ?? 0,
-                              Precio = pp.Precio ?? 0,
-                              Pedido = (s.CantidadMinima ?? 0) - (s.Cantidad ?? 0) + 1,
-                              Id = p.Id
-                          })
-                          .ToListAsync();
         }
 
+        public async Task<ProductoDetallesDTO> traerDetalleAsync(int id, int decCant, int decStock)
+        {
+            var producto = await (
+            from p in _context.Productos
+            join s in _context.StockProductos on p.Id equals s.FkProducto
+            join pp in _context.PreciosProductos on p.Id equals pp.FkProducto
+            join cp in _context.CostosProductos on p.Id equals cp.FkProducto
+            join r in _context.Rubros on p.FkRubro equals r.Id
+            join prov in _context.Proveedores on p.FkProveedor equals prov.Id
+            join prpr in _context.PreciosProveedores on p.Id equals prpr.FkProducto
+            where p.Id == id
+            select new ProductoDetallesDTO
+            {
+                Id = p.Id,
+                CodBarras = p.CodBarras,
+                CodProveedor = p.CodProveedor,
+                Descripcion = p.Descripcion,
+                Cantidad = s.Cantidad,
+                CantidadMinima = s.CantidadMinima,
+                Precio = pp.Precio,
+                Costo = cp.Costo,
+                Rubro = r.Descripcion,
+                Proveedor = prov.NombreComercial,
+                PrecioProveedor = prpr.Precio,
+                FkRubro = p.FkRubro,
+                FkProveedor = p.FkProveedor
+            }).FirstOrDefaultAsync();
+
+
+            if (producto != null)
+            {
+                producto.Cantidad = Math.Round(producto.Cantidad ?? 0, decStock);
+                producto.CantidadMinima = Math.Round(producto.CantidadMinima ?? 0, decStock);
+                producto.Precio = Math.Round(producto.Precio ?? 0, decCant);
+                producto.Costo = Math.Round(producto.Costo ?? 0, decCant);
+                producto.PrecioProveedor = Math.Round(producto.PrecioProveedor ?? 0, decCant);
+            }
+
+            return producto;
+
+        }
+       
     }
 }

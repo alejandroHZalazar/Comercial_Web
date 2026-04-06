@@ -1,172 +1,384 @@
-﻿@page
+@page
 @model Comercial_Web.Pages.Estadisticas.Ventas.IndexModel
 @{
     ViewData["Title"] = "Resumen de Ventas";
 }
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
-<!-- Filtros -->
+@* ==================== FILTROS ==================== *@
 <div class="card mb-4 rounded shadow-sm">
-    <div class="card-header fw-semibold bg-light border-bottom">
+    <div class="card-header fw-semibold bg-light border-bottom d-flex align-items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="me-2" viewBox="0 0 16 16" style="vertical-align:-3px;">
+            <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5z"/>
+        </svg>
         FILTROS
     </div>
     <div class="card-body p-4">
-        <form method="post" asp-page-handler="Buscar" class="row g-3 align-items-end">
-            <div class="col-md-2">
-                <label class="form-label fw-bold">Desde</label>
-                <input type="date" asp-for="Desde" class="form-control form-control-sm" />
-            </div>
-            <div class="col-md-2">
-                <label class="form-label fw-bold">Hasta</label>
-                <input type="date" asp-for="Hasta" class="form-control form-control-sm" />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label fw-bold">Cliente</label>
-                <select asp-for="ClienteId" asp-items="Model.Clientes" class="form-select form-select-sm"></select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label fw-bold">Vendedor</label>
-                <select asp-for="VendedorId" asp-items="Model.Vendedores" class="form-select form-select-sm"></select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label fw-bold">Proveedor</label>
-                <select asp-for="ProveedorId" asp-items="Model.Proveedores" class="form-select form-select-sm"></select>
+        <form method="post" asp-page-handler="Buscar" id="formFiltros">
+
+            <div class="row g-3 align-items-start">
+                @* Desde *@
+                <div class="col-md-2">
+                    <label class="form-label fw-bold mb-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-2px;">
+                            <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5"/>
+                        </svg>
+                        Desde
+                    </label>
+                    <input type="date" asp-for="Desde" class="form-control form-control-sm" />
+                </div>
+
+                @* Hasta *@
+                <div class="col-md-2">
+                    <label class="form-label fw-bold mb-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-2px;">
+                            <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5"/>
+                        </svg>
+                        Hasta
+                    </label>
+                    <input type="date" asp-for="Hasta" class="form-control form-control-sm" />
+                </div>
+
+                @* Cliente *@
+                <div class="col-md-3">
+                    <label class="form-label fw-bold mb-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-2px;">
+                            <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z"/>
+                        </svg>
+                        Cliente
+                    </label>
+                    <select asp-for="ClienteId" asp-items="Model.Clientes" class="form-select form-select-sm"></select>
+                </div>
+
+                @* Vendedor *@
+                <div class="col-md-2">
+                    <label class="form-label fw-bold mb-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-2px;">
+                            <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-.25.006-.51.025-.78.07-.965.327-1.85.83-2.582q.09-.132.186-.26A6 6 0 0 0 5.7 9.1 7 7 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5"/>
+                        </svg>
+                        Vendedor
+                    </label>
+                    <select asp-for="VendedorId" asp-items="Model.Vendedores" class="form-select form-select-sm"></select>
+                </div>
+
+                @* Proveedor *@
+                <div class="col-md-2">
+                    <label class="form-label fw-bold mb-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-2px;">
+                            <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5z"/>
+                        </svg>
+                        Proveedor
+                    </label>
+                    <select asp-for="ProveedorId" asp-items="Model.Proveedores" class="form-select form-select-sm"></select>
+                </div>
             </div>
 
-            <!-- Botones alineados a la derecha -->
-            <div class="col-12 d-flex justify-content-end gap-2">
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-search"></i> Buscar
+            @* Botones de accion *@
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                <button type="submit" class="btn btn-primary shadow-sm" accesskey="b" title="Buscar (Alt+B)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-2px;">
+                        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+                    </svg>
+                    Buscar
                 </button>
 
-                <!-- Botón de imprimir con ícono -->
-                <div class="dropdown">
-                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="dropdownImprimir" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-printer"></i> Imprimir
+                @* Dropdown imprimir *@
+                <div class="dropdown" id="ddImprimir">
+                    <button class="btn btn-outline-secondary shadow-sm dropdown-toggle" type="button"
+                            data-bs-toggle="dropdown" aria-expanded="false" id="btnImprimir">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-2px;">
+                            <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1"/>
+                            <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4zm1 10a1 1 0 0 1-1-1V9h8v3a1 1 0 0 1-1 1z"/>
+                        </svg>
+                        Imprimir
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownImprimir">
-                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="imprimirFiltrado('PDF')">PDF</a></li>
-                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="imprimirFiltrado('EXCEL')">Excel</a></li>
-                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="imprimirFiltrado('WORDOPENXML')">Word</a></li>
+                    <ul class="dropdown-menu shadow">
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="javascript:void(0)" onclick="imprimirFiltrado('PDF')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#dc3545" class="me-2" viewBox="0 0 16 16">
+                                    <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
+                                </svg>
+                                PDF
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="javascript:void(0)" onclick="imprimirFiltrado('EXCEL')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#198754" class="me-2" viewBox="0 0 16 16">
+                                    <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
+                                </svg>
+                                Excel
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="javascript:void(0)" onclick="imprimirFiltrado('WORDOPENXML')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#0d6efd" class="me-2" viewBox="0 0 16 16">
+                                    <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
+                                </svg>
+                                Word
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </div>
+
         </form>
     </div>
 </div>
 
+@* ==================== GRILLA DE VENTAS ==================== *@
 @if (Model.Ventas.Any())
 {
-    <!-- Grilla -->
     <div class="card mb-4 rounded shadow-sm">
+        <div class="card-header fw-semibold bg-light border-bottom d-flex align-items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="me-2" viewBox="0 0 16 16" style="vertical-align:-3px;">
+                <path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h9A1.5 1.5 0 0 1 12 3.5V5h1.02a1.5 1.5 0 0 1 1.17.563l1.481 1.85a1.5 1.5 0 0 1 .329.938V10.5a1.5 1.5 0 0 1-1.5 1.5H14a2 2 0 1 1-4 0H5a2 2 0 1 1-3.998-.085A1.5 1.5 0 0 1 0 10.5zm1.294 7.456A2 2 0 0 1 4.732 11h5.536a2 2 0 0 1 .732-.732V3.5a.5.5 0 0 0-.5-.5h-9a.5.5 0 0 0-.5.5v7a.5.5 0 0 0 .294.456M12 10a2 2 0 0 1 1.732 1h.768a.5.5 0 0 0 .5-.5V8.35a.5.5 0 0 0-.11-.312l-1.48-1.85A.5.5 0 0 0 13.02 6H12zm-9 1a1 1 0 1 0 0 2 1 1 0 0 0 0-2m9 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2"/>
+            </svg>
+            Resumen de Ventas
+            <span class="badge bg-secondary ms-2">@Model.Ventas.Count resultados</span>
+        </div>
+
         <div class="card-body p-0">
-            <div class="table-responsive" style="max-height: 50vh; overflow-y: auto;">
-                <table class="table table-bordered table-hover table-sm mb-0">
-                    <thead class="table-secondary sticky-top">
+            <div class="table-responsive" style="max-height: 55vh; overflow-y: auto;">
+                <table class="table table-bordered table-hover table-sm mb-0 sortable-table">
+                    <thead class="table-dark sticky-top">
                         <tr>
-                            <th>Nro</th>
-                            <th>Fecha</th>
-                            <th>Cliente</th>
-                            <th>Vendedor</th>
-                            <th>IVA</th>
-                            <th>Desc/Rec</th>
-                            <th>Total c/IVA</th>
-                            <th>Total s/IVA</th>
-                            <th>Costo</th>
-                            <th>% Com.</th>
-                            <th>Comisión</th>
-                            <th></th>
+                            <th data-sort="number" role="button">Nro <span class="sort-icon"></span></th>
+                            <th data-sort="string" role="button">Fecha <span class="sort-icon"></span></th>
+                            <th data-sort="string" role="button">Cliente <span class="sort-icon"></span></th>
+                            <th data-sort="string" role="button">Vendedor <span class="sort-icon"></span></th>
+                            <th data-sort="number" class="text-end" role="button">IVA <span class="sort-icon"></span></th>
+                            <th data-sort="number" class="text-end" role="button">Desc/Rec <span class="sort-icon"></span></th>
+                            <th data-sort="number" class="text-end" role="button">Total c/IVA <span class="sort-icon"></span></th>
+                            <th data-sort="number" class="text-end" role="button">Total s/IVA <span class="sort-icon"></span></th>
+                            <th data-sort="number" class="text-end" role="button">Costo <span class="sort-icon"></span></th>
+                            <th data-sort="number" class="text-end" role="button">% Com. <span class="sort-icon"></span></th>
+                            <th data-sort="number" class="text-end" role="button">Comision <span class="sort-icon"></span></th>
+                            <th class="text-center" style="width:90px;">Detalle</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var v in Model.Ventas)
                         {
                             <tr>
-                                <td>@v.Nro</td>
+                                <td class="fw-semibold">@v.Nro</td>
                                 <td>@v.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
                                 <td>@v.Cliente</td>
                                 <td>@v.Vendedor</td>
-                                <td>@v.IVA.ToString("N2")</td>
-                                <td>@v.Desc_Rec.ToString("N2")</td>
-                                <td>@v.TotalCIVA.ToString("N2")</td>
-                                <td>@v.totalSIVA.ToString("N2")</td>
-                                <td>@v.Costo.ToString("N2")</td>
-                                <td>@v.P_Com.ToString("N2")</td>
-                                <td>@v.Comision.ToString("N2")</td>
-                                <td>
-                                    <a href="javascript:void(0)" onclick="cargarDetalle(@v.Nro)" class="text-decoration-none">
-                                        <i class="bi bi-eye"></i> Ver detalle
+                                <td class="text-end">@v.IVA.ToString("N2")</td>
+                                <td class="text-end">@v.Desc_Rec.ToString("N2")</td>
+                                <td class="text-end">@v.TotalCIVA.ToString("N2")</td>
+                                <td class="text-end">@v.totalSIVA.ToString("N2")</td>
+                                <td class="text-end">@v.Costo.ToString("N2")</td>
+                                <td class="text-end">@v.P_Com.ToString("N2")</td>
+                                <td class="text-end">@v.Comision.ToString("N2")</td>
+                                <td class="text-center">
+                                    <a href="javascript:void(0)" onclick="cargarDetalle(@v.Nro)"
+                                       class="btn btn-outline-primary btn-sm py-0 px-2" title="Ver detalle">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="vertical-align:-1px;">
+                                            <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
+                                            <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
+                                        </svg>
                                     </a>
                                 </td>
                             </tr>
                         }
                     </tbody>
+                    <tfoot class="table-secondary fw-bold">
+                        <tr>
+                            <td colspan="4">TOTALES</td>
+                            <td class="text-end">@Model.Ventas.Sum(v => v.IVA).ToString("N2")</td>
+                            <td class="text-end">@Model.Ventas.Sum(v => v.Desc_Rec).ToString("N2")</td>
+                            <td class="text-end">@Model.Ventas.Sum(v => v.TotalCIVA).ToString("N2")</td>
+                            <td class="text-end">@Model.TotVentaSinIva.ToString("N2")</td>
+                            <td class="text-end">@Model.TotCosto.ToString("N2")</td>
+                            <td class="text-end">—</td>
+                            <td class="text-end">@Model.TotComision.ToString("N2")</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         </div>
     </div>
 
-    <!-- Totalizadores -->
+    @* ==================== TOTALIZADORES ==================== *@
     <div class="card mb-4 rounded shadow-sm">
-        <div class="card-header fw-semibold bg-light border-bottom">
+        <div class="card-header fw-semibold bg-light border-bottom d-flex align-items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="me-2" viewBox="0 0 16 16" style="vertical-align:-3px;">
+                <path d="M1 2a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1zm2.5 1a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm4 0a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm4 0a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm-8 4a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm4 0a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm4 0a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm-8 4a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm4 0a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h5a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5z"/>
+            </svg>
             Totales
         </div>
-        <div class="card-body p-4 bg-secondary bg-opacity-10">
+        <div class="card-body p-4">
             <div class="row g-3">
                 <div class="col-md-3">
-                    <label class="form-label fw-bold">Cantidad</label>
-                    <input type="text" class="form-control form-control-sm text-end" value="@Model.Cantidad" readonly />
+                    <label class="form-label fw-bold small mb-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-1px;">
+                            <path d="M5.5 9.511c.076.954.83 1.697 2.182 1.785V12h.6v-.709c1.4-.098 2.218-.846 2.218-1.932 0-.987-.626-1.496-1.745-1.76l-.473-.112V5.57c.6.068.982.396 1.074.85h1.052c-.076-.919-.864-1.638-2.126-1.716V4h-.6v.719c-1.195.117-2.01.836-2.01 1.853 0 .9.606 1.472 1.613 1.707l.397.098v2.034c-.615-.093-1.022-.43-1.114-.9zm2.177-2.166c-.59-.137-.91-.416-.91-.836 0-.47.345-.822.915-.925v1.76h-.005zm.692 1.193c.717.166 1.048.435 1.048.91 0 .542-.412.914-1.135.982V8.518z"/>
+                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                        </svg>
+                        Cantidad
+                    </label>
+                    <input type="text" class="form-control form-control-sm text-end fw-bold bg-light" value="@Model.Cantidad" readonly />
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label fw-bold">Tot. Venta s/IVA</label>
-                    <input type="text" class="form-control form-control-sm text-end" value="@Model.TotVentaSinIva.ToString("N2")" readonly />
+                    <label class="form-label fw-bold small mb-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-1px;">
+                            <path d="M4 10.781c.148 1.667 1.513 2.85 3.591 3.003V15h1.043v-1.216c2.27-.179 3.678-1.438 3.678-3.3 0-1.59-.947-2.51-2.956-3.028l-.722-.187V3.467c1.122.11 1.879.714 2.07 1.616h1.47c-.166-1.6-1.54-2.748-3.54-2.875V1H7.591v1.233c-1.939.23-3.27 1.472-3.27 3.156 0 1.454.966 2.483 2.661 2.917l.61.162v4.031c-1.149-.17-1.94-.8-2.131-1.718zm3.391-3.836c-1.043-.263-1.6-.825-1.6-1.616 0-.944.704-1.641 1.8-1.828v3.495l-.2-.05zm1.591 1.872c1.287.323 1.852.859 1.852 1.769 0 1.097-.826 1.828-2.2 1.939V8.73z"/>
+                        </svg>
+                        Tot. Venta s/IVA
+                    </label>
+                    <input type="text" class="form-control form-control-sm text-end fw-bold bg-light" value="@Model.TotVentaSinIva.ToString("N2")" readonly />
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label fw-bold">Tot. Costo</label>
-                    <input type="text" class="form-control form-control-sm text-end" value="@Model.TotCosto.ToString("N2")" readonly />
+                    <label class="form-label fw-bold small mb-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-1px;">
+                            <path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5 8 5.961 14.154 3.5zM15 4.239l-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923z"/>
+                        </svg>
+                        Tot. Costo
+                    </label>
+                    <input type="text" class="form-control form-control-sm text-end fw-bold bg-light" value="@Model.TotCosto.ToString("N2")" readonly />
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label fw-bold">Tot. Comisión</label>
-                    <input type="text" class="form-control form-control-sm text-end" value="@Model.TotComision.ToString("N2")" readonly />
+                    <label class="form-label fw-bold small mb-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-1px;">
+                            <path d="M1 3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1zm1 0v3h12V3zm0 5a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1zm1 0v3h12V8z"/>
+                        </svg>
+                        Tot. Comision
+                    </label>
+                    <input type="text" class="form-control form-control-sm text-end fw-bold bg-light" value="@Model.TotComision.ToString("N2")" readonly />
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Contenedor único para el detalle -->
+    @* ==================== CONTENEDOR DETALLE ==================== *@
     <div id="detalle" class="mt-3"></div>
 }
-else
+else if (ViewContext.HttpContext.Request.Method == "POST")
 {
-    <div class="alert alert-info rounded shadow-sm">
-        <i class="bi bi-info-circle"></i> Sin datos para el período seleccionado.
+    <div class="card mb-4 rounded shadow-sm">
+        <div class="card-body">
+            <div class="alert alert-info mb-0 d-flex align-items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="me-2 flex-shrink-0" viewBox="0 0 16 16">
+                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                    <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0"/>
+                </svg>
+                Sin datos para el periodo seleccionado.
+            </div>
+        </div>
     </div>
 }
 
-<script>
-    function cargarDetalle(id) {
-        fetch('/Estadistica/Ventas?handler=Detalle&id=' + id)
-            .then(r => r.text())
-            .then(html => {
-                document.getElementById('detalle').innerHTML = html;
+@section Scripts {
+    <script>
+        function cargarDetalle(id) {
+            fetch('/Estadistica/Ventas?handler=Detalle&id=' + id)
+                .then(r => r.text())
+                .then(html => {
+                    document.getElementById('detalle').innerHTML = html;
+                    // Scroll al detalle
+                    document.getElementById('detalle').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+        }
+
+        function imprimirFiltrado(formato) {
+            const desde = document.querySelector('[name="Desde"]').value;
+            const hasta = document.querySelector('[name="Hasta"]').value;
+            const clienteId = document.querySelector('[name="ClienteId"]').value;
+            const vendedorId = document.querySelector('[name="VendedorId"]').value;
+            const proveedorId = document.querySelector('[name="ProveedorId"]').value;
+
+            const url = '/Estadistica/Ventas?handler=Imprimir'
+                + '&formato=' + formato
+                + '&desde=' + encodeURIComponent(desde)
+                + '&hasta=' + encodeURIComponent(hasta)
+                + '&clienteId=' + encodeURIComponent(clienteId)
+                + '&vendedorId=' + encodeURIComponent(vendedorId)
+                + '&proveedorId=' + encodeURIComponent(proveedorId);
+
+            window.open(url, '_blank');
+        }
+
+        // ========== Ordenamiento de grillas ==========
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.sortable-table').forEach(function (table) {
+                var headers = table.querySelectorAll('thead th[data-sort]');
+                headers.forEach(function (th, colIndex) {
+                    th.addEventListener('click', function () {
+                        sortTable(table, colIndex, th);
+                    });
+                });
             });
-    }
+        });
 
-    function imprimirFiltrado(formato) {
-        const desde = document.querySelector('[name="Desde"]').value;
-        const hasta = document.querySelector('[name="Hasta"]').value;
-        const clienteId = document.querySelector('[name="ClienteId"]').value;
-        const vendedorId = document.querySelector('[name="VendedorId"]').value;
-        const proveedorId = document.querySelector('[name="ProveedorId"]').value;
+        function sortTable(table, colIndex, clickedTh) {
+            var tbody = table.querySelector('tbody');
+            if (!tbody) return;
 
-        const url = `/Estadistica/Ventas?handler=Imprimir`
-            + `&formato=${formato}`
-            + `&desde=${encodeURIComponent(desde)}`
-            + `&hasta=${encodeURIComponent(hasta)}`
-            + `&clienteId=${encodeURIComponent(clienteId)}`
-            + `&vendedorId=${encodeURIComponent(vendedorId)}`
-            + `&proveedorId=${encodeURIComponent(proveedorId)}`;
+            var rows = Array.from(tbody.querySelectorAll('tr'));
+            if (rows.length === 0) return;
 
-        window.open(url, '_blank');
-    }
-</script>
+            var sortType = clickedTh.getAttribute('data-sort') || 'string';
+            var currentDir = clickedTh.getAttribute('data-dir');
+            var newDir = (currentDir === 'asc') ? 'desc' : 'asc';
+
+            // Limpiar iconos
+            table.querySelectorAll('thead th[data-sort]').forEach(function (h) {
+                h.removeAttribute('data-dir');
+                var icon = h.querySelector('.sort-icon');
+                if (icon) icon.textContent = '';
+            });
+
+            clickedTh.setAttribute('data-dir', newDir);
+            var icon = clickedTh.querySelector('.sort-icon');
+            if (icon) icon.textContent = (newDir === 'asc') ? ' \u25B2' : ' \u25BC';
+
+            function getValue(row) {
+                var cell = row.cells[colIndex];
+                if (!cell) return '';
+                var text = cell.textContent.trim();
+                if (sortType === 'number') {
+                    var clean = text.replace(/%/g, '').replace(/\./g, '').replace(',', '.').trim();
+                    var num = parseFloat(clean);
+                    return isNaN(num) ? 0 : num;
+                }
+                return text.toLowerCase();
+            }
+
+            rows.sort(function (a, b) {
+                var va = getValue(a);
+                var vb = getValue(b);
+                var result;
+                if (sortType === 'number') {
+                    result = va - vb;
+                } else {
+                    result = va < vb ? -1 : (va > vb ? 1 : 0);
+                }
+                return newDir === 'desc' ? -result : result;
+            });
+
+            rows.forEach(function (row) { tbody.appendChild(row); });
+        }
+    </script>
+
+    <style>
+        /* Dropdown imprimir sobre thead sticky */
+        #ddImprimir .dropdown-menu {
+            z-index: 1050;
+        }
+        /* Sortable columns */
+        .sortable-table thead th[data-sort] {
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+            transition: background-color 0.15s;
+        }
+        .sortable-table thead th[data-sort]:hover {
+            background-color: #3a3f47;
+        }
+        .sortable-table thead th .sort-icon {
+            font-size: 0.7em;
+            opacity: 0.85;
+        }
+    </style>
+}

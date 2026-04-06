@@ -68,7 +68,7 @@ namespace Comercial_Web.Pages.Proveedores.OrdenesCompra
             var proveedores = await _proveedorService.TraerCabeceraAsync();
             var ivas = await _ivaService.GetAllAsync();
             TipoBusqueda = await _parametroService.ObtenerIndiceBusquedaNotaPedidoAsync();
-            CantidadStep = await _productoService.ObtenerDecimalesStockAsync();
+            CantidadStep = await _parametroService.ObtenerCantidadDecimalesStockAsync();
 
             Proveedores = new SelectList(proveedores, "Id", "NombreComercial");
 
@@ -118,11 +118,11 @@ namespace Comercial_Web.Pages.Proveedores.OrdenesCompra
             if (!string.IsNullOrWhiteSpace(filtro))
             {
                 if (tipoBusqueda == 1)
-                    producto = await _productoService.BuscarPorCodProveedorOCAsync(filtro, proveedorId);
+                    producto = await _ordenCompraService.BuscarPorCodProveedorOCAsync(filtro, proveedorId);
                 else if (tipoBusqueda == 2)
-                    producto = await _productoService.BuscarPorCodBarrasOCAsync(filtro, proveedorId);
+                    producto = await _ordenCompraService.BuscarPorCodBarrasOCAsync(filtro, proveedorId);
                 else
-                    producto = await _productoService.TraerPorIdOCAsync(int.Parse(filtro));
+                    producto = await _ordenCompraService.TraerPorIdOCAsync(int.Parse(filtro));
             }
 
             if (producto != null)
@@ -151,7 +151,7 @@ namespace Comercial_Web.Pages.Proveedores.OrdenesCompra
             if (string.IsNullOrWhiteSpace(descripcion))
                 return new JsonResult(new { encontrado = false, mensaje = "Debe ingresar una descripción válida." });
 
-            var producto = await _productoService.BuscarPorDescripcionExactaAsync(descripcion, proveedorId);
+            var producto = await _ordenCompraService.BuscarPorDescripcionExactaAsync(descripcion, proveedorId);
 
             if (producto != null)
             {
@@ -175,7 +175,7 @@ namespace Comercial_Web.Pages.Proveedores.OrdenesCompra
         
         public async Task<IActionResult> OnGetPrepararProductoAsync(string descripcion, int proveedorId)
         {
-            var producto = await _productoService.BuscarPorDescripcionExactaAsync(descripcion, proveedorId);
+            var producto = await _ordenCompraService.BuscarPorDescripcionExactaAsync(descripcion, proveedorId);
             if (producto != null)
             {
                 return Partial("_ProductoSeleccionado", producto);
@@ -192,7 +192,7 @@ namespace Comercial_Web.Pages.Proveedores.OrdenesCompra
 
         public async Task<JsonResult> OnGetCantMinimaAsync(int proveedorId)
         {
-            var productos = await _productoService.TraerCantMinPorProveedorAsync(proveedorId);
+            var productos = await _ordenCompraService.TraerCantMinPorProveedorAsync(proveedorId);
             return new JsonResult(productos);
         }
 
@@ -298,7 +298,7 @@ namespace Comercial_Web.Pages.Proveedores.OrdenesCompra
             using var reader = new StreamReader(Request.Body);
             var body = await reader.ReadToEndAsync();
 
-             var request = JsonSerializer.Deserialize<OrdenCompraRequest>(body, new JsonSerializerOptions
+             var request = JsonSerializer.Deserialize<OrdenCompraDTO>(body, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });

@@ -1,0 +1,253 @@
+@page
+@model Comercial_Web.Pages.Configuracion.ConceptosCaja.IndexModel
+@{
+    ViewData["Title"] = "ABM Conceptos de Caja";
+}
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header fw-semibold bg-light border-bottom d-flex align-items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="me-2" viewBox="0 0 16 16" style="vertical-align:-3px;">
+            <path d="M0 3a2 2 0 0 1 2-2h13.5a.5.5 0 0 1 0 1H15v2a1 1 0 0 1 1 1v8.5a1.5 1.5 0 0 1-1.5 1.5h-12A2.5 2.5 0 0 1 0 12.5zm1 1.732V12.5A1.5 1.5 0 0 0 2.5 14h12a.5.5 0 0 0 .5-.5V5H2a2 2 0 0 1-1-.268M1 3a1 1 0 0 0 1 1h12V2H2a1 1 0 0 0-1 1"/>
+        </svg>
+        Conceptos de Caja
+    </div>
+
+    @* Botón Agregar *@
+    <div class="ms-3 mt-3 mb-3">
+        <form method="post" asp-page-handler="Nuevo" class="d-inline">
+            <button type="submit" class="btn btn-success shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-2px;">
+                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/>
+                </svg>
+                Agregar
+            </button>
+        </form>
+    </div>
+
+    @* Grilla *@
+    <div class="card-body p-0">
+        <table class="table table-striped table-hover table-sm mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th style="width:60px;">Id</th>
+                    <th>Nombre</th>
+                    <th style="width:120px;" class="text-center">Tipo</th>
+                    <th style="width:140px;" class="text-center">Afecta Efectivo</th>
+                    <th style="width:180px;" class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Items)
+                {
+                    <tr>
+                        <td>@item.Id</td>
+                        <td class="fw-semibold">@item.Nombre</td>
+                        <td class="text-center">
+                            @if (item.TipoMovimiento == "I")
+                            {
+                                <span class="badge bg-success">Ingreso</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">Egreso</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            @if (item.AfectaEfectivo)
+                            {
+                                <span class="badge bg-primary">Si</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">No</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            <a class="btn btn-outline-primary btn-sm"
+                               asp-page-handler="Editar"
+                               asp-route-id="@item.Id" title="Editar">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-1px;">
+                                    <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
+                                    <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z"/>
+                                </svg>
+                                Editar
+                            </a>
+                            <form method="post" asp-page-handler="Eliminar" asp-route-id="@item.Id" class="d-inline">
+                                <button type="submit" class="btn btn-outline-danger btn-sm"
+                                        title="Eliminar"
+                                        onclick="return confirm('Está seguro de eliminar este concepto?');">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-1px;">
+                                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                                        <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H5.5l1-1h3l1 1h2.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                                    </svg>
+                                    Eliminar
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@* ==================== MODAL ==================== *@
+<div class="modal fade @(Model.MostrarModal ? "show" : "")"
+     id="modalConcepto"
+     tabindex="-1"
+     aria-labelledby="modalConceptoLabel"
+     aria-hidden="@(!Model.MostrarModal)"
+     style="@(Model.MostrarModal ? "display:block;" : "")">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+
+            <div class="modal-header bg-dark bg-gradient text-white">
+                <h5 class="modal-title" id="modalConceptoLabel">
+                    @(Model.Id.HasValue ? "Editar Concepto de Caja" : "Agregar Concepto de Caja")
+                </h5>
+                <a href="@Url.Page("Index")" class="btn-close btn-close-white" aria-label="Cerrar"></a>
+            </div>
+
+            <form method="post" asp-page-handler="@(Model.Id.HasValue ? "Editar" : "Agregar")">
+
+                @if (Model.Id.HasValue)
+                {
+                    <input type="hidden" name="Id" value="@Model.Id" />
+                }
+
+                <div class="modal-body">
+
+                    @* Nombre *@
+                    <div class="mb-3">
+                        <label for="inputNombre" class="form-label fw-semibold">Nombre</label>
+                        <input type="text" class="form-control" id="inputNombre"
+                               name="Nombre" value="@Model.Nombre" required
+                               style="text-transform:uppercase;" />
+                    </div>
+
+                    @* Tipo Movimiento *@
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tipo de Movimiento</label>
+                        <div class="d-flex gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="TipoMovimiento"
+                                       id="tipoIngreso" value="I"
+                                       @(Model.TipoMovimiento == "I" ? "checked" : "") />
+                                <label class="form-check-label" for="tipoIngreso">
+                                    <span class="badge bg-success">Ingreso</span>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="TipoMovimiento"
+                                       id="tipoEgreso" value="E"
+                                       @(Model.TipoMovimiento == "E" ? "checked" : "") />
+                                <label class="form-check-label" for="tipoEgreso">
+                                    <span class="badge bg-danger">Egreso</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* Afecta Efectivo *@
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch"
+                                   id="chkAfectaEfectivo" name="AfectaEfectivo" value="true"
+                                   @(Model.AfectaEfectivo ? "checked" : "") />
+                            <label class="form-check-label fw-semibold" for="chkAfectaEfectivo">Afecta Efectivo</label>
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    @* Asociada a Medio de Pago *@
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch"
+                                   id="chkAsociadaMedioPago" name="AsociadaMedioPago" value="true"
+                                   @(Model.AsociadaMedioPago ? "checked" : "")
+                                   onchange="toggleMedioPago(this.checked)" />
+                            <label class="form-check-label fw-semibold" for="chkAsociadaMedioPago">Asociada a Medio de Pago</label>
+                        </div>
+                    </div>
+
+                    @* Campos condicionales *@
+                    <div id="panelMedioPago" style="display: @(Model.AsociadaMedioPago ? "block" : "none");">
+                        <div class="card bg-light p-3 mb-2">
+
+                            @* Combo Medio de Pago *@
+                            <div class="mb-3">
+                                <label for="selectMedioPago" class="form-label fw-semibold">Medio de Pago</label>
+                                <select class="form-select" id="selectMedioPago" name="FkMedioPago">
+                                    <option value="">-- Seleccione --</option>
+                                    @if (Model.MediosPago != null)
+                                    {
+                                        foreach (var mp in Model.MediosPago)
+                                        {
+                                            var selected = Model.FkMedioPago.HasValue && mp.Value == Model.FkMedioPago.Value.ToString();
+                                            <option value="@mp.Value" selected="@(selected ? "selected" : null)">@mp.Text</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            @* Combo Operación *@
+                            <div class="mb-0">
+                                <label for="selectOperacion" class="form-label fw-semibold">Tipo de Operación</label>
+                                <select class="form-select" id="selectOperacion" name="Operacion">
+                                    <option value="">-- Seleccione --</option>
+                                    @foreach (var op in Comercial_Web.Pages.Configuracion.ConceptosCaja.IndexModel.TiposOperacion)
+                                    {
+                                        var selected = Model.Operacion == op.Value;
+                                        <option value="@op.Value" selected="@(selected ? "selected" : null)">@op.Text</option>
+                                    }
+                                </select>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <a href="@Url.Page("Index")" class="btn btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary fw-semibold">
+                        @(Model.Id.HasValue ? "Guardar Cambios" : "Agregar")
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+@if (Model.MostrarModal)
+{
+    <div class="modal-backdrop fade show"></div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function toggleMedioPago(checked) {
+            document.getElementById('panelMedioPago').style.display = checked ? 'block' : 'none';
+            if (!checked) {
+                document.getElementById('selectMedioPago').value = '';
+                document.getElementById('selectOperacion').value = '';
+            }
+        }
+
+        // Si el modal viene abierto desde el server, foco en el nombre
+        document.addEventListener('DOMContentLoaded', function () {
+            var modal = document.getElementById('modalConcepto');
+            if (modal && modal.classList.contains('show')) {
+                var input = document.getElementById('inputNombre');
+                if (input) {
+                    input.focus();
+                    input.select();
+                }
+            }
+        });
+    </script>
+}

@@ -11,10 +11,12 @@ namespace Comercial_Web.Pages.Configuracion.TipoPrecios
     public class IndexModel : PageModel
     {
         private readonly ITipoPrecioService _service;
+        private readonly IParametroService _parametroService;
 
-        public IndexModel(ITipoPrecioService service)
+        public IndexModel(ITipoPrecioService service, IParametroService parametroService)
         {
             _service = service;
+            _parametroService = parametroService;
         }
 
         // ====== Grilla ======
@@ -31,12 +33,18 @@ namespace Comercial_Web.Pages.Configuracion.TipoPrecios
         
         public bool MostrarFormulario { get; set; }
 
+        // ====== Cotización Dólar ======
+        public bool DolarizaProductos { get; set; }
+        public decimal CotizacionDolar { get; set; }
+        [BindProperty] public string? NuevaCotizacion { get; set; }
+
         // =====================
 
         public async Task OnGetAsync()
         {
             await CargarGrillaAsync();
             await CargarComboAsync();
+            await CargarParametrosDolarAsync();
         }
 
         public async Task<IActionResult> OnGetEditarAsync(int id)
@@ -53,17 +61,19 @@ namespace Comercial_Web.Pages.Configuracion.TipoPrecios
             FkTipoValor = entity.FkTipoValor;
             Valor = entity.Valor;
 
-            MostrarFormulario = true; 
+            MostrarFormulario = true;
+            await CargarParametrosDolarAsync();
 
             return Page();
         }
 
         public async Task<IActionResult> OnPostNuevoAsync()
         {
-           
+
             MostrarFormulario = true;
             await CargarGrillaAsync();
             await CargarComboAsync();
+            await CargarParametrosDolarAsync();
             return Page();
         }
 
@@ -73,7 +83,8 @@ namespace Comercial_Web.Pages.Configuracion.TipoPrecios
             {
                 await CargarGrillaAsync();
                 await CargarComboAsync();
-                MostrarFormulario = true; 
+                await CargarParametrosDolarAsync();
+                MostrarFormulario = true;
                 return Page();
             }
 
@@ -92,7 +103,8 @@ namespace Comercial_Web.Pages.Configuracion.TipoPrecios
             {
                 await CargarGrillaAsync();
                 await CargarComboAsync();
-                MostrarFormulario = true; 
+                await CargarParametrosDolarAsync();
+                MostrarFormulario = true;
                 return Page();
             }
 
@@ -112,9 +124,22 @@ namespace Comercial_Web.Pages.Configuracion.TipoPrecios
             return RedirectToPage();
         }
 
+        public async Task<IActionResult> OnPostActualizarCotizacionAsync()
+        {
+            // Normalizar: reemplazar coma por punto para parsear siempre con InvariantCulture
+            var valorNormalizado = (NuevaCotizacion ?? "0").Replace(',', '.');
+            if (decimal.TryParse(valorNormalizado, System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out var cotizacion))
+            {
+                await _parametroService.ActualizarValorAsync("productos", "cotizacionDolar",
+                    cotizacion.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            }
+            return RedirectToPage();
+        }
+
         public async Task<IActionResult> OnPostCancelarAsync()
         {
-            
+
             return RedirectToPage();
         }
 
@@ -148,12 +173,22 @@ namespace Comercial_Web.Pages.Configuracion.TipoPrecios
                 .ToList();
         }
 
+        private async Task CargarParametrosDolarAsync()
+        {
+            var dolariza = await _parametroService.ObtenerValorAsync("productos", "dolarizaProductos");
+            DolarizaProductos = int.TryParse(dolariza, out var val) && val != 0;
+
+            var cotizacion = await _parametroService.ObtenerValorAsync("productos", "cotizacionDolar");
+            CotizacionDolar = decimal.TryParse(cotizacion, System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out var cot) ? cot : 0;
+        }
+
         private bool FormularioValido()
         {
             if (string.IsNullOrWhiteSpace(Descripcion))
             {
                 ModelState.AddModelError(nameof(Descripcion),
-                    "Debe indicar una descripci�n");
+                    "Debe indicar una descripci�n");
                 return false;
             }
 

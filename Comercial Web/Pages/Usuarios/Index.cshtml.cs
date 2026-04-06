@@ -1,178 +1,122 @@
 using Domain.Contracts;
-using Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Text.Json;
 using static Domain.DTO.UsuarioDTO;
 
-namespace Comercial_Web.Pages.Usuarios
+namespace Comercial_Web.Pages.Usuarios;
+
+[Authorize]
+[ValidateAntiForgeryToken]
+public class IndexModel : PageModel
 {
-    public class IndexModel : PageModel
+    private readonly IUsuarioService     _usuarioService;
+    private readonly ITipoUsuarioService _tipoUsuarioService;
+
+    private static readonly JsonSerializerOptions JsonOpts = new()
     {
-        private readonly IUsuarioService _usuarioService;
-        private readonly ITipoUsuarioService _tipoUsuarioService;
+        PropertyNamingPolicy        = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true
+    };
 
-        public IndexModel(IUsuarioService usuarioService, ITipoUsuarioService tipoUsuarioService)
+    public IndexModel(IUsuarioService usuarioService, ITipoUsuarioService tipoUsuarioService)
+    {
+        _usuarioService     = usuarioService;
+        _tipoUsuarioService = tipoUsuarioService;
+    }
+
+    // Lista para renderizado inicial en SSR (tabla)
+    public List<UsuarioGridABMItem> Items { get; private set; } = new();
+
+    public async Task OnGetAsync()
+    {
+        Items = await _usuarioService.GetUsuarioGrillaABM();
+    }
+
+    // ----------------------------------------------------------------
+    //  GET: lista de tipos de usuario para el dropdown del modal
+    // ----------------------------------------------------------------
+    public async Task<JsonResult> OnGetTiposAsync()
+    {
+        var tipos = (await _tipoUsuarioService.GetAllAsync())
+            .Select(t => new { id = t.Id, descripcion = t.Descripcion })
+            .ToList();
+
+        return new JsonResult(tipos, JsonOpts);
+    }
+
+    // ----------------------------------------------------------------
+    //  GET: datos de un usuario para pre-cargar el modal de ediciÃ³n
+    // ----------------------------------------------------------------
+    public async Task<JsonResult> OnGetEditarAsync(int id)
+    {
+        var u = await _usuarioService.GetByIdAsync(id);
+        if (u is null)
+            return new JsonResult(new { error = "Usuario no encontrado" }, JsonOpts) { StatusCode = 404 };
+
+        return new JsonResult(new
         {
-            _usuarioService = usuarioService;
-            _tipoUsuarioService = tipoUsuarioService;
+            id     = u.Id,
+            nombre = u.Nombre ?? "",
+            tipo   = u.Tipo
+        }, JsonOpts);
+    }
+
+    // ----------------------------------------------------------------
+    //  POST: crear o actualizar usuario
+    // ----------------------------------------------------------------
+    public async Task<JsonResult> OnPostGuardarAsync([FromBody] GuardarRequest req)
+    {
+        try
+        {
+            if (req.Id.HasValue && req.Id.Value > 0)
+                await _usuarioService.UpdateAsync(
+                    req.Id.Value,
+                    req.Nombre.Trim(),
+                    req.TipoUsuarioId,
+                    string.IsNullOrWhiteSpace(req.Password) ? null : req.Password.Trim());
+            else
+                await _usuarioService.CreateAsync(req.Nombre.Trim(), req.Password!.Trim(), req.TipoUsuarioId);
+
+            return new JsonResult(new { ok = true }, JsonOpts);
         }
-
-        public List<UsuarioGridABMItem> Items { get; private set; } = new();
-        public List<SelectListItem> TiposUsuario { get; private set; } = new();
-
-        [BindProperty] public int? Id { get; set; }
-        [BindProperty] public string Nombre { get; set; } = string.Empty;
-        [BindProperty] public int? TipoUsuarioId { get; set; }
-        [BindProperty] public string Contraseña { get; set; } = string.Empty;
-        [BindProperty] public string RepitaContraseña { get; set; } = string.Empty;
-        [BindProperty] public bool MostrarFormulario { get; set; } = false;
-
-        public async Task OnGetAsync() => await CargarGrillaAsync();
-
-        public async Task<IActionResult> OnPostNuevoAsync()
+        catch (Exception ex)
         {
-            MostrarFormulario = true;
-            Contraseña = ""; RepitaContraseña = ""; // limpio en alta
-            await CargarTiposAsync();
-            await CargarGrillaAsync();
-            return Page();
+            return new JsonResult(new { error = ex.Message }, JsonOpts) { StatusCode = 500 };
         }
+    }
 
-        public async Task<IActionResult> OnGetEditarAsync(int id)
+    // ----------------------------------------------------------------
+    //  POST: baja lÃ³gica
+    // ----------------------------------------------------------------
+    public async Task<JsonResult> OnPostEliminarAsync([FromBody] IdRequest req)
+    {
+        try
         {
-            var usuario = await _usuarioService.GetByIdAsync(id);
-            if (usuario is null) return NotFound();
-
-            Id = usuario.Id;
-            Nombre = usuario.Nombre ?? "";
-            TipoUsuarioId = usuario.Tipo;
-            Contraseña = "";              // en edición no mostramos hash ni password actual
-            RepitaContraseña = "";
-
-            MostrarFormulario = true;
-            await CargarTiposAsync();
-            await CargarGrillaAsync();
-            return Page();
+            await _usuarioService.DeleteAsync(req.Id);
+            return new JsonResult(new { ok = true }, JsonOpts);
         }
-
-        public async Task<IActionResult> OnPostGuardarNuevoAsync()
+        catch (Exception ex)
         {
-            if (!FormularioValido(isEdit: false))
-            {
-                MostrarFormulario = true;
-                await CargarTiposAsync();
-                await CargarGrillaAsync();
-                return Page();
-            }
-
-            await _usuarioService.CreateAsync(Nombre.Trim(), Contraseña.Trim(), TipoUsuarioId!.Value);
-            return RedirectToPage();
+            return new JsonResult(new { error = ex.Message }, JsonOpts) { StatusCode = 500 };
         }
+    }
 
-        public async Task<IActionResult> OnPostGuardarEdicionAsync()
-        {
-            if (!Id.HasValue || !FormularioValido(isEdit: true))
-            {
-                MostrarFormulario = true;
-                await CargarTiposAsync();
-                await CargarGrillaAsync();
-                return Page();
-            }
+    // ----------------------------------------------------------------
+    //  Request models
+    // ----------------------------------------------------------------
+    public class GuardarRequest
+    {
+        public int?   Id           { get; set; }
+        public string Nombre       { get; set; } = string.Empty;
+        public int    TipoUsuarioId { get; set; }
+        public string? Password    { get; set; }
+        public string? Password2   { get; set; }
+    }
 
-            await _usuarioService.UpdateAsync(
-                Id.Value,
-                Nombre.Trim(),
-                TipoUsuarioId!.Value,
-                string.IsNullOrWhiteSpace(Contraseña) ? null : Contraseña.Trim()
-            );
-
-            return RedirectToPage();
-        }
-
-        public async Task<IActionResult> OnPostEliminarAsync(int id)
-        {
-            await _usuarioService.DeleteAsync(id);
-            return RedirectToPage();
-        }
-
-        private async Task CargarGrillaAsync()
-        {
-            Items = await _usuarioService.GetUsuarioGrillaABM();
-            // Si necesitás la descripción del tipo, podés resolverla con un join o servicio de tipos.
-            
-        }
-
-        private async Task CargarTiposAsync()
-        {
-            var tipos = await _tipoUsuarioService.GetAllAsync();
-            TiposUsuario = tipos.Select(t => new SelectListItem
-            {
-                Value = t.Id.ToString(),
-                Text = t.Descripcion
-            }).ToList();
-        }
-
-        private bool FormularioValido(bool isEdit)
-        {
-            if (string.IsNullOrWhiteSpace(Nombre))
-            {
-                ModelState.AddModelError(nameof(Nombre), "Debe escribir un nombre");
-                return false;
-            }
-
-            if (!TipoUsuarioId.HasValue)
-            {
-                ModelState.AddModelError(nameof(TipoUsuarioId), "Debe seleccionar un tipo de usuario");
-                return false;
-            }
-
-            if (!isEdit) // Alta: validar password obligatorio
-            {
-                if (string.IsNullOrWhiteSpace(Contraseña))
-                {
-                    ModelState.AddModelError(nameof(Contraseña), "Debe escribir una contraseña");
-                    return false;
-                }
-
-                if (string.IsNullOrWhiteSpace(RepitaContraseña))
-                {
-                    ModelState.AddModelError(nameof(RepitaContraseña), "Debe repetir la contraseña");
-                    return false;
-                }
-
-                if (!string.Equals(Contraseña, RepitaContraseña))
-                {
-                    ModelState.AddModelError(nameof(RepitaContraseña), "Las contraseñas deben coincidir");
-                    return false;
-                }
-            }
-            else // Edición: password opcional, pero si viene, validar coincidencia
-            {
-                var vienePassword = !string.IsNullOrWhiteSpace(Contraseña) || !string.IsNullOrWhiteSpace(RepitaContraseña);
-                if (vienePassword)
-                {
-                    if (string.IsNullOrWhiteSpace(Contraseña) || string.IsNullOrWhiteSpace(RepitaContraseña))
-                    {
-                        ModelState.AddModelError(nameof(RepitaContraseña), "Debe completar ambos campos de contraseña");
-                        return false;
-                    }
-
-                    if (!string.Equals(Contraseña, RepitaContraseña))
-                    {
-                        ModelState.AddModelError(nameof(RepitaContraseña), "Las contraseñas deben coincidir");
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-        }      
-
-        public class TipoUsuarioItem
-        {
-            public int Id { get; set; }
-            public string Descripcion { get; set; } = string.Empty;
-        }
+    public class IdRequest
+    {
+        public int Id { get; set; }
     }
 }

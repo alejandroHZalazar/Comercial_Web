@@ -1,0 +1,370 @@
+@page
+@model Comercial_Web.Pages.Configuracion.MediosPago.IndexModel
+@{
+    ViewData["Title"] = "ABM Medios de Pago";
+}
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header fw-semibold bg-light border-bottom d-flex align-items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-3px;">
+            <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v1h14V4a1 1 0 0 0-1-1zm13 4H1v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1zm-5 4a1 1 0 0 0 1-1h3v2h-3a1 1 0 0 0-1-1"/>
+        </svg>
+        Medios de Pago
+    </div>
+
+    @* Botón Agregar *@
+    <div class="ms-3 mt-3 mb-3">
+        <form method="post" asp-page-handler="Nuevo" class="d-inline">
+            <button type="submit" class="btn btn-success shadow-sm" accesskey="n" title="Agregar medio de pago (Alt+N)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-2px;">
+                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/>
+                </svg>
+                Agregar
+            </button>
+        </form>
+    </div>
+
+    @* Grilla *@
+    <div class="card-body p-0">
+        <table class="table table-striped table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th style="width:60px;">Id</th>
+                    <th>Nombre</th>
+                    <th style="width:140px;" class="text-center">Necesita Datos</th>
+                    <th style="width:280px;" class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Items)
+                {
+                    <tr>
+                        <td>@item.Id</td>
+                        <td class="fw-semibold">@item.Nombre</td>
+                        <td class="text-center">
+                            @if (item.ConDatos == true)
+                            {
+                                <span class="badge bg-primary">Sí</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">No</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            <a class="btn btn-outline-primary btn-sm"
+                               asp-page-handler="Editar"
+                               asp-route-id="@item.Id"
+                               title="Editar medio de pago">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-1px;">
+                                    <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
+                                    <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z"/>
+                                </svg>
+                                Editar
+                            </a>
+
+                            <a class="btn btn-outline-info btn-sm"
+                               asp-page-handler="Planes"
+                               asp-route-id="@item.Id"
+                               title="Gestionar planes de pago">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-1px;">
+                                    <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5zM2.5 2a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5zm6.5.5A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5zM1 10.5A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5zm6.5.5A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5z"/>
+                                </svg>
+                                Planes
+                            </a>
+
+                            <form method="post"
+                                  asp-page-handler="Eliminar"
+                                  asp-route-id="@item.Id"
+                                  class="d-inline">
+                                <button type="submit"
+                                        class="btn btn-outline-danger btn-sm"
+                                        title="Eliminar medio de pago"
+                                        onclick="return confirm('¿Está seguro de eliminar este medio de pago?');">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-1px;">
+                                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                                        <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H5.5l1-1h3l1 1h2.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                                    </svg>
+                                    Eliminar
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@* ==================== MODAL MEDIO DE PAGO ==================== *@
+<div class="modal fade @(Model.MostrarModal ? "show" : "")"
+     id="modalMedioPago"
+     tabindex="-1" aria-hidden="@(!Model.MostrarModal)"
+     style="@(Model.MostrarModal ? "display:block;" : "")">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+
+            <div class="modal-header bg-dark bg-gradient text-white">
+                <h5 class="modal-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="me-2" viewBox="0 0 16 16" style="vertical-align:-3px;">
+                        <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v1h14V4a1 1 0 0 0-1-1zm13 4H1v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1zm-5 4a1 1 0 0 0 1-1h3v2h-3a1 1 0 0 0-1-1"/>
+                    </svg>
+                    @(Model.Id.HasValue ? "Editar Medio de Pago" : "Agregar Medio de Pago")
+                </h5>
+                <a href="@Url.Page("Index")" class="btn-close btn-close-white" aria-label="Cerrar"></a>
+            </div>
+
+            <form method="post" asp-page-handler="@(Model.Id.HasValue ? "Editar" : "Agregar")">
+
+                @if (Model.Id.HasValue)
+                {
+                    <input type="hidden" name="Id" value="@Model.Id" />
+                }
+
+                <div class="modal-body">
+
+                    <div class="mb-3">
+                        <label for="mpNombre" class="form-label fw-semibold">Nombre</label>
+                        <input type="text" class="form-control" id="mpNombre"
+                               name="Nombre" value="@Model.Nombre" required
+                               style="text-transform:uppercase;" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="mpRecargo" class="form-label fw-semibold">Recargo %</label>
+                        <input type="text" class="form-control" id="mpRecargo"
+                               name="Recargo" inputmode="decimal"
+                               value="@(Model.Recargo.HasValue ? Model.Recargo.Value.ToString("N2") : "")" />
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch"
+                                   id="mpNecesitaDatos" name="NecesitaDatos" value="true"
+                                   @(Model.NecesitaDatos ? "checked" : "") />
+                            <label class="form-check-label fw-semibold" for="mpNecesitaDatos">Necesita Datos</label>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <a href="@Url.Page("Index")" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary fw-semibold" accesskey="g" title="Guardar (Alt+G)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-2px;">
+                            <path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9.5a1 1 0 0 0-1 1v4.5h2a.5.5 0 0 1 .354.854l-2.5 2.5a.5.5 0 0 1-.708 0l-2.5-2.5A.5.5 0 0 1 5.5 6.5h2V2a2 2 0 0 1 2-2H14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h2.5a.5.5 0 0 1 0 1z"/>
+                        </svg>
+                        @(Model.Id.HasValue ? "Guardar Cambios" : "Agregar")
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+@if (Model.MostrarModal)
+{
+    <div class="modal-backdrop fade show"></div>
+}
+
+@* ==================== MODAL PLANES DE PAGO ==================== *@
+<div class="modal fade @(Model.MostrarModalPlanes ? "show" : "")"
+     id="modalPlanes"
+     tabindex="-1" aria-hidden="@(!Model.MostrarModalPlanes)"
+     style="@(Model.MostrarModalPlanes ? "display:block;" : "")">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+
+            <div class="modal-header bg-info bg-gradient text-white">
+                <h5 class="modal-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="me-2" viewBox="0 0 16 16" style="vertical-align:-3px;">
+                        <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5zM2.5 2a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5zm6.5.5A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5z"/>
+                    </svg>
+                    Planes de Pago — @Model.PlanMedioPagoNombre
+                </h5>
+                <a href="@Url.Page("Index")" class="btn-close btn-close-white" aria-label="Cerrar"></a>
+            </div>
+
+            <div class="modal-body">
+
+                @* Botón agregar plan *@
+                <form method="post" asp-page-handler="PlanNuevo" class="mb-3">
+                    <input type="hidden" name="PlanMedioPagoId" value="@Model.PlanMedioPagoId" />
+                    <button type="submit" class="btn btn-success btn-sm shadow-sm" accesskey="p" title="Agregar plan de pago (Alt+P)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-1px;">
+                            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/>
+                        </svg>
+                        Agregar Plan
+                    </button>
+                </form>
+
+                @* Formulario inline para agregar/editar plan *@
+                @if (Model.MostrarFormPlan)
+                {
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-3">@(Model.PlanId.HasValue ? "Editar Plan" : "Nuevo Plan")</h6>
+                            <form method="post" asp-page-handler="PlanGuardar">
+                                <input type="hidden" name="PlanMedioPagoId" value="@Model.PlanMedioPagoId" />
+                                @if (Model.PlanId.HasValue)
+                                {
+                                    <input type="hidden" name="PlanId" value="@Model.PlanId" />
+                                }
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-md-5">
+                                        <label for="planNombre" class="form-label fw-semibold">Nombre</label>
+                                        <input type="text" class="form-control" id="planNombre"
+                                               name="PlanNombre" value="@Model.PlanNombre" required
+                                               style="text-transform:uppercase;" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="planRecargo" class="form-label fw-semibold">Recargo %</label>
+                                        <input type="text" class="form-control" id="planRecargo"
+                                               name="PlanRecargo" inputmode="decimal"
+                                               value="@(Model.PlanRecargo.HasValue ? Model.PlanRecargo.Value.ToString("N2") : "")" />
+                                    </div>
+                                    <div class="col-md-4 d-flex gap-2">
+                                        <button type="submit" class="btn btn-primary btn-sm fw-semibold">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-1" viewBox="0 0 16 16" style="vertical-align:-1px;">
+                                                <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z"/>
+                                            </svg>
+                                            Guardar
+                                        </button>
+                                        <a href="@Url.Page("Index", "Planes", new { id = Model.PlanMedioPagoId })" class="btn btn-secondary btn-sm">
+                                            Cancelar
+                                        </a>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                }
+
+                @* Grilla de planes *@
+                @if (Model.Planes.Any())
+                {
+                    <table class="table table-striped table-hover table-sm mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:60px;">Id</th>
+                                <th>Nombre</th>
+                                <th style="width:120px;" class="text-end">Recargo %</th>
+                                <th style="width:180px;" class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var plan in Model.Planes)
+                            {
+                                <tr>
+                                    <td>@plan.Id</td>
+                                    <td class="fw-semibold">@plan.Nombre</td>
+                                    <td class="text-end">@(plan.Recargo.HasValue ? plan.Recargo.Value.ToString("N2") + " %" : "—")</td>
+                                    <td class="text-center">
+                                        <form method="post" asp-page-handler="PlanEditarForm" class="d-inline">
+                                            <input type="hidden" name="planId" value="@plan.Id" />
+                                            <input type="hidden" name="PlanMedioPagoId" value="@Model.PlanMedioPagoId" />
+                                            <button type="submit" class="btn btn-outline-primary btn-sm" title="Editar plan">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16" style="vertical-align:-1px;">
+                                                    <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
+                                                    <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z"/>
+                                                </svg>
+                                                Editar
+                                            </button>
+                                        </form>
+
+                                        <form method="post"
+                                              asp-page-handler="PlanEliminar"
+                                              class="d-inline">
+                                            <input type="hidden" name="planId" value="@plan.Id" />
+                                            <input type="hidden" name="medioPagoId" value="@Model.PlanMedioPagoId" />
+                                            <button type="submit"
+                                                    class="btn btn-outline-danger btn-sm"
+                                                    title="Eliminar plan"
+                                                    onclick="return confirm('¿Está seguro de eliminar este plan?');">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16" style="vertical-align:-1px;">
+                                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                                                    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H5.5l1-1h3l1 1h2.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                                                </svg>
+                                                Eliminar
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="mb-2 opacity-50" viewBox="0 0 16 16">
+                            <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z"/>
+                            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/>
+                        </svg>
+                        <p>No hay planes de pago configurados para este medio.<br/>Presione <strong>Agregar Plan</strong> para crear uno.</p>
+                    </div>
+                }
+
+            </div>
+
+            <div class="modal-footer">
+                <a href="@Url.Page("Index")" class="btn btn-secondary">
+                    Cerrar
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@if (Model.MostrarModalPlanes)
+{
+    <div class="modal-backdrop fade show"></div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Foco automático al abrir modal medio de pago
+            var modalMP = document.getElementById('modalMedioPago');
+            if (modalMP && modalMP.classList.contains('show')) {
+                var input = document.getElementById('mpNombre');
+                if (input) { input.focus(); input.select(); }
+            }
+
+            // Foco automático al abrir form plan de pago
+            var planNombre = document.getElementById('planNombre');
+            if (planNombre && planNombre.closest('.card')) {
+                planNombre.focus();
+                planNombre.select();
+            }
+
+            // Normalizar coma → punto en campos decimales
+            document.querySelectorAll('input[inputmode="decimal"]').forEach(function (input) {
+                input.addEventListener('input', function () {
+                    var val = this.value.replace(/,/g, '.');
+                    val = val.replace(/[^\d.]/g, '');
+                    var parts = val.split('.');
+                    if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
+                    this.value = val;
+                });
+                input.addEventListener('keydown', function (e) {
+                    if (e.key === ',') {
+                        e.preventDefault();
+                        var s = this.selectionStart, end = this.selectionEnd, cur = this.value;
+                        if (cur.indexOf('.') === -1 || (s <= cur.indexOf('.') && end > cur.indexOf('.'))) {
+                            this.value = cur.substring(0, s) + '.' + cur.substring(end);
+                            this.setSelectionRange(s + 1, s + 1);
+                        }
+                        this.dispatchEvent(new Event('input'));
+                    }
+                });
+            });
+        });
+    </script>
+}

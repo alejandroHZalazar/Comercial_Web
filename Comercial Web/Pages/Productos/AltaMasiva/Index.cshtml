@@ -1,0 +1,709 @@
+@page
+@model Comercial_Web.Pages.Productos.AltaMasiva.IndexModel
+@{
+    ViewData["Title"] = "Alta Masiva de Productos";
+}
+
+<style>
+    /* ---- HEADER ---- */
+    .page-header {
+        background: linear-gradient(135deg, #1a2a4a 0%, #2d4a7a 100%);
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+        color: #fff;
+    }
+    .page-header h4 { margin: 0; font-weight: 700; letter-spacing: .3px; }
+
+    /* ---- SECTION CARD ---- */
+    .section-card {
+        background: #fff;
+        border: 1px solid #e3e6f0;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,.06);
+        overflow: visible;
+        margin-bottom: 1.25rem;
+    }
+    .section-card-header {
+        background: linear-gradient(90deg,#f0f4ff 0%,#f8f9fc 100%);
+        border-bottom: 1px solid #e3e6f0;
+        padding: .65rem 1.1rem;
+        display: flex; align-items: center; gap: .5rem;
+        border-radius: 11px 11px 0 0;
+    }
+    .section-card-header span {
+        font-weight: 700; font-size: .75rem;
+        text-transform: uppercase; letter-spacing: .5px; color: #4e73df;
+    }
+    .section-card-body { padding: 1rem 1.1rem; }
+
+    /* ---- FILE DROP ZONE ---- */
+    .drop-zone {
+        border: 2px dashed #c5cee0;
+        border-radius: 10px;
+        padding: 1.8rem 1rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all .2s;
+        background: #fafbff;
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+        border-color: #4e73df;
+        background: #eef2ff;
+    }
+    .drop-zone svg { opacity: .4; }
+    .drop-zone .dz-title { font-size: .9rem; font-weight: 600; color: #4a5568; margin-top: .5rem; }
+    .drop-zone .dz-sub   { font-size: .78rem; color: #9aa3b0; margin-top: .2rem; }
+    .drop-zone.has-file  { border-color: #1cc88a; background: #f0fdf7; }
+    .drop-zone.has-file svg { opacity: .8; }
+
+    /* ---- FORM ---- */
+    .form-label { font-size: .82rem; font-weight: 600; color: #4a5568; margin-bottom: 3px; }
+
+    /* ---- BUTTONS ---- */
+    .btn-am {
+        border: none; border-radius: 8px;
+        padding: .42rem 1rem; font-size: .83rem; font-weight: 600;
+        display: inline-flex; align-items: center; gap: .4rem;
+        cursor: pointer; transition: all .18s; white-space: nowrap;
+    }
+    .btn-am svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .btn-am-primary  { background: #4e73df; color: #fff; }
+    .btn-am-primary:hover  { background: #3a5bc7; color: #fff; }
+    .btn-am-success  { background: #1cc88a; color: #fff; }
+    .btn-am-success:hover  { background: #17a673; color: #fff; }
+    .btn-am-secondary { background: #858796; color: #fff; }
+    .btn-am-secondary:hover { background: #6a6b7a; color: #fff; }
+    .btn-am:disabled { opacity: .55; cursor: not-allowed; }
+
+    /* ---- PREVIEW TABLE ---- */
+    .prev-table { width: 100%; border-collapse: collapse; font-size: .81rem; }
+    .prev-table thead tr { background: linear-gradient(90deg,#1a2a4a 0%,#2d4a7a 100%); }
+    .prev-table th {
+        padding: .5rem .7rem; color: #fff;
+        font-size: .69rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .4px; white-space: nowrap;
+    }
+    .prev-table td {
+        padding: .42rem .7rem; color: #2d3748;
+        border-bottom: 1px solid #f0f0f0; vertical-align: middle;
+    }
+    .prev-table tbody tr:hover { background: #f8f9ff; }
+    .prev-table tbody tr:last-child td { border-bottom: none; }
+    .badge-row-ok    { background: #e6f9f2; color: #1cc88a; border-radius: 20px; padding: .1rem .5rem; font-size: .72rem; font-weight: 700; }
+    .badge-row-error { background: #fdecea; color: #e74a3b; border-radius: 20px; padding: .1rem .5rem; font-size: .72rem; font-weight: 700; }
+    .badge-row-warn  { background: #fffbeb; color: #92400e; border-radius: 20px; padding: .1rem .5rem; font-size: .72rem; font-weight: 700; border: 1px solid #fcd34d; }
+    .prev-table tbody tr.row-warn { background: #fffdf0 !important; }
+    .prev-table tbody tr.row-warn td { border-bottom-color: #fde68a; }
+    .prev-table td.precio-cero { color: #e74a3b; font-weight: 700; }
+
+    /* ---- PROGRESS ---- */
+    .progress-wrap { height: 18px; border-radius: 9px; background: #e9ecef; overflow: hidden; }
+    .progress-bar-am {
+        height: 100%; border-radius: 9px;
+        background: linear-gradient(90deg,#4e73df 0%,#1cc88a 100%);
+        transition: width .3s ease;
+        display: flex; align-items: center; justify-content: center;
+        font-size: .68rem; font-weight: 700; color: #fff;
+        min-width: 2rem;
+    }
+
+    /* ---- LOG ---- */
+    .log-box {
+        background: #0d1117;
+        border-radius: 8px;
+        padding: .75rem 1rem;
+        max-height: 320px;
+        overflow-y: auto;
+        font-family: 'Consolas', 'Courier New', monospace;
+        font-size: .79rem;
+        line-height: 1.7;
+    }
+    .log-entry        { display: flex; gap: .6rem; align-items: flex-start; }
+    .log-ts           { color: #7c8fa1; flex-shrink: 0; }
+    .log-row          { color: #8b98a8; flex-shrink: 0; }
+    .log-ok           { color: #56d364; }
+    .log-error        { color: #f87171; }
+    .log-dup          { color: #fbbf24; }
+    .log-info         { color: #93c5fd; }
+
+    /* ---- DOLARIZADO BADGE ---- */
+    .dolarizado-badge {
+        display: inline-flex; align-items: center; gap: .4rem;
+        background: #fffbeb; border: 1px solid #fcd34d;
+        border-radius: 8px; padding: .4rem .8rem;
+        font-size: .83rem; font-weight: 600; color: #92400e;
+        cursor: pointer; user-select: none; transition: all .18s;
+    }
+    .dolarizado-badge.active { background: #fef3c7; border-color: #f59e0b; }
+    .dolarizado-badge input  { width: 15px; height: 15px; accent-color: #f59e0b; cursor: pointer; }
+
+    /* ---- COUNTER BADGES ---- */
+    .stat-badge {
+        border-radius: 8px; padding: .35rem .8rem;
+        font-size: .8rem; font-weight: 700;
+        display: inline-flex; align-items: center; gap: .35rem;
+    }
+    .stat-ok    { background: #e6f9f2; color: #1cc88a; }
+    .stat-error { background: #fdecea; color: #e74a3b; }
+    .stat-total { background: #eef2ff; color: #4e73df; }
+
+    /* ---- EMPTY STATE ---- */
+    .empty-state { text-align: center; padding: 2.5rem 1rem; color: #aaa; }
+    .empty-state svg { width: 44px; height: 44px; opacity: .35; margin-bottom: .6rem; }
+</style>
+
+@* ---- PAGE HEADER ---- *@
+<div class="page-header d-flex align-items-center gap-3">
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M4.406 3.342A5.53 5.53 0 0 1 8 2c2.69 0 4.923 2 5.166 4.579C14.758 6.804 16 8.137 16 9.773 16 11.569 14.502 13 12.687 13H3.781C1.708 13 0 11.366 0 9.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383zm.653.757c-.757.653-1.153 1.44-1.153 2.056v.448l-.445.049C2.064 6.805 1 7.952 1 9.318 1 10.785 2.23 12 3.781 12h8.906C13.98 12 15 10.988 15 9.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 4.825 10.328 3 8 3a4.53 4.53 0 0 0-2.941 1.1z"/>
+        <path d="M7.646 4.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 6.707V14.5a.5.5 0 0 1-1 0V6.707L5.354 7.854a.5.5 0 1 1-.708-.708l3-3z"/>
+    </svg>
+    <div>
+        <h4>Alta Masiva de Productos</h4>
+        <small class="opacity-75">Importación de productos desde archivo CSV</small>
+    </div>
+</div>
+
+@* ====================================================================
+   SECCIÓN 1 — CONFIGURACIÓN
+   ==================================================================== *@
+<div class="section-card">
+    <div class="section-card-header">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#4e73df" viewBox="0 0 16 16">
+            <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/>
+        </svg>
+        <span>Configuración de Importación</span>
+    </div>
+    <div class="section-card-body">
+        <div class="row g-4 align-items-start">
+
+            @* --- Drop zone / file picker --- *@
+            <div class="col-md-6">
+                <label class="form-label">Archivo CSV</label>
+                <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileCsv').click()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="#4e73df" viewBox="0 0 16 16">
+                        <path d="M4.406 3.342A5.53 5.53 0 0 1 8 2c2.69 0 4.923 2 5.166 4.579C14.758 6.804 16 8.137 16 9.773 16 11.569 14.502 13 12.687 13H3.781C1.708 13 0 11.366 0 9.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383zm.653.757c-.757.653-1.153 1.44-1.153 2.056v.448l-.445.049C2.064 6.805 1 7.952 1 9.318 1 10.785 2.23 12 3.781 12h8.906C13.98 12 15 10.988 15 9.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 4.825 10.328 3 8 3a4.53 4.53 0 0 0-2.941 1.1z"/>
+                        <path d="M7.646 4.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 6.707V14.5a.5.5 0 0 1-1 0V6.707L5.354 7.854a.5.5 0 1 1-.708-.708l3-3z"/>
+                    </svg>
+                    <div class="dz-title" id="dzTitle">Hacé clic o arrastrá un archivo .csv</div>
+                    <div class="dz-sub">Separado por tabulaciones — primera fila = encabezados</div>
+                </div>
+                <input type="file" id="fileCsv" accept=".csv,.txt" class="d-none" />
+
+                @* ---- Ejemplo CSV ---- *@
+                <div class="mt-2">
+                    <button type="button" class="btn-am btn-am-secondary"
+                            style="padding:.28rem .7rem;font-size:.75rem;"
+                            onclick="toggleEjemplo()">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" id="icoEjemplo">
+                            <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2z"/>
+                        </svg>
+                        Ver ejemplo de CSV
+                    </button>
+                </div>
+
+                <div id="panelEjemplo" class="d-none mt-2">
+                    <div style="background:#0d1117;border-radius:8px;padding:.7rem .9rem;position:relative;">
+                        <button type="button" onclick="copiarEjemplo()" title="Copiar"
+                                style="position:absolute;top:.5rem;right:.5rem;background:#2d3748;border:none;border-radius:5px;padding:.2rem .5rem;cursor:pointer;color:#93c5fd;font-size:.72rem;display:flex;align-items:center;gap:.3rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5H3.5A1.5 1.5 0 0 0 2 3h12a1.5 1.5 0 0 0-1.5-1.5H11A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                            </svg>
+                            <span id="lblCopiar">Copiar</span>
+                        </button>
+                        <pre id="csvEjemplo" style="margin:0;font-family:'Consolas','Courier New',monospace;font-size:.72rem;color:#e2e8f0;white-space:pre;overflow-x:auto;">Cod_Proveedor;Cod_Barras;Descripcion;Rubro;IVA;Proveedor;P.Proveedor;P.Costo;P.Lista;Stock;Cant Minima
+1;1001;SISTEMA BRAZILERO ANODIZADO;1;1;25;250000;250000;325000,00;5;5
+2;1002;SISTEMA BRAZILERO NEGRO;1;1;25;250000;250000;325000,00;5;5
+3;1003;SISTEMA BRAZILERO X 2.00 MTR.;1;1;25;100000;100000;130000,00;5;5</pre>
+                    </div>
+                    <div class="mt-1" style="font-size:.72rem;color:#9aa3b0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="#9aa3b0" viewBox="0 0 16 16" class="me-1">
+                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                        </svg>
+                        Separador: <strong>punto y coma (;)</strong> · Decimales: <strong>coma (,)</strong> · Primera fila = encabezados · <strong>Rubro</strong> y <strong>Proveedor</strong> deben ser IDs numéricos válidos de la base de datos
+                    </div>
+                </div>
+            </div>
+
+            @* --- Opciones --- *@
+            <div class="col-md-6">
+                <label class="form-label">Opciones</label>
+                <div class="mb-3">
+                    <label class="dolarizado-badge" id="lblDolarizado">
+                        <input type="checkbox" id="chkDolarizado" />
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M4 10.781c.148 1.667 1.513 2.85 3.591 3.003V15h1.043v-1.216c2.27-.179 3.678-1.438 3.678-3.3 0-1.59-.947-2.51-2.956-3.028l-.722-.187V3.467c1.122.11 1.879.714 2.07 1.616h1.47c-.166-1.6-1.54-2.748-3.54-2.875V1H7.591v1.233c-1.939.23-3.27 1.472-3.27 3.156 0 1.454.966 2.483 2.661 2.917l.61.162v4.031c-1.149-.17-1.95-.8-2.161-1.718H4zm6.137-3.115c0 1.23-.627 1.955-1.96 2.164V7.677c1.116.248 1.96.905 1.96 1.989zm-5.05-1.9c0-1.064.603-1.796 1.719-2.019V8.21c-1.112-.244-1.719-.895-1.719-2.024z"/>
+                        </svg>
+                        Precios en dólares
+                    </label>
+                </div>
+                <div class="d-flex gap-2 mt-3">
+                    <button class="btn-am btn-am-primary" id="btnImportar" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                        </svg>
+                        Importar CSV
+                    </button>
+                    <button class="btn-am btn-am-secondary" id="btnLimpiar" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854z"/>
+                        </svg>
+                        Limpiar
+                    </button>
+                </div>
+                <div class="mt-3 d-flex gap-2 flex-wrap" id="statsBar" style="display:none!important;"></div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@* ====================================================================
+   SECCIÓN 2 — VISTA PREVIA
+   ==================================================================== *@
+<div class="section-card" id="cardPreview" style="display:none!important;">
+    <div class="section-card-header">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#4e73df" viewBox="0 0 16 16">
+            <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2z"/>
+            <path d="M4.5 5.5A.5.5 0 0 1 5 5h7a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0 2A.5.5 0 0 1 5 7h7a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0 2A.5.5 0 0 1 5 9h4a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5z"/>
+        </svg>
+        <span>Vista Previa del Archivo</span>
+        <span class="ms-auto" id="lblTotalFilas" style="font-size:.75rem;color:#6c757d;font-weight:600;text-transform:none;letter-spacing:0;"></span>
+    </div>
+    <div style="max-height:340px;overflow-y:auto;">
+        <table class="prev-table" id="tablaPreview">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Cód. Proveedor</th>
+                    <th>Cód. Barras</th>
+                    <th>Descripción</th>
+                    <th>Rubro</th>
+                    <th>Proveedor</th>
+                    <th class="text-end">P. Proveedor</th>
+                    <th class="text-end">P. Costo</th>
+                    <th class="text-end">P. Lista</th>
+                    <th class="text-end">Stock</th>
+                    <th class="text-end">Cant. Mín.</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyPreview"></tbody>
+        </table>
+    </div>
+    <div style="padding:.75rem 1rem;border-top:1px solid #e3e6f0;background:#f8f9fc;border-radius:0 0 11px 11px;">
+        <button class="btn-am btn-am-success" id="btnCargar" disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9.5a1 1 0 0 0-1 1v7.293l2.646-2.647a.5.5 0 0 1 .708.708l-3.5 3.5a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L7.5 9.293V2a2 2 0 0 1 2-2H14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h2.5a.5.5 0 0 1 0 1H2z"/>
+            </svg>
+            Cargar Productos a la Base de Datos
+        </button>
+    </div>
+</div>
+
+@* ====================================================================
+   SECCIÓN 3 — PROGRESO Y LOG
+   ==================================================================== *@
+<div class="section-card" id="cardProgreso" style="display:none!important;">
+    <div class="section-card-header">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#4e73df" viewBox="0 0 16 16">
+            <path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/>
+            <path d="M7 5.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm-1.496-.854a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 1 1 .708-.708l.146.147 1.146-1.147a.5.5 0 0 1 .708 0zM7 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm-1.496-.854a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 0 1 .708-.708l.146.147 1.146-1.147a.5.5 0 0 1 .708 0z"/>
+        </svg>
+        <span>Progreso de Carga</span>
+        <div class="ms-auto d-flex gap-2" id="statsBarProg"></div>
+    </div>
+    <div class="section-card-body">
+        <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="flex-grow-1">
+                <div class="d-flex justify-content-between mb-1">
+                    <span style="font-size:.75rem;font-weight:600;color:#6c757d;text-transform:uppercase;letter-spacing:.4px;">Progreso</span>
+                    <span id="lblPct" style="font-size:.75rem;font-weight:700;color:#4e73df;">0 %</span>
+                </div>
+                <div class="progress-wrap">
+                    <div class="progress-bar-am" id="progressBar" style="width:0%">0%</div>
+                </div>
+            </div>
+            <div style="font-size:.82rem;font-weight:600;color:#4a5568;" id="lblProgresoDetalle">0 / 0</div>
+        </div>
+        <div class="log-box" id="logBox">
+            <div class="log-entry log-info">
+                <span class="log-ts">──</span>
+                <span>Esperando inicio de carga…</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Datos para JS *@
+<script id="rubrosData" type="application/json">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+    Model.Rubros.ToDictionary(r => r.Value, r => r.Text)))</script>
+<script id="proveedoresData" type="application/json">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+    Model.Proveedores.ToDictionary(p => p.Value, p => p.Text)))</script>
+
+<script>
+    // ---- Datos de referencia ----
+    const rubrosMap     = JSON.parse(document.getElementById('rubrosData').textContent);
+    const proveedoresMap = JSON.parse(document.getElementById('proveedoresData').textContent);
+
+    // ---- Estado ----
+    let filasParseadas  = [];       // array de objetos por fila
+    let procesando      = false;
+    let cntOk = 0, cntError = 0;
+
+    // ---- Elementos del DOM ----
+    const dropZone    = document.getElementById('dropZone');
+    const fileCsv     = document.getElementById('fileCsv');
+    const btnImportar = document.getElementById('btnImportar');
+    const btnCargar   = document.getElementById('btnCargar');
+    const btnLimpiar  = document.getElementById('btnLimpiar');
+    const cardPreview = document.getElementById('cardPreview');
+    const cardProgreso = document.getElementById('cardProgreso');
+    const tbodyPreview = document.getElementById('tbodyPreview');
+    const lblTotalFilas = document.getElementById('lblTotalFilas');
+    const logBox       = document.getElementById('logBox');
+    const progressBar  = document.getElementById('progressBar');
+    const lblPct       = document.getElementById('lblPct');
+    const lblProg      = document.getElementById('lblProgresoDetalle');
+
+    // ================================================================
+    // FILE HANDLING
+    // ================================================================
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        const f = e.dataTransfer?.files[0];
+        if (f) procesarArchivo(f);
+    });
+    fileCsv.addEventListener('change', () => {
+        if (fileCsv.files[0]) procesarArchivo(fileCsv.files[0]);
+    });
+
+    function procesarArchivo(file) {
+        if (!file.name.match(/\.(csv|txt)$/i)) {
+            mostrarToast('El archivo debe ser .csv o .txt', false);
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = e => parsearCSV(e.target.result, file.name);
+        reader.readAsText(file, 'UTF-8');
+    }
+
+    // ================================================================
+    // PARSEO NUMÉRICO ROBUSTO
+    // Soporta:  250000 | 325000,00 | 33553,98 | 1.234,56 | 1,234.56
+    // ================================================================
+    function parseNum(v) {
+        if (v == null) return 0;
+        // Eliminar BOM, espacios normales y no-rompibles, tabulaciones
+        v = v.replace(/[\u00A0\uFEFF\t]/g, '').trim();
+        if (v === '' || v === '-') return 0;
+
+        const hasDot   = v.includes('.');
+        const hasComma = v.includes(',');
+
+        if (hasDot && hasComma) {
+            // Ambos presentes → el último de los dos es el separador decimal
+            // Ej: "1.234,56" → lastComma > lastDot → coma=decimal
+            // Ej: "1,234.56" → lastDot  > lastComma → punto=decimal
+            if (v.lastIndexOf(',') > v.lastIndexOf('.')) {
+                v = v.replace(/\./g, '').replace(',', '.');   // formato europeo
+            } else {
+                v = v.replace(/,/g, '');                       // formato inglés
+            }
+        } else if (hasComma) {
+            // Solo coma → separador decimal (formato argentino)
+            v = v.replace(',', '.');
+        }
+        // Solo punto o sin separador → parseFloat lo maneja directamente
+
+        const n = parseFloat(v);
+        return isNaN(n) ? 0 : n;
+    }
+
+    // ================================================================
+    // CSV PARSER
+    // ================================================================
+    function parsearCSV(texto, nombreArchivo) {
+        // Eliminar BOM si está presente
+        if (texto.charCodeAt(0) === 0xFEFF) texto = texto.slice(1);
+
+        const lineas = texto.split(/\r?\n/).filter(l => l.trim().length > 0);
+        if (lineas.length < 2) {
+            mostrarToast('El archivo está vacío o sólo tiene encabezados.', false);
+            return;
+        }
+
+        // Detectar separador: tab tiene prioridad, luego ; , ,
+        const primeraLinea = lineas[0];
+        let sep = '\t';
+        if (!primeraLinea.includes('\t')) {
+            sep = primeraLinea.includes(';') ? ';' : ',';
+        }
+
+        const datos = lineas.slice(1);
+        filasParseadas = [];
+        let filasSaltadas = 0;
+
+        datos.forEach((linea, idx) => {
+            // Limpiar espacios no-rompibles y caracteres invisibles
+            linea = linea.replace(/\u00A0/g, ' ');
+            const cols = linea.split(sep).map(c => c.trim());
+            if (cols.length < 11 || cols.every(c => c === '')) {
+                filasSaltadas++;
+                return;
+            }
+
+            const fila = {
+                nro:             idx + 1,
+                codProveedor:    cols[0]  || '',
+                codBarras:       cols[1]  || '',
+                descripcion:     cols[2]  || '',
+                fkRubro:         parseInt(cols[3]) || 0,
+                // cols[4] = IVA — informativo, el SP toma el valor de parametros
+                fkProveedor:     parseInt(cols[5]) || 0,
+                precioProveedor: parseNum(cols[6]),
+                costo:           parseNum(cols[7]),
+                precioLista:     parseNum(cols[8]),
+                stock:           parseNum(cols[9]),
+                cantMinima:      parseNum(cols[10]),
+                esDolarizado:    false,
+                // flags de validación para resaltar en preview
+                _warnPrecio: parseNum(cols[6]) === 0 || parseNum(cols[7]) === 0 || parseNum(cols[8]) === 0
+            };
+            filasParseadas.push(fila);
+        });
+
+        if (filasParseadas.length === 0) {
+            mostrarToast('No se encontraron filas de datos válidas.', false);
+            return;
+        }
+
+        const conAdvertencia = filasParseadas.filter(f => f._warnPrecio).length;
+
+        dropZone.classList.add('has-file');
+        document.getElementById('dzTitle').textContent = `✔ ${nombreArchivo}`;
+        btnImportar.disabled = false;
+        btnLimpiar.disabled  = false;
+
+        let msg = `Archivo cargado: ${filasParseadas.length} fila(s).`;
+        if (filasSaltadas)    msg += ` (${filasSaltadas} saltadas por incompletas)`;
+        if (conAdvertencia)   msg += ` ⚠ ${conAdvertencia} fila(s) con precio = 0`;
+        mostrarToast(msg, conAdvertencia === 0);
+    }
+
+    // ================================================================
+    // IMPORTAR → MOSTRAR VISTA PREVIA
+    // ================================================================
+    btnImportar.addEventListener('click', () => {
+        if (filasParseadas.length === 0) return;
+        construirTablaPreview();
+        cardPreview.style.removeProperty('display');
+        btnCargar.disabled = false;
+        cardPreview.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    function construirTablaPreview() {
+        tbodyPreview.innerHTML = '';
+        lblTotalFilas.textContent = `${filasParseadas.length} fila(s)`;
+
+        filasParseadas.forEach(f => {
+            const rubroNombre     = rubrosMap[String(f.fkRubro)]     || `#${f.fkRubro}`;
+            const proveedorNombre = proveedoresMap[String(f.fkProveedor)] || `#${f.fkProveedor}`;
+
+            const tr = document.createElement('tr');
+            tr.id = `prev-row-${f.nro}`;
+            if (f._warnPrecio) tr.classList.add('row-warn');
+            const estadoHtml = f._warnPrecio
+                ? `<span class="badge-row-warn">⚠ Precio 0</span>`
+                : `<span class="text-muted" style="font-size:.72rem;">Pendiente</span>`;
+            const pProv = f.precioProveedor === 0 ? `<span class="precio-cero">${fmt(f.precioProveedor)}</span>` : fmt(f.precioProveedor);
+            const pCosto = f.costo === 0 ? `<span class="precio-cero">${fmt(f.costo)}</span>` : fmt(f.costo);
+            const pLista = f.precioLista === 0 ? `<span class="precio-cero">${fmt(f.precioLista)}</span>` : fmt(f.precioLista);
+            tr.innerHTML = `
+                <td class="text-muted" style="font-size:.72rem;">${f.nro}</td>
+                <td><code style="font-size:.78rem;">${esc(f.codProveedor)}</code></td>
+                <td><code style="font-size:.78rem;">${esc(f.codBarras)}</code></td>
+                <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(f.descripcion)}">${esc(f.descripcion)}</td>
+                <td>${esc(rubroNombre)}</td>
+                <td>${esc(proveedorNombre)}</td>
+                <td class="text-end">${pProv}</td>
+                <td class="text-end">${pCosto}</td>
+                <td class="text-end">${pLista}</td>
+                <td class="text-end">${f.stock}</td>
+                <td class="text-end">${f.cantMinima}</td>
+                <td id="estado-${f.nro}">${estadoHtml}</td>`;
+            tbodyPreview.appendChild(tr);
+        });
+    }
+
+    // ================================================================
+    // CARGAR ROW BY ROW
+    // ================================================================
+    btnCargar.addEventListener('click', async () => {
+        if (procesando) return;
+        procesando = true;
+        btnCargar.disabled   = true;
+        btnImportar.disabled = true;
+        btnLimpiar.disabled  = true;
+        cntOk = 0; cntError = 0;
+
+        const esDolarizado = document.getElementById('chkDolarizado').checked;
+
+        // Mostrar sección progreso
+        cardProgreso.style.removeProperty('display');
+        logBox.innerHTML = '';
+        setProgreso(0, filasParseadas.length);
+        cardProgreso.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        appendLog('info', null, `Iniciando carga de ${filasParseadas.length} producto(s). Dolarizado: ${esDolarizado ? 'SÍ' : 'NO'}`);
+
+        for (let i = 0; i < filasParseadas.length; i++) {
+            const fila = { ...filasParseadas[i], esDolarizado };
+            const nro  = fila.nro;
+
+            try {
+                const resp = await fetch('/Productos/AltaMasiva?handler=ProcesarFila', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify(fila)
+                });
+
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const result = await resp.json();
+
+                if (result.success) {
+                    cntOk++;
+                    marcarFila(nro, 'ok', `Cargado (ID #${result.productoId})`);
+                    appendLog('ok', nro, `[${esc(fila.descripcion)}] — ${result.mensaje}`);
+                } else {
+                    cntError++;
+                    const esDup = result.mensaje.includes('DUPLICADO');
+                    marcarFila(nro, 'error', esDup ? 'Duplicado' : 'Error');
+                    appendLog(esDup ? 'dup' : 'error', nro, `[${esc(fila.descripcion)}] — ${result.mensaje}`);
+                }
+            } catch (err) {
+                cntError++;
+                marcarFila(nro, 'error', 'Error de red');
+                appendLog('error', nro, `[${esc(fila.descripcion)}] — Error de conexión: ${err.message}`);
+            }
+
+            setProgreso(i + 1, filasParseadas.length);
+            actualizarStats();
+        }
+
+        appendLog('info', null, `──── Proceso finalizado. Cargados: ${cntOk}  |  Errores/Duplicados: ${cntError} ────`);
+        procesando = false;
+        btnLimpiar.disabled = false;
+    });
+
+    // ================================================================
+    // LIMPIAR
+    // ================================================================
+    btnLimpiar.addEventListener('click', () => {
+        filasParseadas  = [];
+        cntOk = 0; cntError = 0;
+        dropZone.classList.remove('has-file');
+        document.getElementById('dzTitle').textContent = 'Hacé clic o arrastrá un archivo .csv';
+        fileCsv.value = '';
+        tbodyPreview.innerHTML = '';
+        logBox.innerHTML = '';
+        cardPreview.style.display  = 'none';
+        cardProgreso.style.display = 'none';
+        btnImportar.disabled = true;
+        btnCargar.disabled   = true;
+        btnLimpiar.disabled  = true;
+        document.getElementById('statsBar').style.display  = 'none';
+        document.getElementById('statsBarProg').innerHTML  = '';
+        setProgreso(0, 0);
+    });
+
+    // ================================================================
+    // HELPERS UI
+    // ================================================================
+    function setProgreso(actual, total) {
+        const pct = total > 0 ? Math.round((actual / total) * 100) : 0;
+        progressBar.style.width = pct + '%';
+        progressBar.textContent = pct + '%';
+        lblPct.textContent      = pct + ' %';
+        lblProg.textContent     = `${actual} / ${total}`;
+    }
+
+    function marcarFila(nro, tipo, texto) {
+        const td = document.getElementById(`estado-${nro}`);
+        if (!td) return;
+        const cls = tipo === 'ok' ? 'badge-row-ok' : 'badge-row-error';
+        td.innerHTML = `<span class="${cls}">${texto}</span>`;
+    }
+
+    function appendLog(tipo, nro, mensaje) {
+        const now   = new Date();
+        const ts    = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+        const clsMsg = tipo === 'ok' ? 'log-ok' : tipo === 'dup' ? 'log-dup' : tipo === 'error' ? 'log-error' : 'log-info';
+        const rowPart = nro != null ? `<span class="log-row">[Fila ${nro}]</span>` : '';
+
+        const div = document.createElement('div');
+        div.className = 'log-entry';
+        div.innerHTML = `<span class="log-ts">${ts}</span>${rowPart}<span class="${clsMsg}">${mensaje}</span>`;
+        logBox.appendChild(div);
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function actualizarStats() {
+        const html = `
+            <span class="stat-badge stat-total">Total: ${filasParseadas.length}</span>
+            <span class="stat-badge stat-ok">✔ OK: ${cntOk}</span>
+            <span class="stat-badge stat-error">✘ Errores: ${cntError}</span>`;
+        document.getElementById('statsBar').innerHTML = html;
+        document.getElementById('statsBar').style.removeProperty('display');
+        document.getElementById('statsBarProg').innerHTML = html;
+    }
+
+    function esc(s) {
+        return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+    function fmt(n) {
+        return Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    // Checkbox dolarizado visual
+    document.getElementById('chkDolarizado').addEventListener('change', function () {
+        document.getElementById('lblDolarizado').classList.toggle('active', this.checked);
+    });
+
+    // ---- Ejemplo CSV ----
+    function toggleEjemplo() {
+        const panel = document.getElementById('panelEjemplo');
+        const ico   = document.getElementById('icoEjemplo');
+        const abierto = !panel.classList.contains('d-none');
+        panel.classList.toggle('d-none', abierto);
+        // Rotar ícono de filtro cuando está abierto
+        ico.style.transform = abierto ? '' : 'rotate(180deg)';
+        ico.style.transition = 'transform .2s';
+    }
+
+    function copiarEjemplo() {
+        const texto = document.getElementById('csvEjemplo').textContent;
+        navigator.clipboard.writeText(texto).then(() => {
+            const lbl = document.getElementById('lblCopiar');
+            lbl.textContent = '¡Copiado!';
+            setTimeout(() => { lbl.textContent = 'Copiar'; }, 2000);
+        });
+    }
+
+    // Toast helper
+    function mostrarToast(msg, exito) {
+        const area = document.createElement('div');
+        area.className = `alert alert-${exito ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+        area.style.cssText = 'bottom:1.2rem;right:1.2rem;z-index:9999;min-width:280px;font-size:.85rem;';
+        area.innerHTML = `${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+        document.body.appendChild(area);
+        setTimeout(() => area.remove(), 4000);
+    }
+</script>

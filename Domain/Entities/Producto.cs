@@ -20,4 +20,8 @@ public partial class Producto
     public int? FkProveedor { get; set; }
 
     public bool? Baja { get; set; }
+
+    public bool? Fraccionado { get; set; }
+
+    public bool? Dolarizado { get; set; }
 }

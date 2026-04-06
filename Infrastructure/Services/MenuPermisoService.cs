@@ -18,7 +18,7 @@ namespace Infrastructure.Services{
         public async Task<List<MenuPermiso>> GetAllAsync()
         {
             return await _context.MenuPermisos
-                                 .OrderBy(m => m.Funcion)
+                                 .OrderBy(m => m.Id)
                                  .ToListAsync();
         }
 

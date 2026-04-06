@@ -23,18 +23,18 @@ namespace Infrastructure.Services
             return await _db.CondIvas.FirstOrDefaultAsync(c => c.Id == id);
         }
 
-        public async Task<CondicionIva> CreateAsync(string descripcion, string abrev, string letra)
+        public async Task<CondicionIva> CreateAsync(string descripcion, string abrev, string letra, string? abrevFE)
         {
             Validar(descripcion, abrev, letra);
             Upper(ref descripcion, ref abrev, ref letra);
 
-            var entity = new CondicionIva { Descripcion = descripcion, Abrev = abrev, Letra = letra };
+            var entity = new CondicionIva { Descripcion = descripcion, Abrev = abrev, Letra = letra, AbrevFE = abrevFE?.Trim().ToUpperInvariant() };
             _db.CondIvas.Add(entity);
             await _db.SaveChangesAsync();
             return entity;
         }
 
-        public async Task UpdateAsync(int id, string descripcion, string abrev, string letra)
+        public async Task UpdateAsync(int id, string descripcion, string abrev, string letra, string? abrevFE)
         {
             Validar(descripcion, abrev, letra);
             Upper(ref descripcion, ref abrev, ref letra);
@@ -45,6 +45,7 @@ namespace Infrastructure.Services
             entity.Descripcion = descripcion;
             entity.Abrev = abrev;
             entity.Letra = letra;
+            entity.AbrevFE = abrevFE?.Trim().ToUpperInvariant();
             await _db.SaveChangesAsync();
         }
 

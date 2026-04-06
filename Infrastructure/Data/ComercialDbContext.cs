@@ -83,6 +83,16 @@ public partial class ComercialDbContext : DbContext
 
     public virtual DbSet<VentasDetalle> VentasDetalles { get; set; }
 
+    public virtual DbSet<ConceptoCaja> ConceptosCaja { get; set; }
+
+    public virtual DbSet<MedioPago> MediosPago { get; set; }
+
+    public virtual DbSet<PlanPago> PlanesPago { get; set; }
+
+    public virtual DbSet<DocumentoTipo> DocumentosTipo { get; set; }
+    public virtual DbSet<VentasFormasPago> VentasFormasPago { get; set; }
+    public virtual DbSet<MovimientoCC>    MovimientosCC    { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseMySql("server=72.61.47.240;database=ale;user=remoto;password=0315061", ServerVersion.Parse("5.5.62-mysql"));
@@ -191,6 +201,10 @@ public partial class ComercialDbContext : DbContext
             entity.Property(e => e.Letra)
                 .HasMaxLength(1)
                 .HasColumnName("letra");
+            entity.Property(e => e.AbrevFE)
+                .HasMaxLength(5)
+                .HasDefaultValue(null)
+                .HasColumnName("abrevFE");
         });
 
         modelBuilder.Entity<CostosProducto>(entity =>
@@ -293,6 +307,18 @@ public partial class ComercialDbContext : DbContext
             entity.Property(e => e.Subtotal)
                 .HasPrecision(18, 4)
                 .HasColumnName("subtotal");
+            entity.Property(e => e.Descuento)
+                .HasPrecision(18, 4)
+                .HasDefaultValue(null)
+                .HasColumnName("descuento");
+            entity.Property(e => e.Recargo)
+                .HasPrecision(18, 4)
+                .HasDefaultValue(null)
+                .HasColumnName("recargo");
+            entity.Property(e => e.SubtotalSinIva)
+                .HasPrecision(18, 4)
+                .HasDefaultValue(null)
+                .HasColumnName("subtotalSinIVA");
         });
 
         modelBuilder.Entity<Impuesto>(entity =>
@@ -622,6 +648,8 @@ public partial class ComercialDbContext : DbContext
             entity.Property(e => e.Iva)
                 .HasColumnType("int(11)")
                 .HasColumnName("iva");
+            entity.Property(e => e.Fraccionado).HasColumnName("fraccionado");
+            entity.Property(e => e.Dolarizado).HasColumnName("dolarizado");
         });
 
         modelBuilder.Entity<ProductosAcrear>(entity =>
@@ -1011,6 +1039,175 @@ public partial class ComercialDbContext : DbContext
             entity.Property(e => e.Subtotal)
                 .HasPrecision(18, 4)
                 .HasColumnName("subtotal");
+            entity.Property(e => e.Descuento)
+                .HasPrecision(18, 4)
+                .HasDefaultValue(null)
+                .HasColumnName("descuento");
+            entity.Property(e => e.Recargo)
+                .HasPrecision(18, 4)
+                .HasDefaultValue(null)
+                .HasColumnName("recargo");
+            entity.Property(e => e.SubtotalSinIva)
+                .HasPrecision(18, 4)
+                .HasDefaultValue(null)
+                .HasColumnName("subtotalSinIVA");
+        });
+
+        modelBuilder.Entity<ConceptoCaja>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("conceptos_caja");
+
+            entity.Property(e => e.Id)
+                .HasColumnType("int")
+                .HasColumnName("concepto_caja_id");
+            entity.Property(e => e.Nombre)
+                .HasMaxLength(100)
+                .HasColumnName("nombre");
+            entity.Property(e => e.TipoMovimiento)
+                .HasMaxLength(1)
+                .HasColumnName("tipo_movimiento");
+            entity.Property(e => e.AfectaEfectivo)
+                .HasColumnType("tinyint(1)")
+                .HasColumnName("afecta_efectivo");
+            entity.Property(e => e.FkMedioPago)
+                .HasColumnType("int")
+                .HasDefaultValue(null)
+                .HasColumnName("fk_medio_pago");
+            entity.Property(e => e.Operacion)
+                .HasMaxLength(20)
+                .HasDefaultValue(null)
+                .HasColumnName("Operacion");
+        });
+
+        modelBuilder.Entity<MedioPago>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("medios_pago");
+
+            entity.Property(e => e.Id)
+                .HasColumnType("int")
+                .HasColumnName("medio_pago_id");
+            entity.Property(e => e.Nombre)
+                .HasMaxLength(50)
+                .HasColumnName("nombre");
+            entity.Property(e => e.Recargo)
+                .HasPrecision(18, 2)
+                .HasDefaultValue(null)
+                .HasColumnName("recargo");
+            entity.Property(e => e.ConDatos)
+                .HasColumnType("tinyint(1)")
+                .HasDefaultValue(null)
+                .HasColumnName("conDatos");
+        });
+
+        modelBuilder.Entity<PlanPago>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("planes_pago");
+
+            entity.Property(e => e.Id)
+                .HasColumnType("int")
+                .HasColumnName("id");
+            entity.Property(e => e.FkMedioPago)
+                .HasColumnType("int")
+                .HasDefaultValue(null)
+                .HasColumnName("fk_medioPago");
+            entity.Property(e => e.Nombre)
+                .HasMaxLength(50)
+                .HasColumnName("nombre");
+            entity.Property(e => e.Recargo)
+                .HasPrecision(18, 2)
+                .HasDefaultValue(null)
+                .HasColumnName("recargo");
+        });
+
+        modelBuilder.Entity<DocumentoTipo>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("Documentos_Tipo");
+
+            entity.Property(e => e.Id)
+                .HasColumnType("int")
+                .HasColumnName("id");
+            entity.Property(e => e.Abreviatura)
+                .HasMaxLength(2)
+                .IsFixedLength()
+                .HasColumnName("abreviatura");
+            entity.Property(e => e.Descripcion)
+                .HasMaxLength(30)
+                .HasDefaultValue(null)
+                .HasColumnName("descripcion");
+        });
+
+        modelBuilder.Entity<VentasFormasPago>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("ventas_formasPago");
+
+            entity.Property(e => e.Id)
+                .HasColumnType("int")
+                .HasColumnName("id");
+            entity.Property(e => e.FkVenta)
+                .HasColumnType("int")
+                .HasColumnName("fk_venta");
+            entity.Property(e => e.FkMedioPago)
+                .HasColumnType("int")
+                .HasColumnName("fk_medioPago");
+            entity.Property(e => e.FkPlanPago)
+                .HasColumnType("int")
+                .HasColumnName("fk_planPago");
+            entity.Property(e => e.Importe)
+                .HasPrecision(18, 2)
+                .HasColumnName("importe");
+            entity.Property(e => e.Referencia1)
+                .HasMaxLength(45)
+                .HasDefaultValue(null)
+                .HasColumnName("referencia1");
+            entity.Property(e => e.Referencia2)
+                .HasMaxLength(45)
+                .HasDefaultValue(null)
+                .HasColumnName("referencia2");
+            entity.Property(e => e.Referencia3)
+                .HasMaxLength(45)
+                .HasDefaultValue(null)
+                .HasColumnName("referencia3");
+        });
+
+        modelBuilder.Entity<MovimientoCC>(entity =>
+        {
+            entity.HasKey(e => e.MovimientoId).HasName("PRIMARY");
+
+            entity.ToTable("MovimientosCC");
+
+            entity.Property(e => e.MovimientoId)
+                .HasColumnType("int")
+                .HasColumnName("MovimientoId");
+            entity.Property(e => e.ClienteId)
+                .HasColumnType("int")
+                .HasColumnName("ClienteId");
+            entity.Property(e => e.DocumentoId)
+                .HasColumnType("int")
+                .HasDefaultValue(null)
+                .HasColumnName("DocumentoId");
+            entity.Property(e => e.Fecha)
+                .HasColumnType("datetime")
+                .HasColumnName("Fecha");
+            entity.Property(e => e.TipoMovimiento)
+                .HasMaxLength(1)
+                .IsFixedLength()
+                .HasColumnName("TipoMovimiento");
+            entity.Property(e => e.Importe)
+                .HasPrecision(18, 2)
+                .HasColumnName("Importe");
+            entity.Property(e => e.SaldoPendiente)
+                .HasPrecision(18, 2)
+                .HasColumnName("SaldoPendiente");
         });
 
         OnModelCreatingPartial(modelBuilder);

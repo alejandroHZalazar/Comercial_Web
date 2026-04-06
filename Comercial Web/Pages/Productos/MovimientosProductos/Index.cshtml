@@ -1,0 +1,842 @@
+@page
+@model Comercial_Web.Pages.Productos.MovimientosProductos.IndexModel
+@{
+    ViewData["Title"] = "Movimientos de Productos";
+}
+
+<style>
+    /* ---- PAGE HEADER ---- */
+    .page-header {
+        background: linear-gradient(135deg,#1a2a4a 0%,#2d4a7a 100%);
+        border-radius:12px; padding:1.25rem 1.5rem;
+        margin-bottom:1.5rem; color:#fff;
+    }
+    .page-header h4 { margin:0; font-weight:700; letter-spacing:.3px; }
+
+    /* ---- SECTION CARD ---- */
+    .section-card {
+        background:#fff; border:1px solid #e3e6f0;
+        border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.06);
+        overflow:visible; margin-bottom:1.25rem;
+    }
+    .section-card-header {
+        background:linear-gradient(90deg,#f0f4ff 0%,#f8f9fc 100%);
+        border-bottom:1px solid #e3e6f0; padding:.65rem 1.1rem;
+        display:flex; align-items:center; gap:.5rem;
+        border-radius:11px 11px 0 0;
+    }
+    .section-card-header span {
+        font-weight:700; font-size:.75rem;
+        text-transform:uppercase; letter-spacing:.5px; color:#4e73df;
+    }
+    .section-card-body { padding:1rem 1.1rem; }
+
+    /* ---- FORM ---- */
+    .form-label { font-size:.82rem; font-weight:600; color:#4a5568; margin-bottom:3px; }
+
+    /* ---- BUTTONS ---- */
+    .btn-mp {
+        border:none; border-radius:8px;
+        padding:.42rem 1rem; font-size:.83rem; font-weight:600;
+        display:inline-flex; align-items:center; gap:.4rem;
+        cursor:pointer; transition:all .18s; white-space:nowrap;
+    }
+    .btn-mp svg { width:15px; height:15px; flex-shrink:0; }
+    .btn-mp-primary   { background:#4e73df; color:#fff; }
+    .btn-mp-primary:hover   { background:#3a5bc7; color:#fff; }
+    .btn-mp-excel     { background:#1D6F42; color:#fff; }
+    .btn-mp-excel:hover     { background:#155934; color:#fff; }
+    .btn-mp-secondary { background:#858796; color:#fff; }
+    .btn-mp-secondary:hover { background:#6a6b7a; color:#fff; }
+    .btn-mp-teal      { background:#36b9cc; color:#fff; }
+    .btn-mp-teal:hover      { background:#2a9faf; color:#fff; }
+    .btn-mp:disabled  { opacity:.55; cursor:not-allowed; }
+
+    /* ---- MULTI-SELECT ---- */
+    .ms-wrap { position:relative; }
+    .ms-input {
+        display:flex; align-items:center; justify-content:space-between;
+        border:1px solid #ced4da; border-radius:8px;
+        padding:.38rem .75rem; font-size:.83rem; cursor:pointer;
+        background:#fff; user-select:none; min-height:36px;
+        transition:border-color .15s,box-shadow .15s;
+    }
+    .ms-input:hover  { border-color:#4e73df; }
+    .ms-input.open   { border-color:#4e73df; box-shadow:0 0 0 3px rgba(78,115,223,.15); }
+    .ms-input .ms-label { flex:1; color:#495057; font-size:.82rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .ms-input .ms-label.placeholder { color:#adb5bd; }
+    .ms-chevron { color:#6c757d; flex-shrink:0; transition:transform .2s; }
+    .ms-input.open .ms-chevron { transform:rotate(180deg); }
+    .ms-panel {
+        display:none; position:absolute; top:calc(100% + 4px); left:0; right:0;
+        background:#fff; border:1px solid #d0d7e8;
+        border-radius:8px; box-shadow:0 4px 18px rgba(0,0,0,.12);
+        z-index:1200; overflow:hidden;
+    }
+    .ms-panel.open { display:block; }
+    .ms-ctrl-bar { padding:.35rem .75rem; border-bottom:1px solid #eef0f5; background:#f8f9fc; display:flex; gap:.75rem; }
+    .ms-ctrl-bar span { font-size:.75rem; font-weight:600; cursor:pointer; }
+    .ms-ctrl-todo    { color:#4e73df; }
+    .ms-ctrl-todo:hover  { text-decoration:underline; }
+    .ms-ctrl-ninguno { color:#e74a3b; }
+    .ms-ctrl-ninguno:hover { text-decoration:underline; }
+    .ms-search-box { padding:.45rem .65rem; border-bottom:1px solid #eee; background:#fff; }
+    .ms-search-box input { width:100%; border:1px solid #ced4da; border-radius:6px; padding:.28rem .6rem; font-size:.8rem; outline:none; }
+    .ms-search-box input:focus { border-color:#4e73df; }
+    .ms-options { max-height:180px; overflow-y:auto; padding:.3rem 0; }
+    .ms-option { display:flex; align-items:center; gap:.5rem; padding:.32rem .75rem; font-size:.82rem; cursor:pointer; transition:background .12s; }
+    .ms-option:hover { background:#f0f4ff; }
+    .ms-option input[type=checkbox] { width:14px; height:14px; accent-color:#4e73df; flex-shrink:0; }
+    .ms-option.hidden { display:none; }
+
+    /* ---- TABS ---- */
+    .mp-tabs-nav {
+        display:flex; gap:.5rem;
+        border-bottom:2px solid #e3e6f0; margin-bottom:1rem; padding-bottom:0;
+    }
+    .mp-tab-btn {
+        border:none; background:none; cursor:pointer;
+        padding:.55rem 1.1rem; font-size:.83rem; font-weight:600;
+        color:#858796; border-radius:8px 8px 0 0;
+        border-bottom:2px solid transparent; margin-bottom:-2px;
+        display:inline-flex; align-items:center; gap:.4rem; transition:all .15s;
+    }
+    .mp-tab-btn:hover { color:#4e73df; background:#f0f4ff; }
+    .mp-tab-btn.active { color:#4e73df; border-bottom-color:#4e73df; background:#f0f4ff; }
+    .mp-tab-pane { display:none; }
+    .mp-tab-pane.active { display:block; }
+
+    /* ---- TABLAS ---- */
+    .mp-table { width:100%; border-collapse:collapse; font-size:.81rem; }
+    .mp-table thead tr { background:linear-gradient(90deg,#1a2a4a 0%,#2d4a7a 100%); }
+    .mp-table th {
+        padding:.5rem .75rem; color:#fff;
+        font-size:.69rem; font-weight:700;
+        text-transform:uppercase; letter-spacing:.4px; white-space:nowrap;
+    }
+    .mp-table td {
+        padding:.42rem .75rem; color:#2d3748;
+        border-bottom:1px solid #f0f0f0; vertical-align:middle;
+    }
+    .mp-table tbody tr:hover { background:#f8f9ff; }
+    .mp-table tbody tr:last-child td { border-bottom:none; }
+    .mp-table th.num, .mp-table td.num { text-align:right; }
+
+    /* Fila de lote clickeable */
+    .tr-lote { cursor:pointer; transition:background .12s; }
+    .tr-lote:hover td { background:#eef2ff !important; }
+    .tr-lote.selected td { background:#dde6ff !important; font-weight:600; }
+
+    /* Cantidad negativa (baja) */
+    .cant-neg { color:#e74a3b; font-weight:700; }
+    .cant-pos { color:#1cc88a; font-weight:700; }
+
+    /* ---- TOOLBAR ---- */
+    .mp-toolbar {
+        padding:.6rem 1rem; border-bottom:1px solid #e3e6f0;
+        background:#f8f9fc; border-radius:11px 11px 0 0;
+        display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem;
+    }
+    .mp-toolbar-left  { display:flex; align-items:center; gap:.5rem; }
+    .mp-toolbar-right { display:flex; align-items:center; gap:.5rem; }
+    .cnt-badge { background:#eef2ff; color:#4e73df; border-radius:12px; padding:.18rem .65rem; font-size:.75rem; font-weight:700; }
+
+    /* ---- LISTA DE PRODUCTOS (Tab 2) ---- */
+    .prod-list-item {
+        padding:.55rem .9rem; border-bottom:1px solid #f0f0f0;
+        cursor:pointer; transition:background .12s;
+        display:flex; align-items:center; justify-content:space-between;
+    }
+    .prod-list-item:hover { background:#f0f4ff; }
+    .prod-list-item.selected { background:#dde6ff; font-weight:600; }
+    .prod-list-item:last-child { border-bottom:none; }
+    .prod-badge { background:#e3e8ff; color:#4e73df; border-radius:20px; padding:.08rem .5rem; font-size:.7rem; font-weight:700; }
+
+    /* ---- EMPTY STATE ---- */
+    .empty-state { text-align:center; padding:2rem 1rem; color:#bbb; }
+    .empty-state svg { width:40px; height:40px; opacity:.3; margin-bottom:.5rem; }
+
+    /* ---- SPINNER ---- */
+    .spinner-sm {
+        display:inline-block; width:14px; height:14px;
+        border:2px solid rgba(255,255,255,.35);
+        border-top-color:#fff; border-radius:50%;
+        animation:spin .7s linear infinite; flex-shrink:0;
+    }
+    .spinner-dark {
+        display:inline-block; width:14px; height:14px;
+        border:2px solid rgba(78,115,223,.25);
+        border-top-color:#4e73df; border-radius:50%;
+        animation:spin .7s linear infinite;
+    }
+    @@keyframes spin { to { transform:rotate(360deg); } }
+
+    /* Responsive date inputs */
+    input[type=date] { font-size:.82rem; }
+</style>
+
+@* ---- PAGE HEADER ---- *@
+<div class="page-header d-flex align-items-center gap-3">
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+        <path fill-rule="evenodd" d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8z"/>
+        <path d="M7.5 3a.5.5 0 0 1 .5.5v5.21l3.248 1.856a.5.5 0 0 1-.496.868l-3.5-2A.5.5 0 0 1 7 9V3.5a.5.5 0 0 1 .5-.5z"/>
+    </svg>
+    <div>
+        <h4>Movimientos de Productos</h4>
+        <small class="opacity-75">Lotes de ingreso · Historial de movimientos por producto</small>
+    </div>
+</div>
+
+@* ---- TABS ---- *@
+<div class="mp-tabs-nav">
+    <button class="mp-tab-btn active" id="tabBtnLotes" onclick="cambiarTab('lotes')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm0 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V7zm0 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-1z"/>
+        </svg>
+        Lotes de Ingreso
+    </button>
+    <button class="mp-tab-btn" id="tabBtnMov" onclick="cambiarTab('mov')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8z"/>
+            <path d="M7.5 3a.5.5 0 0 1 .5.5v5.21l3.248 1.856a.5.5 0 0 1-.496.868l-3.5-2A.5.5 0 0 1 7 9V3.5a.5.5 0 0 1 .5-.5z"/>
+        </svg>
+        Movimientos por Producto
+    </button>
+</div>
+
+@* =============================================================
+   TAB 1 — LOTES DE INGRESO
+   ============================================================= *@
+<div class="mp-tab-pane active" id="tabLotes">
+
+    @* Filtros *@
+    <div class="section-card">
+        <div class="section-card-header">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#4e73df" viewBox="0 0 16 16">
+                <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2z"/>
+            </svg>
+            <span>Filtros de Lotes</span>
+        </div>
+        <div class="section-card-body">
+            <div class="row g-3 align-items-end">
+                @* Proveedores *@
+                <div class="col-md-3">
+                    <label class="form-label">Proveedor</label>
+                    <div class="ms-wrap" id="msWrapProv">
+                        <div class="ms-input" id="msInputProv" onclick="toggleMs('Prov')">
+                            <span class="ms-label placeholder" id="msLabelProv">Todos los proveedores</span>
+                            <svg class="ms-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+                            </svg>
+                        </div>
+                        <div class="ms-panel" id="msPanelProv">
+                            <div class="ms-ctrl-bar">
+                                <span class="ms-ctrl-todo"    onclick="selTodos('Prov')">Seleccionar todo</span>
+                                <span class="ms-ctrl-ninguno" onclick="selNinguno('Prov')">Ninguno</span>
+                            </div>
+                            <div class="ms-search-box">
+                                <input type="text" placeholder="Buscar proveedor…" oninput="filterMs('Prov',this.value)" />
+                            </div>
+                            <div class="ms-options" id="msOptionsProv">
+                                @foreach (var p in Model.Proveedores)
+                                {
+                                    <label class="ms-option" data-label="@p.Text.ToUpper()">
+                                        <input type="checkbox" class="ms-chk-prov" value="@p.Value"
+                                               onchange="updateMsLabel('Prov')" />
+                                        @p.Text
+                                    </label>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @* Texto libre *@
+                <div class="col-md-3">
+                    <label class="form-label">Cód./Barras/Descripción</label>
+                    <input type="text" id="txtLote" class="form-control form-control-sm"
+                           placeholder="Búsqueda libre…" style="border-radius:8px;font-size:.83rem;"
+                           onkeydown="if(event.key==='Enter') buscarLotes()" />
+                </div>
+                @* Nro Comprobante *@
+                <div class="col-md-2">
+                    <label class="form-label">Nro. Comprobante</label>
+                    <input type="text" id="txtComprobante" class="form-control form-control-sm"
+                           placeholder="Nro. comprobante…" style="border-radius:8px;font-size:.83rem;"
+                           onkeydown="if(event.key==='Enter') buscarLotes()" />
+                </div>
+                @* Fecha desde *@
+                <div class="col-md-2">
+                    <label class="form-label">Fecha desde</label>
+                    <input type="date" id="fechaDesdeL" class="form-control form-control-sm" style="border-radius:8px;" />
+                </div>
+                @* Fecha hasta *@
+                <div class="col-md-1">
+                    <label class="form-label">Hasta</label>
+                    <input type="date" id="fechaHastaL" class="form-control form-control-sm" style="border-radius:8px;" />
+                </div>
+                @* Buscar *@
+                <div class="col-md-1">
+                    <button class="btn-mp btn-mp-primary w-100" id="btnBuscarLotes" onclick="buscarLotes()">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                        </svg>
+                        Buscar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Grilla de lotes *@
+    <div class="section-card">
+        <div class="mp-toolbar">
+            <div class="mp-toolbar-left">
+                <span style="font-weight:700;font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;color:#4e73df;">Lotes encontrados</span>
+                <span class="cnt-badge" id="cntLotes">0 lote(s)</span>
+            </div>
+        </div>
+        <div style="max-height:300px;overflow-y:auto;">
+            <table class="mp-table" id="tablaLotes">
+                <thead>
+                    <tr>
+                        <th>Nro. Comprobante</th>
+                        <th>Fecha Mov.</th>
+                        <th>Proveedor</th>
+                        <th class="num">Cant. Productos</th>
+                        <th class="num">Total Costo</th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyLotes"></tbody>
+            </table>
+        </div>
+        <div id="emptyLotes" class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm0 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V7zm0 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-1z"/>
+            </svg>
+            <div style="font-size:.85rem;font-weight:600;">Sin lotes</div>
+            <div style="font-size:.76rem;margin-top:.2rem;">Aplicá los filtros y hacé clic en <strong>Buscar</strong></div>
+        </div>
+    </div>
+
+    @* Detalle del lote seleccionado *@
+    <div class="section-card" id="cardDetalleLote" style="display:none;">
+        <div class="mp-toolbar">
+            <div class="mp-toolbar-left">
+                <span style="font-weight:700;font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;color:#1cc88a;">Detalle del Lote</span>
+                <span class="cnt-badge" id="cntDetalle" style="background:#e6f9f2;color:#1cc88a;">0 ítem(s)</span>
+                <span id="lblLoteSelec" style="font-size:.78rem;color:#6c757d;font-weight:600;"></span>
+            </div>
+            <div class="mp-toolbar-right">
+                <button class="btn-mp btn-mp-excel" id="btnExcelLote" disabled onclick="exportarLote()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M14 4.5V14a2 2 0 0 1-2 2h-1v-1h1a1 1 0 0 0 1-1V4.5h-2A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v9H2V2a2 2 0 0 1 2-2h5.5L14 4.5z"/>
+                        <path d="M3.517 14.841a1.13 1.13 0 0 0 .401.823c.13.108.289.192.478.252.19.061.411.091.665.091.338 0 .624-.053.859-.158.236-.105.416-.252.539-.44.125-.189.187-.408.187-.656 0-.224-.045-.41-.134-.56a1.001 1.001 0 0 0-.375-.357 2.027 2.027 0 0 0-.566-.21l-.621-.144a.97.97 0 0 1-.404-.176.37.37 0 0 1-.144-.299c0-.156.062-.284.185-.384.125-.101.296-.152.512-.152.143 0 .266.023.37.068a.624.624 0 0 1 .246.181.56.56 0 0 1 .12.258h.75a1.092 1.092 0 0 0-.2-.566 1.21 1.21 0 0 0-.5-.41 1.813 1.813 0 0 0-.78-.152c-.293 0-.551.05-.776.15-.225.099-.4.24-.527.421-.127.182-.19.395-.19.639 0 .201.04.376.122.524.082.149.2.27.352.367.152.095.332.167.539.213l.618.144c.207.049.361.113.463.193a.387.387 0 0 1 .152.326.505.505 0 0 1-.085.29.559.559 0 0 1-.255.193c-.111.047-.249.07-.413.07-.117 0-.223-.013-.32-.04a.838.838 0 0 1-.248-.115.578.578 0 0 1-.255-.384h-.765zM.806 13.693c0-.248.034-.46.102-.633a.868.868 0 0 1 .302-.399.814.814 0 0 1 .475-.137c.15 0 .283.032.398.097a.7.7 0 0 1 .272.26.85.85 0 0 1 .12.381h.765v-.072a1.33 1.33 0 0 0-.466-.964 1.441 1.441 0 0 0-.489-.272 1.838 1.838 0 0 0-.606-.097c-.356 0-.66.074-.911.223-.25.148-.44.359-.572.632-.13.274-.196.6-.196.979v.498c0 .379.064.704.193.976.131.271.322.48.572.626.25.145.554.217.914.217.293 0 .554-.055.785-.164.23-.11.414-.26.55-.454a1.27 1.27 0 0 0 .226-.674v-.076h-.764a.799.799 0 0 1-.118.363.7.7 0 0 1-.272.25.874.874 0 0 1-.401.087.845.845 0 0 1-.478-.132.833.833 0 0 1-.299-.392 1.699 1.699 0 0 1-.102-.627v-.495z"/>
+                    </svg>
+                    Exportar Excel
+                </button>
+            </div>
+        </div>
+        <div style="max-height:360px;overflow-y:auto;">
+            <table class="mp-table" id="tablaDetalle">
+                <thead>
+                    <tr>
+                        <th>Cód. Proveedor</th>
+                        <th>Descripción</th>
+                        <th>Fecha Entrega</th>
+                        <th>Tipo</th>
+                        <th class="num">Stock Ant.</th>
+                        <th class="num">Cantidad</th>
+                        <th class="num">Stock Act.</th>
+                        <th>Nro. Comprobante</th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyDetalle"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+@* =============================================================
+   TAB 2 — MOVIMIENTOS POR PRODUCTO
+   ============================================================= *@
+<div class="mp-tab-pane" id="tabMov">
+
+    @* Filtros *@
+    <div class="section-card">
+        <div class="section-card-header">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#4e73df" viewBox="0 0 16 16">
+                <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2z"/>
+            </svg>
+            <span>Filtros de Producto</span>
+        </div>
+        <div class="section-card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Cód. Proveedor / Cód. Barras / Descripción</label>
+                    <input type="text" id="txtProd" class="form-control form-control-sm"
+                           placeholder="Buscá el producto…" style="border-radius:8px;font-size:.83rem;"
+                           onkeydown="if(event.key==='Enter') buscarProductos()" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Fecha desde</label>
+                    <input type="date" id="fechaDesdeProd" class="form-control form-control-sm" style="border-radius:8px;" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Fecha hasta</label>
+                    <input type="date" id="fechaHastaProd" class="form-control form-control-sm" style="border-radius:8px;" />
+                </div>
+                <div class="col-md-2">
+                    <button class="btn-mp btn-mp-primary w-100" id="btnBuscarProd" onclick="buscarProductos()">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                        </svg>
+                        Buscar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+
+        @* Lista de productos encontrados *@
+        <div class="col-md-4">
+            <div class="section-card" style="height:100%;">
+                <div class="mp-toolbar" style="border-radius:11px 11px 0 0;">
+                    <div class="mp-toolbar-left">
+                        <span style="font-weight:700;font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;color:#4e73df;">Productos</span>
+                        <span class="cnt-badge" id="cntProds">0</span>
+                    </div>
+                </div>
+                <div style="max-height:480px;overflow-y:auto;" id="listaProdContainer">
+                    <div id="emptyProds" class="empty-state">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                        </svg>
+                        <div style="font-size:.82rem;font-weight:600;">Sin resultados</div>
+                        <div style="font-size:.74rem;margin-top:.2rem;">Filtrá y hacé clic en <strong>Buscar</strong></div>
+                    </div>
+                    <div id="listaProd"></div>
+                </div>
+            </div>
+        </div>
+
+        @* Movimientos del producto seleccionado *@
+        <div class="col-md-8">
+            <div class="section-card">
+                <div class="mp-toolbar">
+                    <div class="mp-toolbar-left">
+                        <span style="font-weight:700;font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;color:#4e73df;">Movimientos</span>
+                        <span class="cnt-badge" id="cntMov">0</span>
+                        <span id="lblProdSelec" style="font-size:.76rem;color:#6c757d;font-weight:600;max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
+                    </div>
+                    <div class="mp-toolbar-right">
+                        <button class="btn-mp btn-mp-excel" id="btnExcelMov" disabled onclick="exportarMovimientos()">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M14 4.5V14a2 2 0 0 1-2 2h-1v-1h1a1 1 0 0 0 1-1V4.5h-2A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v9H2V2a2 2 0 0 1 2-2h5.5L14 4.5z"/>
+                                <path d="M3.517 14.841a1.13 1.13 0 0 0 .401.823c.13.108.289.192.478.252.19.061.411.091.665.091.338 0 .624-.053.859-.158.236-.105.416-.252.539-.44.125-.189.187-.408.187-.656 0-.224-.045-.41-.134-.56a1.001 1.001 0 0 0-.375-.357 2.027 2.027 0 0 0-.566-.21l-.621-.144a.97.97 0 0 1-.404-.176.37.37 0 0 1-.144-.299c0-.156.062-.284.185-.384.125-.101.296-.152.512-.152.143 0 .266.023.37.068a.624.624 0 0 1 .246.181.56.56 0 0 1 .12.258h.75a1.092 1.092 0 0 0-.2-.566 1.21 1.21 0 0 0-.5-.41 1.813 1.813 0 0 0-.78-.152c-.293 0-.551.05-.776.15-.225.099-.4.24-.527.421-.127.182-.19.395-.19.639 0 .201.04.376.122.524.082.149.2.27.352.367.152.095.332.167.539.213l.618.144c.207.049.361.113.463.193a.387.387 0 0 1 .152.326.505.505 0 0 1-.085.29.559.559 0 0 1-.255.193c-.111.047-.249.07-.413.07-.117 0-.223-.013-.32-.04a.838.838 0 0 1-.248-.115.578.578 0 0 1-.255-.384h-.765zM.806 13.693c0-.248.034-.46.102-.633a.868.868 0 0 1 .302-.399.814.814 0 0 1 .475-.137c.15 0 .283.032.398.097a.7.7 0 0 1 .272.26.85.85 0 0 1 .12.381h.765v-.072a1.33 1.33 0 0 0-.466-.964 1.441 1.441 0 0 0-.489-.272 1.838 1.838 0 0 0-.606-.097c-.356 0-.66.074-.911.223-.25.148-.44.359-.572.632-.13.274-.196.6-.196.979v.498c0 .379.064.704.193.976.131.271.322.48.572.626.25.145.554.217.914.217.293 0 .554-.055.785-.164.23-.11.414-.26.55-.454a1.27 1.27 0 0 0 .226-.674v-.076h-.764a.799.799 0 0 1-.118.363.7.7 0 0 1-.272.25.874.874 0 0 1-.401.087.845.845 0 0 1-.478-.132.833.833 0 0 1-.299-.392 1.699 1.699 0 0 1-.102-.627v-.495z"/>
+                            </svg>
+                            Exportar Excel
+                        </button>
+                    </div>
+                </div>
+                <div style="max-height:480px;overflow-y:auto;">
+                    <table class="mp-table" id="tablaMov">
+                        <thead>
+                            <tr>
+                                <th>Cód. Proveedor</th>
+                                <th>Descripción</th>
+                                <th>Fecha</th>
+                                <th>Tipo</th>
+                                <th class="num">Stock Ant.</th>
+                                <th class="num">Cantidad</th>
+                                <th class="num">Stock Act.</th>
+                                <th>Comprobante</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyMov"></tbody>
+                    </table>
+                </div>
+                <div id="emptyMov" class="empty-state">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8z"/>
+                        <path d="M7.5 3a.5.5 0 0 1 .5.5v5.21l3.248 1.856a.5.5 0 0 1-.496.868l-3.5-2A.5.5 0 0 1 7 9V3.5a.5.5 0 0 1 .5-.5z"/>
+                    </svg>
+                    <div style="font-size:.85rem;font-weight:600;">Sin movimientos</div>
+                    <div style="font-size:.76rem;margin-top:.2rem;">Seleccioná un producto de la lista</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// =================================================================
+// ESTADO GLOBAL
+// =================================================================
+let detalleLoteActual   = [];   // últimos detalles cargados (tab 1)
+let movimientosActuales = [];   // últimos movimientos cargados (tab 2)
+let productoSelecDesc   = '';   // descripción del producto seleccionado (tab 2)
+let loteSeleccionado    = null; // { nroComprobante, fechaMov } del lote activo
+
+// =================================================================
+// TABS
+// =================================================================
+function cambiarTab(tab) {
+    ['lotes','mov'].forEach(t => {
+        document.getElementById('tabBtn' + (t === 'lotes' ? 'Lotes' : 'Mov')).classList.toggle('active', t === tab);
+        document.getElementById('tab'    + (t === 'lotes' ? 'Lotes' : 'Mov')).classList.toggle('active', t === tab);
+    });
+}
+
+// =================================================================
+// MULTI-SELECT (Tab 1)
+// =================================================================
+function toggleMs(id) {
+    const inp   = document.getElementById('msInput' + id);
+    const panel = document.getElementById('msPanel' + id);
+    const open  = panel.classList.contains('open');
+    document.querySelectorAll('.ms-panel.open').forEach(p => p.classList.remove('open'));
+    document.querySelectorAll('.ms-input.open').forEach(i => i.classList.remove('open'));
+    if (!open) {
+        panel.classList.add('open'); inp.classList.add('open');
+        const si = panel.querySelector('.ms-search-box input');
+        if (si) { si.value = ''; filterMs(id, ''); si.focus(); }
+    }
+}
+function filterMs(id, val) {
+    const q = val.trim().toUpperCase();
+    document.querySelectorAll('#msOptions' + id + ' .ms-option').forEach(o =>
+        o.classList.toggle('hidden', q !== '' && !(o.dataset.label || '').includes(q)));
+}
+function updateMsLabel(id) {
+    const chk = [...document.querySelectorAll('.ms-chk-' + id.toLowerCase() + ':checked')];
+    const lbl = document.getElementById('msLabel' + id);
+    if (!chk.length) { lbl.textContent = 'Todos los proveedores'; lbl.classList.add('placeholder'); }
+    else if (chk.length === 1) { lbl.textContent = chk[0].closest('label').textContent.trim(); lbl.classList.remove('placeholder'); }
+    else { lbl.textContent = `${chk.length} seleccionado(s)`; lbl.classList.remove('placeholder'); }
+}
+function selTodos(id) {
+    document.querySelectorAll('#msOptions' + id + ' .ms-option:not(.hidden) input').forEach(c => c.checked = true);
+    updateMsLabel(id);
+}
+function selNinguno(id) {
+    document.querySelectorAll('.ms-chk-' + id.toLowerCase()).forEach(c => c.checked = false);
+    updateMsLabel(id);
+}
+document.addEventListener('click', e => {
+    if (!e.target.closest('.ms-wrap')) {
+        document.querySelectorAll('.ms-panel.open').forEach(p => p.classList.remove('open'));
+        document.querySelectorAll('.ms-input.open').forEach(i => i.classList.remove('open'));
+    }
+});
+
+// =================================================================
+// TAB 1 — BUSCAR LOTES
+// =================================================================
+async function buscarLotes() {
+    const btn  = document.getElementById('btnBuscarLotes');
+    const prev = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-sm"></span> Buscando…';
+
+    try {
+        const prov  = [...document.querySelectorAll('.ms-chk-prov:checked')].map(c => c.value);
+        const texto = document.getElementById('txtLote').value.trim();
+        const nro   = document.getElementById('txtComprobante').value.trim();
+        const desde = document.getElementById('fechaDesdeL').value;
+        const hasta = document.getElementById('fechaHastaL').value;
+
+        const qs = new URLSearchParams();
+        prov.forEach(v => qs.append('proveedores', v));
+        if (texto) qs.set('texto', texto);
+        if (nro)   qs.set('nroComprobante', nro);
+        if (desde) qs.set('fechaDesde', desde);
+        if (hasta) qs.set('fechaHasta', hasta);
+
+        const resp = await fetch(`/Productos/MovimientosProductos?handler=BuscarLotes&${qs}`);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const lotes = await resp.json();
+
+        renderizarLotes(lotes);
+        if (!lotes.length) mostrarToast('No se encontraron lotes con los filtros aplicados.', false);
+
+    } catch (e) {
+        mostrarToast('Error al buscar: ' + e.message, false);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = prev;
+    }
+}
+
+function renderizarLotes(lotes) {
+    const tbody = document.getElementById('tbodyLotes');
+    tbody.innerHTML = '';
+    document.getElementById('cntLotes').textContent = `${lotes.length} lote(s)`;
+    document.getElementById('emptyLotes').style.display = lotes.length === 0 ? 'block' : 'none';
+    document.getElementById('cardDetalleLote').style.display = 'none';
+    loteSeleccionado = null;
+
+    lotes.forEach(l => {
+        const tr = document.createElement('tr');
+        tr.className = 'tr-lote';
+        tr.innerHTML = `
+            <td><strong>${esc(l.nroComprobante)}</strong></td>
+            <td>${l.fechaMov ? fmtFecha(l.fechaMov) : '—'}</td>
+            <td>${esc(l.proveedorNombre || '—')}</td>
+            <td class="num">${l.cantProductos}</td>
+            <td class="num">${fmt2(l.totalCosto)}</td>`;
+        tr.addEventListener('click', () => seleccionarLote(tr, l));
+        tbody.appendChild(tr);
+    });
+}
+
+async function seleccionarLote(trEl, lote) {
+    // Resaltar fila
+    document.querySelectorAll('#tbodyLotes .tr-lote').forEach(r => r.classList.remove('selected'));
+    trEl.classList.add('selected');
+
+    document.getElementById('cardDetalleLote').style.display = 'block';
+    document.getElementById('tbodyDetalle').innerHTML =
+        '<tr><td colspan="8" style="text-align:center;padding:1rem;"><span class="spinner-dark"></span> Cargando detalle…</td></tr>';
+    document.getElementById('cntDetalle').textContent = '…';
+    document.getElementById('btnExcelLote').disabled  = true;
+
+    try {
+        const qs = new URLSearchParams({
+            nroComprobante: lote.nroComprobante,
+            fechaMov:       lote.fechaMov
+        });
+        const resp = await fetch(`/Productos/MovimientosProductos?handler=DetallesLote&${qs}`);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const items = await resp.json();
+
+        detalleLoteActual = items;
+        loteSeleccionado  = lote;
+
+        document.getElementById('cntDetalle').textContent = `${items.length} ítem(s)`;
+        document.getElementById('lblLoteSelec').textContent =
+            `Comprobante: ${lote.nroComprobante} · ${lote.fechaMov ? fmtFecha(lote.fechaMov) : ''}`;
+        document.getElementById('btnExcelLote').disabled = items.length === 0;
+
+        const tbody = document.getElementById('tbodyDetalle');
+        tbody.innerHTML = '';
+        if (!items.length) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:1rem;">Sin ítems</td></tr>';
+            return;
+        }
+        items.forEach(it => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><code style="font-size:.77rem;">${esc(it.codProveedor)}</code></td>
+                <td style="max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(it.descripcion)}">${esc(it.descripcion)}</td>
+                <td>${it.fechaEntrega ? fmtSoloFecha(it.fechaEntrega) : '—'}</td>
+                <td><span style="font-size:.75rem;background:#eef2ff;color:#4e73df;border-radius:12px;padding:.1rem .5rem;font-weight:700;">${esc(it.tipo)}</span></td>
+                <td class="num">${fmt4(it.stockAnt)}</td>
+                <td class="num ${it.cantidad < 0 ? 'cant-neg' : 'cant-pos'}">${fmt4(it.cantidad)}</td>
+                <td class="num">${fmt4(it.stockAct)}</td>
+                <td style="font-size:.77rem;">${esc(it.nroComprobante)}</td>`;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('cardDetalleLote').scrollIntoView({ behavior:'smooth', block:'nearest' });
+
+    } catch (e) {
+        mostrarToast('Error al cargar detalle: ' + e.message, false);
+    }
+}
+
+// =================================================================
+// TAB 2 — BUSCAR PRODUCTOS
+// =================================================================
+async function buscarProductos() {
+    const btn  = document.getElementById('btnBuscarProd');
+    const prev = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-sm"></span> Buscando…';
+
+    try {
+        const texto = document.getElementById('txtProd').value.trim();
+        const desde = document.getElementById('fechaDesdeProd').value;
+        const hasta = document.getElementById('fechaHastaProd').value;
+
+        if (!texto && !desde && !hasta) {
+            mostrarToast('Ingresá un texto o rango de fechas para buscar.', false);
+            return;
+        }
+
+        const qs = new URLSearchParams();
+        if (texto) qs.set('texto', texto);
+        if (desde) qs.set('fechaDesde', desde);
+        if (hasta) qs.set('fechaHasta', hasta);
+
+        const resp = await fetch(`/Productos/MovimientosProductos?handler=BuscarProductos&${qs}`);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const prods = await resp.json();
+
+        renderizarListaProductos(prods);
+        if (!prods.length) mostrarToast('No se encontraron productos con movimientos.', false);
+
+    } catch (e) {
+        mostrarToast('Error: ' + e.message, false);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = prev;
+    }
+}
+
+function renderizarListaProductos(prods) {
+    const lista = document.getElementById('listaProd');
+    lista.innerHTML = '';
+    document.getElementById('cntProds').textContent   = prods.length;
+    document.getElementById('emptyProds').style.display = prods.length === 0 ? 'block' : 'none';
+    // Limpiar movimientos al cambiar búsqueda
+    document.getElementById('tbodyMov').innerHTML = '';
+    document.getElementById('emptyMov').style.display = 'block';
+    document.getElementById('cntMov').textContent     = '0';
+    document.getElementById('lblProdSelec').textContent = '';
+    document.getElementById('btnExcelMov').disabled    = true;
+    movimientosActuales = [];
+
+    prods.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'prod-list-item';
+        div.innerHTML = `
+            <div>
+                <div style="font-size:.82rem;font-weight:600;">${esc(p.descripcion)}</div>
+                <div style="font-size:.74rem;color:#9aa3b0;margin-top:1px;">
+                    ${p.codProveedor ? `Cód: ${esc(p.codProveedor)}` : ''}
+                    ${p.codBarras    ? ` · Barras: ${esc(p.codBarras)}` : ''}
+                </div>
+            </div>
+            <span class="prod-badge">${p.cantMov} mov.</span>`;
+        div.addEventListener('click', () => {
+            document.querySelectorAll('.prod-list-item').forEach(el => el.classList.remove('selected'));
+            div.classList.add('selected');
+            cargarMovimientos(p);
+        });
+        lista.appendChild(div);
+    });
+}
+
+async function cargarMovimientos(prod) {
+    document.getElementById('tbodyMov').innerHTML =
+        '<tr><td colspan="8" style="text-align:center;padding:1.2rem;"><span class="spinner-dark"></span> Cargando…</td></tr>';
+    document.getElementById('emptyMov').style.display = 'none';
+    document.getElementById('cntMov').textContent = '…';
+    document.getElementById('btnExcelMov').disabled = true;
+    productoSelecDesc = prod.descripcion;
+    document.getElementById('lblProdSelec').textContent = prod.descripcion;
+
+    try {
+        const desde = document.getElementById('fechaDesdeProd').value;
+        const hasta = document.getElementById('fechaHastaProd').value;
+        const qs = new URLSearchParams({ productoId: prod.productoId });
+        if (desde) qs.set('fechaDesde', desde);
+        if (hasta) qs.set('fechaHasta', hasta);
+
+        const resp = await fetch(`/Productos/MovimientosProductos?handler=MovimientosProducto&${qs}`);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const movs = await resp.json();
+
+        movimientosActuales = movs;
+        document.getElementById('cntMov').textContent    = movs.length;
+        document.getElementById('btnExcelMov').disabled  = movs.length === 0;
+        document.getElementById('emptyMov').style.display = movs.length === 0 ? 'block' : 'none';
+
+        const tbody = document.getElementById('tbodyMov');
+        tbody.innerHTML = '';
+        movs.forEach(m => {
+            const tr = document.createElement('tr');
+            const neg = m.cantidad < 0;
+            tr.innerHTML = `
+                <td><code style="font-size:.77rem;">${esc(m.codProveedor)}</code></td>
+                <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(m.descripcion)}">${esc(m.descripcion)}</td>
+                <td style="white-space:nowrap;">${m.fechaMov ? fmtFechaHora(m.fechaMov) : '—'}</td>
+                <td><span style="font-size:.74rem;background:#eef2ff;color:#4e73df;border-radius:12px;padding:.1rem .5rem;font-weight:700;">${esc(m.tipo)}</span></td>
+                <td class="num">${fmt4(m.stockAnt)}</td>
+                <td class="num ${neg ? 'cant-neg' : 'cant-pos'}">${fmt4(m.cantidad)}</td>
+                <td class="num">${fmt4(m.stockAct)}</td>
+                <td style="font-size:.77rem;">${esc(m.nroComprobante)}</td>`;
+            tbody.appendChild(tr);
+        });
+
+    } catch (e) {
+        mostrarToast('Error al cargar movimientos: ' + e.message, false);
+    }
+}
+
+// =================================================================
+// EXPORTAR EXCEL — LOTE
+// =================================================================
+async function exportarLote() {
+    if (!detalleLoteActual.length) return;
+    const btn = document.getElementById('btnExcelLote');
+    const prev = btn.innerHTML;
+    btn.disabled = true; btn.innerHTML = '<span class="spinner-sm"></span> Generando…';
+    try {
+        const resp = await fetch('/Productos/MovimientosProductos?handler=ExportarLote', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(detalleLoteActual)
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        descargar(await resp.blob(), `lote_ingreso_${ts()}.xls`);
+        mostrarToast('Excel generado.', true);
+    } catch(e) { mostrarToast('Error: ' + e.message, false); }
+    finally { btn.disabled = false; btn.innerHTML = prev; }
+}
+
+// =================================================================
+// EXPORTAR EXCEL — MOVIMIENTOS
+// =================================================================
+async function exportarMovimientos() {
+    if (!movimientosActuales.length) return;
+    const btn = document.getElementById('btnExcelMov');
+    const prev = btn.innerHTML;
+    btn.disabled = true; btn.innerHTML = '<span class="spinner-sm"></span> Generando…';
+    try {
+        const body = { descripcion: productoSelecDesc, filas: movimientosActuales };
+        const resp = await fetch('/Productos/MovimientosProductos?handler=ExportarMovimientos', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(body)
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        descargar(await resp.blob(), `movimientos_${ts()}.xls`);
+        mostrarToast('Excel generado.', true);
+    } catch(e) { mostrarToast('Error: ' + e.message, false); }
+    finally { btn.disabled = false; btn.innerHTML = prev; }
+}
+
+// =================================================================
+// HELPERS
+// =================================================================
+function descargar(blob, nombre) {
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement('a');
+    a.href = url; a.download = nombre;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+function esc(s) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmt2(n) { return Number(n).toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function fmt4(n) { return Number(n).toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:4}); }
+function fmtFecha(s)     { const d = new Date(s); return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`; }
+function fmtSoloFecha(s) { return fmtFecha(s); }
+function fmtFechaHora(s) { const d = new Date(s); return `${fmtFecha(s)} ${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+function pad(n)  { return String(n).padStart(2,'0'); }
+function ts()    { return new Date().toISOString().replace(/\D/g,'').slice(0,14); }
+
+function mostrarToast(msg, ok) {
+    const a = document.createElement('div');
+    a.className = `alert alert-${ok?'success':'danger'} alert-dismissible fade show position-fixed`;
+    a.style.cssText = 'bottom:1.2rem;right:1.2rem;z-index:9999;min-width:280px;font-size:.85rem;max-width:420px;';
+    a.innerHTML = `${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+    document.body.appendChild(a);
+    setTimeout(() => { try { a.remove(); } catch{} }, 4500);
+}
+</script>

@@ -1,0 +1,1851 @@
+@page
+@model Comercial_Web.Pages.Estadistica.DashboardVentas.IndexModel
+@{
+    ViewData["Title"] = "Dashboard Ventas";
+    var hoy = DateTime.Today;
+}
+
+@* ========= ESTILOS ========= *@
+<style>
+    /* ---- LAYOUT ---- */
+    .dashboard-header {
+        background: linear-gradient(135deg, #1a2a4a 0%, #2d4a7a 100%);
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.25rem;
+        color: #fff;
+    }
+
+    .dashboard-header h4 {
+        margin: 0;
+        font-weight: 700;
+        letter-spacing: .3px;
+    }
+
+    /* ---- BOTONES PERÍODO MODAL PROVEEDOR ---- */
+    .btn-periodo-prov {
+        background: #fff;
+        border: 1px solid #ced4da;
+        color: #495057;
+        border-radius: 6px;
+        font-size: .8rem;
+        padding: .28rem .65rem;
+        transition: background .18s, border-color .18s, color .18s;
+        display: inline-flex; align-items: center; gap: 4px;
+    }
+    .btn-periodo-prov:hover  { background: #e8f5ee; border-color: #2d6a4a; color: #2d6a4a; }
+    .btn-periodo-prov.active { background: #2d6a4a; border-color: #2d6a4a; color: #fff; font-weight: 600; }
+
+    /* ---- PERÍODO ---- */
+    .filtros-card {
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,.08);
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .btn-periodo {
+        border-radius: 20px;
+        font-size: .82rem;
+        font-weight: 600;
+        padding: .35rem .9rem;
+        border: 2px solid #4e73df;
+        color: #4e73df;
+        background: transparent;
+        transition: all .2s;
+    }
+
+    .btn-periodo:hover,
+    .btn-periodo.active {
+        background: #4e73df;
+        color: #fff;
+        box-shadow: 0 4px 10px rgba(78,115,223,.4);
+    }
+
+    .btn-filtrar {
+        border-radius: 20px;
+        font-size: .82rem;
+        font-weight: 600;
+        padding: .35rem 1.1rem;
+        background: #1cc88a;
+        border: 2px solid #1cc88a;
+        color: #fff;
+        transition: all .2s;
+    }
+
+    .btn-filtrar:hover { background: #17a673; border-color: #17a673; }
+
+    /* ---- KPI CARDS ---- */
+    .kpi-card {
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,.08);
+        padding: .85rem 1rem;
+        display: flex;
+        flex-direction: column;         /* columna: header arriba, valor abajo */
+        gap: .4rem;
+        height: 100%;
+        border-left: 5px solid var(--kpi-color, #4e73df);
+        transition: box-shadow .2s;
+    }
+
+    .kpi-card:hover { box-shadow: 0 4px 18px rgba(0,0,0,.13); }
+
+    /* fila superior: icono + etiqueta */
+    .kpi-top {
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+    }
+
+    .kpi-icon {
+        width: 30px; height: 30px;
+        border-radius: 7px;
+        background: var(--kpi-bg, #eef2ff);
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .kpi-icon svg { width: 15px; height: 15px; color: var(--kpi-color, #4e73df); }
+
+    .kpi-label {
+        font-size: .68rem; color: #888;
+        font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+        margin: 0; line-height: 1;
+    }
+
+    /* valor: ancho completo, fuente grande */
+    .kpi-value {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #2d3748;
+        line-height: 1.15;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        width: 100%;
+    }
+
+    /* ---- CHART CARDS ---- */
+    .chart-card {
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,.08);
+        margin-bottom: 1.25rem;
+        overflow: hidden;
+    }
+
+    .chart-card-header {
+        background: #f8f9fc;
+        border-bottom: 1px solid #e3e6f0;
+        padding: .75rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        font-weight: 700;
+        font-size: .9rem;
+        color: #2d3748;
+    }
+
+    .chart-card-header svg { width: 18px; height: 18px; color: #4e73df; flex-shrink: 0; }
+    .chart-card-body { padding: 1rem; }
+
+    .chart-container { position: relative; }
+
+    /* ---- OVERLAY LOADING ---- */
+    #loadingOverlay {
+        display: none;
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(255,255,255,.6);
+        z-index: 9999;
+        align-items: center; justify-content: center;
+    }
+
+    .spinner-ring {
+        width: 56px; height: 56px;
+        border: 6px solid #e3e6f0;
+        border-top-color: #4e73df;
+        border-radius: 50%;
+        animation: spin .8s linear infinite;
+    }
+
+    @@keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---- BOTONES ESTADÍSTICAS ---- */
+    .btn-estadistica {
+        border-radius: 8px;
+        font-size: .88rem;
+        font-weight: 600;
+        padding: .55rem 1.4rem;
+        border: none;
+        color: #fff;
+        transition: all .2s;
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        cursor: pointer;
+    }
+
+    .btn-estadistica svg { width: 18px; height: 18px; }
+    .btn-est-prov { background: #36b9cc; }
+    .btn-est-prov:hover { background: #2a9faf; color: #fff; }
+    .btn-est-cli { background: #e74a3b; }
+    .btn-est-cli:hover { background: #c73b2d; color: #fff; }
+
+    /* ---- BOTONES PERÍODO MODAL CLIENTE ---- */
+    .btn-periodo-cli {
+        background: #fff;
+        border: 1px solid #ced4da;
+        color: #495057;
+        border-radius: 6px;
+        font-size: .8rem;
+        padding: .28rem .65rem;
+        transition: background .18s, border-color .18s, color .18s;
+        display: inline-flex; align-items: center; gap: 4px;
+    }
+    .btn-periodo-cli:hover  { background: #fdecea; border-color: #c73b2d; color: #c73b2d; }
+    .btn-periodo-cli.active { background: #c73b2d; border-color: #c73b2d; color: #fff; font-weight: 600; }
+
+    /* ---- sin datos ---- */
+    .no-data-msg { text-align: center; color: #aaa; padding: 2rem 0; font-size: .9rem; }
+</style>
+
+@* ========= LOADING OVERLAY ========= *@
+<div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+     background:rgba(255,255,255,.65); z-index:9999; align-items:center; justify-content:center;">
+    <div class="spinner-ring"></div>
+</div>
+
+@* ========= HEADER ========= *@
+<div class="dashboard-header d-flex align-items-center gap-3">
+    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M0 0h1v15h15v1H0V0zm10 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4.9l-3.613 4.417a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61L13.445 4H10.5a.5.5 0 0 1-.5-.5z"/>
+    </svg>
+    <div>
+        <h4>Dashboard Ventas</h4>
+        <small class="opacity-75">Indicadores y gráficos en tiempo real</small>
+    </div>
+</div>
+
+@* ====== ANTIFORGERY (para AJAX) ====== *@
+@Html.AntiForgeryToken()
+
+@* ========= FILTROS ========= *@
+<div class="filtros-card">
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        @* Botones período *@
+        <button class="btn-periodo" onclick="setPeriodo('hoy', this)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16" class="me-1">
+                <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+            </svg>Hoy
+        </button>
+        <button class="btn-periodo" onclick="setPeriodo('7d', this)">Últ. 7 días</button>
+        <button class="btn-periodo" onclick="setPeriodo('30d', this)">Últ. 30 días</button>
+        <button class="btn-periodo active" onclick="setPeriodo('esteMes', this)">Este Mes</button>
+        <button class="btn-periodo" onclick="setPeriodo('mesPasado', this)">Mes Pasado</button>
+
+        <div class="vr mx-1 d-none d-md-block"></div>
+
+        @* Calendarios *@
+        <div class="d-flex align-items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="#888" viewBox="0 0 16 16">
+                <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+            </svg>
+            <label class="mb-0 me-1 text-muted" style="font-size:.8rem">Desde</label>
+            <input type="date" id="inpDesde" class="form-control form-control-sm" style="width:140px"
+                   value="@hoy.ToString("yyyy-MM-dd")">
+        </div>
+        <div class="d-flex align-items-center gap-1">
+            <label class="mb-0 me-1 text-muted" style="font-size:.8rem">Hasta</label>
+            <input type="date" id="inpHasta" class="form-control form-control-sm" style="width:140px"
+                   value="@hoy.ToString("yyyy-MM-dd")">
+        </div>
+
+        <button class="btn-filtrar" onclick="setPeriodo('filtro', this)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" class="me-1">
+                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+            </svg>Filtrar
+        </button>
+    </div>
+</div>
+
+@* ========= KPI CARDS ========= *@
+<div class="row g-3 mb-3" id="kpiSection">
+
+    @* Total Ventas *@
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="kpi-card" style="--kpi-color:#4e73df;--kpi-bg:#eef2ff">
+            <div class="kpi-top">
+                <div class="kpi-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M0 3a2 2 0 0 1 2-2h13.5a.5.5 0 0 1 0 1H15v2a1 1 0 0 1 1 1v8.5a1.5 1.5 0 0 1-1.5 1.5h-12A2.5 2.5 0 0 1 0 12.5V3zm1 1.732V12.5A1.5 1.5 0 0 0 2.5 14h12a.5.5 0 0 0 .5-.5V5H2a1.99 1.99 0 0 1-1-.268zM1 3a1 1 0 0 0 1 1h12V2H2a1 1 0 0 0-1 1z"/></svg></div>
+                <div class="kpi-label">Total Ventas</div>
+            </div>
+            <div class="kpi-value" id="kpiTotalVentas">—</div>
+        </div>
+    </div>
+
+    @* Cantidad Ventas *@
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="kpi-card" style="--kpi-color:#1cc88a;--kpi-bg:#e6f9f2">
+            <div class="kpi-top">
+                <div class="kpi-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M2.97 1.35A1 1 0 0 1 3.73 1h8.54a1 1 0 0 1 .76.35l2.609 3.044A1.5 1.5 0 0 1 16 5.37v.255a2.375 2.375 0 0 1-4.25 1.458A2.371 2.371 0 0 1 9.875 8 2.37 2.37 0 0 1 8 7.083 2.37 2.37 0 0 1 6.125 8a2.37 2.37 0 0 1-1.875-.917A2.375 2.375 0 0 1 0 5.625V5.37a1.5 1.5 0 0 1 .361-.976l2.61-3.045zm1.78 4.275a1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0 1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0 1.375 1.375 0 1 0 2.75 0V5.37a.5.5 0 0 0-.12-.325L12.27 2H3.73L1.12 5.045A.5.5 0 0 0 1 5.37v.255a1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0zM1.5 8.5A.5.5 0 0 1 2 9v6h1v-5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v5h6V9a.5.5 0 0 1 1 0v6h.5a.5.5 0 0 1 0 1H.5a.5.5 0 0 1 0-1H1V9a.5.5 0 0 1 .5-.5zM4 15h3v-5H4v5zm5-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-3zm3 0h-2v3h2v-3z"/></svg></div>
+                <div class="kpi-label">Cant. Ventas</div>
+            </div>
+            <div class="kpi-value" id="kpiCantidad">—</div>
+        </div>
+    </div>
+
+    @* Mejor Día *@
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="kpi-card" style="--kpi-color:#f6c23e;--kpi-bg:#fffbea">
+            <div class="kpi-top">
+                <div class="kpi-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/></svg></div>
+                <div class="kpi-label">Mejor Día</div>
+            </div>
+            <div class="kpi-value" id="kpiMejorDia" style="font-size:1rem;">—</div>
+        </div>
+    </div>
+
+    @* Promedio *@
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="kpi-card" style="--kpi-color:#36b9cc;--kpi-bg:#e8f8fb">
+            <div class="kpi-top">
+                <div class="kpi-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M0 0h1v15h15v1H0V0zm10 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4.9l-3.613 4.417a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61L13.445 4H10.5a.5.5 0 0 1-.5-.5z"/></svg></div>
+                <div class="kpi-label">Promedio / Venta</div>
+            </div>
+            <div class="kpi-value" id="kpiPromedio">—</div>
+        </div>
+    </div>
+
+    @* Costos *@
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="kpi-card" style="--kpi-color:#858796;--kpi-bg:#f4f4f7">
+            <div class="kpi-top">
+                <div class="kpi-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M1 3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1H1zm7 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M0 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V5zm3 0a2 2 0 0 1-2 2v4a2 2 0 0 1 2 2h10a2 2 0 0 1 2-2V7a2 2 0 0 1-2-2H3z"/></svg></div>
+                <div class="kpi-label">Costos</div>
+            </div>
+            <div class="kpi-value" id="kpiCostos">—</div>
+        </div>
+    </div>
+
+    @* Ganancias *@
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="kpi-card" style="--kpi-color:#1cc88a;--kpi-bg:#e6f9f2">
+            <div class="kpi-top">
+                <div class="kpi-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M0 0h1v15h15v1H0V0zm10 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4.9l-3.613 4.417a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61L13.445 4H10.5a.5.5 0 0 1-.5-.5z"/></svg></div>
+                <div class="kpi-label">Ganancia</div>
+            </div>
+            <div class="kpi-value" id="kpiGanancias">—</div>
+        </div>
+    </div>
+
+    @* Compras *@
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="kpi-card" style="--kpi-color:#5a5c69;--kpi-bg:#f0f0f4">
+            <div class="kpi-top">
+                <div class="kpi-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM3.102 4l1.313 7h8.17l1.313-7H3.102zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg></div>
+                <div class="kpi-label">Compras</div>
+            </div>
+            <div class="kpi-value" id="kpiCompras">—</div>
+        </div>
+    </div>
+
+</div>
+
+@* ========= GRÁFICO LÍNEA: VENTAS POR DÍA ========= *@
+<div class="chart-card mb-3">
+    <div class="chart-card-header">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M0 0h1v15h15v1H0V0zm10 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4.9l-3.613 4.417a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61L13.445 4H10.5a.5.5 0 0 1-.5-.5z"/>
+        </svg>
+        Ventas por Día
+    </div>
+    <div class="chart-card-body">
+        <div class="chart-container" style="height:260px">
+            <canvas id="chartDia"></canvas>
+            <div id="noDia" class="no-data-msg d-none">Sin datos para el período seleccionado</div>
+        </div>
+    </div>
+</div>
+
+@* ========= FILA 2: CLIENTES + MEDIOS DE PAGO ========= *@
+<div class="row g-3 mb-3">
+    <div class="col-12 col-lg-5">
+        <div class="chart-card h-100">
+            <div class="chart-card-header">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                    <path fill-rule="evenodd" d="M5.216 14A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216z"/>
+                    <path d="M4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/>
+                </svg>
+                Top 10 Clientes
+            </div>
+            <div class="chart-card-body">
+                <div class="chart-container" style="height:280px">
+                    <canvas id="chartCliente"></canvas>
+                    <div id="noCliente" class="no-data-msg d-none">Sin datos</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-7">
+        <div class="chart-card h-100">
+            <div class="chart-card-header">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M0 3a2 2 0 0 1 2-2h13.5a.5.5 0 0 1 0 1H15v2a1 1 0 0 1 1 1v8.5a1.5 1.5 0 0 1-1.5 1.5h-12A2.5 2.5 0 0 1 0 12.5V3zm1 1.732V12.5A1.5 1.5 0 0 0 2.5 14h12a.5.5 0 0 0 .5-.5V5H2a1.99 1.99 0 0 1-1-.268z"/>
+                </svg>
+                Medios de Pago
+            </div>
+            <div class="chart-card-body">
+                <div class="chart-container" style="height:280px">
+                    <canvas id="chartMedios"></canvas>
+                    <div id="noMedios" class="no-data-msg d-none">Sin datos</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ========= FILA 3: PROVEEDOR + RUBRO ========= *@
+<div class="row g-3 mb-4">
+    <div class="col-12 col-lg-6">
+        <div class="chart-card h-100">
+            <div class="chart-card-header">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5z"/>
+                </svg>
+                Ventas por Proveedor
+            </div>
+            <div class="chart-card-body">
+                <div class="chart-container" style="height:280px">
+                    <canvas id="chartProveedor"></canvas>
+                    <div id="noProveedor" class="no-data-msg d-none">Sin datos</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="chart-card h-100">
+            <div class="chart-card-header">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2zm6 4c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995A.905.905 0 0 1 8 4zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                </svg>
+                Ventas por Rubro
+            </div>
+            <div class="chart-card-body">
+                <div class="chart-container" style="height:280px">
+                    <canvas id="chartRubro"></canvas>
+                    <div id="noRubro" class="no-data-msg d-none">Sin datos</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ========= BOTONES ESTADÍSTICAS ========= *@
+<div class="d-flex flex-wrap gap-3 justify-content-center mb-4">
+    <button type="button" class="btn-estadistica btn-est-prov"
+            data-bs-toggle="modal" data-bs-target="#modalProveedor">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5z"/>
+        </svg>
+        Estadísticas Proveedores
+    </button>
+    <button type="button" class="btn-estadistica btn-est-cli"
+            data-bs-toggle="modal" data-bs-target="#modalCliente">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+            <path fill-rule="evenodd" d="M5.216 14A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216z"/>
+        </svg>
+        Estadísticas Clientes
+    </button>
+    <a href="/Estadistica/Ventas" class="btn-estadistica" style="background:#4e73df;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M0 0h1v15h15v1H0V0zm10 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4.9l-3.613 4.417a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61L13.445 4H10.5a.5.5 0 0 1-.5-.5z"/>
+        </svg>
+        Estadísticas de Ventas
+    </a>
+</div>
+
+@* ====================================================================
+   MODAL — ESTADÍSTICAS DE PROVEEDORES
+   ==================================================================== *@
+<div class="modal fade" id="modalProveedor" tabindex="-1" aria-labelledby="modalProveedorLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content" style="border:none;border-radius:14px;overflow:hidden;">
+
+            @* ---- HEADER ---- *@
+            <div class="modal-header border-0 py-3 px-4"
+                 style="background:linear-gradient(135deg,#1a3a2a 0%,#2d6a4a 100%);color:#fff;">
+                <div class="d-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM3.102 4l1.313 7h8.17l1.313-7H3.102zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                    </svg>
+                    <h5 class="modal-title mb-0 fw-bold" id="modalProveedorLabel">Estadísticas de Proveedores</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+
+            @* ---- BODY ---- *@
+            <div class="modal-body p-4" style="background:#f4f7f9;">
+
+                @* -- Filtros -- *@
+                <div class="card shadow-sm border-0 mb-3" style="border-radius:10px;">
+                    <div class="card-body p-3">
+                        <div class="d-flex flex-wrap gap-2 align-items-end">
+
+                            @* Botones período *@
+                            <div class="d-flex flex-wrap gap-1">
+                                <button class="btn btn-sm btn-periodo-prov" data-tipo="hoy"
+                                        onclick="setPeriodoProveedor('hoy',this)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>
+                                    Hoy
+                                </button>
+                                <button class="btn btn-sm btn-periodo-prov" data-tipo="7d"
+                                        onclick="setPeriodoProveedor('7d',this)">Ult. 7 días</button>
+                                <button class="btn btn-sm btn-periodo-prov" data-tipo="30d"
+                                        onclick="setPeriodoProveedor('30d',this)">Ult. 30 días</button>
+                                <button class="btn btn-sm btn-periodo-prov" data-tipo="esteMes"
+                                        onclick="setPeriodoProveedor('esteMes',this)">Este Mes</button>
+                                <button class="btn btn-sm btn-periodo-prov" data-tipo="mesPasado"
+                                        onclick="setPeriodoProveedor('mesPasado',this)">Mes Pasado</button>
+                            </div>
+
+                            @* Calendarios *@
+                            <div class="d-flex align-items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="#6c757d" viewBox="0 0 16 16"><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>
+                                <input type="date" id="inpDesdeP" class="form-control form-control-sm" style="width:130px;" />
+                                <span class="text-muted small">–</span>
+                                <input type="date" id="inpHastaP" class="form-control form-control-sm" style="width:130px;" />
+                            </div>
+
+                            @* Multi-select Proveedores *@
+                            <div class="dropdown" id="ddProvP">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                        type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                                        id="btnDdProvP">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5z"/></svg>
+                                    <span id="lblProvP">Todos los proveedores</span>
+                                </button>
+                                <div class="dropdown-menu shadow p-2" style="min-width:260px;max-height:300px;overflow-y:auto;z-index:1060;">
+                                    <div class="d-flex justify-content-center gap-2 mb-2 pb-2 border-bottom">
+                                        <button class="btn btn-outline-primary btn-sm px-2 py-0" onclick="seleccionarTodosP(true)">Todos</button>
+                                        <button class="btn btn-outline-secondary btn-sm px-2 py-0" onclick="seleccionarTodosP(false)">Ninguno</button>
+                                    </div>
+                                    <div id="listaProveedoresP">
+                                        <div class="text-muted small px-2">Cargando…</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @* Botón Filtrar *@
+                            <button class="btn btn-sm btn-primary" onclick="setPeriodoProveedor('filtro',null)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.44 1.406a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/></svg>
+                                Filtrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                @* -- Loading overlay del modal -- *@
+                <div id="loadingProvModal" style="display:none;position:absolute;inset:0;background:rgba(255,255,255,.7);
+                     z-index:10;align-items:center;justify-content:center;border-radius:14px;">
+                    <div class="spinner-border text-success" role="status"><span class="visually-hidden">Cargando…</span></div>
+                </div>
+
+                @* -- Alerta de error -- *@
+                <div id="errProvModal" style="display:none;" class="alert alert-danger alert-dismissible mb-3">
+                    <strong>Error:</strong> <span id="errProvMsg"></span>
+                    <button type="button" class="btn-close" onclick="document.getElementById('errProvModal').style.display='none'"></button>
+                </div>
+
+                @* -- KPI Cards -- *@
+                <div class="row g-3 mb-3">
+                    <div class="col-6 col-md-3">
+                        <div class="kpi-card" style="--kpi-color:#2d6a4a;--kpi-bg:#e8f5ee">
+                            <div class="kpi-top">
+                                <div class="kpi-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M4 10.781c.148 1.667 1.513 2.85 3.591 3.003V15h1.043v-1.216c2.27-.179 3.678-1.438 3.678-3.3 0-1.59-.947-2.51-2.956-3.028l-.722-.187V3.467c1.122.11 1.879.714 2.07 1.616h1.47c-.166-1.6-1.54-2.748-3.54-2.875V1H7.591v1.233c-1.939.23-3.27 1.472-3.27 3.156 0 1.454.966 2.483 2.661 2.917l.61.162v4.031c-1.149-.17-1.94-.8-2.131-1.718H4zm3.391-3.836c-1.043-.263-1.6-.825-1.6-1.616 0-.944.704-1.641 1.8-1.828v3.495l-.2-.051zm1.591 1.872c1.287.323 1.852.859 1.852 1.769 0 1.097-.826 1.828-2.2 1.939V8.73l.348.086z"/></svg></div>
+                                <div class="kpi-label">Total Compras</div>
+                            </div>
+                            <div class="kpi-value" id="pkpiTotal">—</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="kpi-card" style="--kpi-color:#36b9cc;--kpi-bg:#e8f8fb">
+                            <div class="kpi-top">
+                                <div class="kpi-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg></div>
+                                <div class="kpi-label">Días con Compras</div>
+                            </div>
+                            <div class="kpi-value" id="pkpiDias">—</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="kpi-card" style="--kpi-color:#f6c23e;--kpi-bg:#fffbea">
+                            <div class="kpi-top">
+                                <div class="kpi-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M0 0h1v15h15v1H0V0zm10 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4.9l-3.613 4.417a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61L13.445 4H10.5a.5.5 0 0 1-.5-.5z"/></svg></div>
+                                <div class="kpi-label">Promedio / Día</div>
+                            </div>
+                            <div class="kpi-value" id="pkpiPromedio">—</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="kpi-card" style="--kpi-color:#e74a3b;--kpi-bg:#fdecea">
+                            <div class="kpi-top">
+                                <div class="kpi-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg></div>
+                                <div class="kpi-label">Mejor Día</div>
+                            </div>
+                            <div class="kpi-value" id="pkpiMejorDia" style="font-size:1rem;">—</div>
+                        </div>
+                    </div>
+                </div>
+
+                @* -- Gráfico Curvas (full width) -- *@
+                <div class="card shadow-sm border-0 mb-3" style="border-radius:10px;">
+                    <div class="card-header bg-white border-bottom fw-semibold d-flex align-items-center gap-2 py-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2d6a4a" viewBox="0 0 16 16"><path d="M0 0h1v15h15v1H0V0zm10 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4.9l-3.613 4.417a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61L13.445 4H10.5a.5.5 0 0 1-.5-.5z"/></svg>
+                        Compras por Día / Proveedor
+                    </div>
+                    <div class="card-body p-3">
+                        <div style="position:relative;height:260px;">
+                            <canvas id="chartProvCurvas"></canvas>
+                            <div id="noProvCurvas" class="no-data-msg d-none">Sin datos para el período</div>
+                        </div>
+                    </div>
+                </div>
+
+                @* -- Torta Proveedor + Torta Rubro -- *@
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <div class="card shadow-sm border-0 h-100" style="border-radius:10px;">
+                            <div class="card-header bg-white border-bottom fw-semibold d-flex align-items-center gap-2 py-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2d6a4a" viewBox="0 0 16 16"><path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5z"/></svg>
+                                Compras por Proveedor
+                            </div>
+                            <div class="card-body p-3">
+                                <div style="position:relative;height:240px;">
+                                    <canvas id="chartProvTorta"></canvas>
+                                    <div id="noProvTorta" class="no-data-msg d-none">Sin datos</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="card shadow-sm border-0 h-100" style="border-radius:10px;">
+                            <div class="card-header bg-white border-bottom fw-semibold d-flex align-items-center gap-2 py-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2d6a4a" viewBox="0 0 16 16"><path d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2zm6 4c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995A.905.905 0 0 1 8 4zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
+                                Compras por Rubro
+                            </div>
+                            <div class="card-body p-3">
+                                <div style="position:relative;height:240px;">
+                                    <canvas id="chartProvRubro"></canvas>
+                                    <div id="noProvRubro" class="no-data-msg d-none">Sin datos</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>@* /modal-body *@
+
+            @* ---- FOOTER ---- *@
+            <div class="modal-footer border-0" style="background:#f4f7f9;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854z"/></svg>
+                    Cerrar
+                </button>
+            </div>
+
+        </div>@* /modal-content *@
+    </div>@* /modal-dialog *@
+</div>@* /modal *@
+
+@* ====================================================================
+   MODAL — ESTADÍSTICAS DE CLIENTES
+   ==================================================================== *@
+<div class="modal fade" id="modalCliente" tabindex="-1" aria-labelledby="modalClienteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content" style="border:none;border-radius:14px;overflow:hidden;">
+
+            @* ---- HEADER ---- *@
+            <div class="modal-header border-0 py-3 px-4"
+                 style="background:linear-gradient(135deg,#7b1a1a 0%,#c73b2d 100%);color:#fff;">
+                <div class="d-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                        <path fill-rule="evenodd" d="M5.216 14A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216z"/>
+                    </svg>
+                    <h5 class="modal-title mb-0 fw-bold" id="modalClienteLabel">Estadísticas de Clientes</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+
+            @* ---- BODY ---- *@
+            <div class="modal-body p-4" style="background:#f4f7f9;position:relative;">
+
+                @* -- Filtros -- *@
+                <div class="card shadow-sm border-0 mb-3" style="border-radius:10px;">
+                    <div class="card-body p-3">
+                        <div class="d-flex flex-wrap gap-2 align-items-end">
+
+                            @* Botones período *@
+                            <div class="d-flex flex-wrap gap-1">
+                                <button class="btn btn-sm btn-periodo-cli" data-tipo="hoy"
+                                        onclick="setPeriodoCliente('hoy',this)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>
+                                    Hoy
+                                </button>
+                                <button class="btn btn-sm btn-periodo-cli" data-tipo="7d"
+                                        onclick="setPeriodoCliente('7d',this)">Ult. 7 días</button>
+                                <button class="btn btn-sm btn-periodo-cli" data-tipo="30d"
+                                        onclick="setPeriodoCliente('30d',this)">Ult. 30 días</button>
+                                <button class="btn btn-sm btn-periodo-cli" data-tipo="esteMes"
+                                        onclick="setPeriodoCliente('esteMes',this)">Este Mes</button>
+                                <button class="btn btn-sm btn-periodo-cli" data-tipo="mesPasado"
+                                        onclick="setPeriodoCliente('mesPasado',this)">Mes Pasado</button>
+                            </div>
+
+                            @* Calendarios *@
+                            <div class="d-flex align-items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="#6c757d" viewBox="0 0 16 16"><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>
+                                <input type="date" id="inpDesdeCli" class="form-control form-control-sm" style="width:130px;" />
+                                <span class="text-muted small">–</span>
+                                <input type="date" id="inpHastaCli" class="form-control form-control-sm" style="width:130px;" />
+                            </div>
+
+                            @* Multi-select Clientes *@
+                            <div class="dropdown" id="ddCliC">
+                                <button class="btn btn-sm btn-outline-danger dropdown-toggle"
+                                        type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                                        id="btnDdCliC">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path fill-rule="evenodd" d="M5.216 14A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216z"/></svg>
+                                    <span id="lblCliC">Todos los clientes</span>
+                                </button>
+                                <div class="dropdown-menu shadow p-2" style="min-width:280px;max-height:300px;overflow-y:auto;z-index:1060;">
+                                    <div class="d-flex justify-content-center gap-2 mb-2 pb-2 border-bottom">
+                                        <button class="btn btn-outline-danger btn-sm px-2 py-0" onclick="seleccionarTodosCli(true)">Todos</button>
+                                        <button class="btn btn-outline-secondary btn-sm px-2 py-0" onclick="seleccionarTodosCli(false)">Ninguno</button>
+                                    </div>
+                                    <div class="mb-2 px-1">
+                                        <input type="text" id="buscarCli" class="form-control form-control-sm" placeholder="Buscar cliente…"
+                                               oninput="filtrarListaCli(this.value)" />
+                                    </div>
+                                    <div id="listaClientesC">
+                                        <div class="text-muted small px-2">Cargando…</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @* Botón Filtrar *@
+                            <button class="btn btn-sm btn-danger" onclick="setPeriodoCliente('filtro',null)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.44 1.406a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/></svg>
+                                Filtrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                @* -- Loading overlay del modal -- *@
+                <div id="loadingCliModal" style="display:none;position:absolute;inset:0;background:rgba(255,255,255,.7);
+                     z-index:10;align-items:center;justify-content:center;border-radius:14px;">
+                    <div class="spinner-border text-danger" role="status"><span class="visually-hidden">Cargando…</span></div>
+                </div>
+
+                @* -- Alerta de error -- *@
+                <div id="errCliModal" style="display:none;" class="alert alert-danger alert-dismissible mb-3">
+                    <strong>Error:</strong> <span id="errCliMsg"></span>
+                    <button type="button" class="btn-close" onclick="document.getElementById('errCliModal').style.display='none'"></button>
+                </div>
+
+                @* -- KPI Cards -- *@
+                <div class="row g-3 mb-3">
+                    <div class="col-6 col-md-4">
+                        <div class="kpi-card" style="--kpi-color:#c73b2d;--kpi-bg:#fdecea">
+                            <div class="kpi-top">
+                                <div class="kpi-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M4 10.781c.148 1.667 1.513 2.85 3.591 3.003V15h1.043v-1.216c2.27-.179 3.678-1.438 3.678-3.3 0-1.59-.947-2.51-2.956-3.028l-.722-.187V3.467c1.122.11 1.879.714 2.07 1.616h1.47c-.166-1.6-1.54-2.748-3.54-2.875V1H7.591v1.233c-1.939.23-3.27 1.472-3.27 3.156 0 1.454.966 2.483 2.661 2.917l.61.162v4.031c-1.149-.17-1.94-.8-2.131-1.718H4zm3.391-3.836c-1.043-.263-1.6-.825-1.6-1.616 0-.944.704-1.641 1.8-1.828v3.495l-.2-.051zm1.591 1.872c1.287.323 1.852.859 1.852 1.769 0 1.097-.826 1.828-2.2 1.939V8.73l.348.086z"/></svg>
+                                </div>
+                                <div class="kpi-label">Total Ventas</div>
+                            </div>
+                            <div class="kpi-value" id="ckpiTotal">—</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="kpi-card" style="--kpi-color:#36b9cc;--kpi-bg:#e8f8fb">
+                            <div class="kpi-top">
+                                <div class="kpi-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M2.97 1.35A1 1 0 0 1 3.73 1h8.54a1 1 0 0 1 .76.35l2.609 3.044A1.5 1.5 0 0 1 16 5.37v.255a2.375 2.375 0 0 1-4.25 1.458A2.371 2.371 0 0 1 9.875 8 2.37 2.37 0 0 1 8 7.083 2.37 2.37 0 0 1 6.125 8a2.37 2.37 0 0 1-1.875-.917A2.375 2.375 0 0 1 0 5.625V5.37a1.5 1.5 0 0 1 .361-.976l2.61-3.045zm1.78 4.275a1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0 1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0 1.375 1.375 0 1 0 2.75 0V5.37a.5.5 0 0 0-.12-.325L12.27 2H3.73L1.12 5.045A.5.5 0 0 0 1 5.37v.255a1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0zM1.5 8.5A.5.5 0 0 1 2 9v6h1v-5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v5h6V9a.5.5 0 0 1 1 0v6h.5a.5.5 0 0 1 0 1H.5a.5.5 0 0 1 0-1H1V9a.5.5 0 0 1 .5-.5zM4 15h3v-5H4v5zm5-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-3zm3 0h-2v3h2v-3z"/></svg>
+                                </div>
+                                <div class="kpi-label">Cant. Ventas</div>
+                            </div>
+                            <div class="kpi-value" id="ckpiCantidad">—</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="kpi-card" style="--kpi-color:#f6c23e;--kpi-bg:#fffbea">
+                            <div class="kpi-top">
+                                <div class="kpi-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/></svg>
+                                </div>
+                                <div class="kpi-label">Mejor Día</div>
+                            </div>
+                            <div class="kpi-value" id="ckpiMejorDia" style="font-size:1rem;">—</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="kpi-card" style="--kpi-color:#0d6efd;--kpi-bg:#e8f0ff">
+                            <div class="kpi-top">
+                                <div class="kpi-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M0 0h1v15h15v1H0V0zm10 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4.9l-3.613 4.417a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61L13.445 4H10.5a.5.5 0 0 1-.5-.5z"/></svg>
+                                </div>
+                                <div class="kpi-label">Promedio / Venta</div>
+                            </div>
+                            <div class="kpi-value" id="ckpiPromedio">—</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="kpi-card" style="--kpi-color:#858796;--kpi-bg:#f4f4f7">
+                            <div class="kpi-top">
+                                <div class="kpi-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M1 3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1H1zm7 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M0 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V5zm3 0a2 2 0 0 1-2 2v4a2 2 0 0 1 2 2h10a2 2 0 0 1 2-2V7a2 2 0 0 1-2-2H3z"/></svg>
+                                </div>
+                                <div class="kpi-label">Costos</div>
+                            </div>
+                            <div class="kpi-value" id="ckpiCostos">—</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="kpi-card" style="--kpi-color:#1cc88a;--kpi-bg:#e6f9f2">
+                            <div class="kpi-top">
+                                <div class="kpi-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M0 0h1v15h15v1H0V0zm10 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4.9l-3.613 4.417a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61L13.445 4H10.5a.5.5 0 0 1-.5-.5z"/></svg>
+                                </div>
+                                <div class="kpi-label">Ganancia</div>
+                            </div>
+                            <div class="kpi-value" id="ckpiGanancias">—</div>
+                        </div>
+                    </div>
+                </div>
+
+                @* -- Gráfico Curvas: Ventas por Día por Cliente (full width) -- *@
+                <div class="card shadow-sm border-0 mb-3" style="border-radius:10px;">
+                    <div class="card-header bg-white border-bottom fw-semibold d-flex align-items-center gap-2 py-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#c73b2d" viewBox="0 0 16 16"><path d="M0 0h1v15h15v1H0V0zm10 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4.9l-3.613 4.417a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61L13.445 4H10.5a.5.5 0 0 1-.5-.5z"/></svg>
+                        Ventas por Día / Cliente (Top 10)
+                    </div>
+                    <div class="card-body p-3">
+                        <div style="position:relative;height:270px;">
+                            <canvas id="chartCliCurvas"></canvas>
+                            <div id="noCliCurvas" class="no-data-msg d-none">Sin datos para el período</div>
+                        </div>
+                    </div>
+                </div>
+
+                @* -- Medios de Pago (barras, full width) -- *@
+                <div class="card shadow-sm border-0 mb-3" style="border-radius:10px;">
+                    <div class="card-header bg-white border-bottom fw-semibold d-flex align-items-center gap-2 py-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#c73b2d" viewBox="0 0 16 16"><path d="M0 3a2 2 0 0 1 2-2h13.5a.5.5 0 0 1 0 1H15v2a1 1 0 0 1 1 1v8.5a1.5 1.5 0 0 1-1.5 1.5h-12A2.5 2.5 0 0 1 0 12.5V3zm1 1.732V12.5A1.5 1.5 0 0 0 2.5 14h12a.5.5 0 0 0 .5-.5V5H2a1.99 1.99 0 0 1-1-.268z"/></svg>
+                        Ventas por Medio de Pago
+                    </div>
+                    <div class="card-body p-3">
+                        <div style="position:relative;height:230px;">
+                            <canvas id="chartCliMedios"></canvas>
+                            <div id="noCliMedios" class="no-data-msg d-none">Sin datos</div>
+                        </div>
+                    </div>
+                </div>
+
+                @* -- Top 10 Clientes Deudores (barras) -- *@
+                <div class="card shadow-sm border-0 mb-3" style="border-radius:10px;">
+                    <div class="card-header bg-white border-bottom fw-semibold d-flex align-items-center gap-2 py-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#c73b2d" viewBox="0 0 16 16">
+                            <path d="M1 11a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3zm5-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm5-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V2z"/>
+                        </svg>
+                        Top 10 Clientes Deudores
+                    </div>
+                    <div class="card-body p-3">
+                        <div style="position:relative;height:230px;">
+                            <canvas id="chartCliDeudores"></canvas>
+                            <div id="noCliDeudores" class="no-data-msg d-none">Sin clientes deudores</div>
+                        </div>
+                    </div>
+                </div>
+
+                @* -- Torta Proveedor + Torta Rubro -- *@
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <div class="card shadow-sm border-0 h-100" style="border-radius:10px;">
+                            <div class="card-header bg-white border-bottom fw-semibold d-flex align-items-center gap-2 py-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#c73b2d" viewBox="0 0 16 16"><path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5z"/></svg>
+                                Ventas por Proveedor
+                            </div>
+                            <div class="card-body p-3">
+                                <div style="position:relative;height:240px;">
+                                    <canvas id="chartCliTortaProv"></canvas>
+                                    <div id="noCliTortaProv" class="no-data-msg d-none">Sin datos</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="card shadow-sm border-0 h-100" style="border-radius:10px;">
+                            <div class="card-header bg-white border-bottom fw-semibold d-flex align-items-center gap-2 py-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#c73b2d" viewBox="0 0 16 16"><path d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2zm6 4c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995A.905.905 0 0 1 8 4zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
+                                Ventas por Rubro
+                            </div>
+                            <div class="card-body p-3">
+                                <div style="position:relative;height:240px;">
+                                    <canvas id="chartCliTortaRubro"></canvas>
+                                    <div id="noCliTortaRubro" class="no-data-msg d-none">Sin datos</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>@* /modal-body *@
+
+            @* ---- FOOTER ---- *@
+            <div class="modal-footer border-0" style="background:#f4f7f9;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854z"/></svg>
+                    Cerrar
+                </button>
+            </div>
+
+        </div>@* /modal-content *@
+    </div>@* /modal-dialog *@
+</div>@* /modal cliente *@
+
+@* ========= CHART.JS CDN ========= *@
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+<script>
+// ============================================================
+//  PALETA DE COLORES
+// ============================================================
+const PALETTE = [
+    '#4e73df','#1cc88a','#36b9cc','#f6c23e','#e74a3b',
+    '#858796','#5a5c69','#2ecc71','#e67e22','#9b59b6',
+    '#3498db','#1abc9c','#e74c3c','#f39c12','#fd7f6f',
+    '#7eb0d5','#b2e061','#bd7ebe','#ffb55a','#ffee65'
+];
+
+// ============================================================
+//  INSTANCIAS DE CHART.JS
+// ============================================================
+let chartDia, chartCliente, chartMedios, chartProveedor, chartRubro;
+
+function initCharts() {
+    // ---- Línea: Ventas por Día ----
+    chartDia = new Chart(document.getElementById('chartDia'), {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Ventas',
+                data: [],
+                borderColor: '#4e73df',
+                backgroundColor: 'rgba(78,115,223,.08)',
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#4e73df',
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                borderWidth: 2.5
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { callbacks: {
+                label: ctx => ' $' + fmtNum(ctx.parsed.y)
+            }}},
+            scales: {
+                x: { grid: { color: '#f0f0f0' }, ticks: { font: { size: 11 } } },
+                y: { grid: { color: '#f0f0f0' }, ticks: { font: { size: 11 },
+                    callback: v => '$' + fmtNum(v) }}
+            }
+        }
+    });
+
+    // ---- Doughnut: Top Clientes ----
+    chartCliente = new Chart(document.getElementById('chartCliente'), {
+        type: 'doughnut',
+        data: { labels: [], datasets: [{ data: [], backgroundColor: PALETTE, borderWidth: 2 }] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right', labels: { font: { size: 11 }, boxWidth: 14, padding: 10 } },
+                tooltip: { callbacks: { label: ctx => ' $' + fmtNum(ctx.parsed) }}
+            }
+        }
+    });
+
+    // ---- Barras: Medios de Pago ----
+    chartMedios = new Chart(document.getElementById('chartMedios'), {
+        type: 'bar',
+        data: { labels: [], datasets: [{ label: 'Total', data: [], backgroundColor: PALETTE, borderRadius: 5 }] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { callbacks: {
+                label: ctx => ' $' + fmtNum(ctx.parsed.y)
+            }}},
+            scales: {
+                x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                y: { grid: { color: '#f0f0f0' }, ticks: { font: { size: 11 },
+                    callback: v => '$' + fmtNum(v) }}
+            }
+        }
+    });
+
+    // ---- Pie: Proveedores ----
+    chartProveedor = new Chart(document.getElementById('chartProveedor'), {
+        type: 'pie',
+        data: { labels: [], datasets: [{ data: [], backgroundColor: PALETTE, borderWidth: 2 }] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right', labels: { font: { size: 11 }, boxWidth: 14, padding: 8 } },
+                tooltip: { callbacks: { label: ctx => ' $' + fmtNum(ctx.parsed) }}
+            }
+        }
+    });
+
+    // ---- Pie: Rubros ----
+    chartRubro = new Chart(document.getElementById('chartRubro'), {
+        type: 'pie',
+        data: { labels: [], datasets: [{ data: [], backgroundColor: PALETTE, borderWidth: 2 }] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right', labels: { font: { size: 11 }, boxWidth: 14, padding: 8 } },
+                tooltip: { callbacks: { label: ctx => ' $' + fmtNum(ctx.parsed) }}
+            }
+        }
+    });
+}
+
+// ============================================================
+//  FORMATO NUMÉRICO es-AR
+// ============================================================
+function fmtNum(n) {
+    return Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function fmtMoney(n) { return '$ ' + fmtNum(n); }
+
+// ============================================================
+//  PERÍODO → FECHAS
+// ============================================================
+function setPeriodo(tipo, btn) {
+    const hoy  = new Date();
+    let desde, hasta;
+
+    if (tipo === 'hoy') {
+        desde = hasta = new Date(hoy);
+    } else if (tipo === '7d') {
+        desde = new Date(hoy); desde.setDate(hoy.getDate() - 6);
+        hasta = new Date(hoy);
+    } else if (tipo === '30d') {
+        desde = new Date(hoy); desde.setDate(hoy.getDate() - 29);
+        hasta = new Date(hoy);
+    } else if (tipo === 'esteMes') {
+        desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+        hasta = new Date(hoy);
+    } else if (tipo === 'mesPasado') {
+        desde = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+        hasta = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+    } else { // filtro manual
+        const dv = document.getElementById('inpDesde').value;
+        const hv = document.getElementById('inpHasta').value;
+        if (!dv || !hv) { alert('Ingrese las fechas Desde y Hasta'); return; }
+        desde = new Date(dv + 'T00:00:00');
+        hasta = new Date(hv + 'T00:00:00');
+    }
+
+    // Actualizar inputs
+    document.getElementById('inpDesde').value = toInputDate(desde);
+    document.getElementById('inpHasta').value = toInputDate(hasta);
+
+    // Marcar botón activo
+    document.querySelectorAll('.btn-periodo').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    cargarDashboard(desde, hasta);
+}
+
+function toInputDate(d) {
+    // Formato local yyyy-MM-dd (sin conversión UTC)
+    const y  = d.getFullYear();
+    const m  = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${dd}`;
+}
+
+// ============================================================
+//  CARGA DE DATOS — llamadas en paralelo
+//  IMPORTANTE: body usa PascalCase (Desde/Hasta) para
+//  coincidir con las propiedades del modelo C#.
+//  La respuesta llega en camelCase (configurado en el servidor).
+// ============================================================
+async function cargarDashboard(desde, hasta) {
+    const overlay = document.getElementById('loadingOverlay');
+    overlay.style.display = 'flex';
+    ocultarError();
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+    // *** PascalCase en el body: coincide con FiltroRequest.Desde / .Hasta ***
+    const body = JSON.stringify({
+        Desde: desde.toISOString(),
+        Hasta: hasta.toISOString()
+    });
+
+    const opts = {
+        method : 'POST',
+        headers: {
+            'Content-Type'             : 'application/json',
+            'RequestVerificationToken' : token
+        },
+        body
+    };
+
+    try {
+        const [resInd, resVent] = await Promise.all([
+            fetch('?handler=Indicadores', opts),
+            fetch('?handler=Ventas',      opts)
+        ]);
+
+        // Verificar que ambas respuestas sean OK
+        if (!resInd.ok)  throw new Error(`Error indicadores: HTTP ${resInd.status}`);
+        if (!resVent.ok) throw new Error(`Error ventas: HTTP ${resVent.status}`);
+
+        const [ind, vent] = await Promise.all([resInd.json(), resVent.json()]);
+
+        // Verificar errores de negocio devueltos en JSON
+        if (ind.error)  throw new Error('Indicadores: ' + ind.error);
+        if (vent.error) throw new Error('Ventas: '      + vent.error);
+
+        // *** Respuesta llega en camelCase desde el servidor ***
+        actualizarKPIs(ind);
+        actualizarGraficos(vent);
+
+    } catch (e) {
+        console.error('[Dashboard]', e);
+        mostrarError(e.message);
+    } finally {
+        overlay.style.display = 'none';
+    }
+}
+
+// ============================================================
+//  ACTUALIZAR KPIs  — camelCase (servidor configurado así)
+// ============================================================
+function actualizarKPIs(d) {
+    // Defensa: si algún campo es undefined mostrar '—' en lugar de NaN
+    const safe = (v, fn) => (v !== undefined && v !== null) ? fn(v) : '—';
+
+    document.getElementById('kpiTotalVentas').textContent = safe(d.totalVentas, fmtMoney);
+    document.getElementById('kpiCantidad').textContent    = safe(d.cantidadVentas, v => Number(v).toLocaleString('es-AR'));
+    document.getElementById('kpiMejorDia').textContent    = d.mejorDia  || '—';
+    document.getElementById('kpiPromedio').textContent    = safe(d.promedio,   fmtMoney);
+    document.getElementById('kpiCostos').textContent      = safe(d.costos,     fmtMoney);
+
+    // Ganancias: color verde si positivo, rojo si negativo
+    const elGan = document.getElementById('kpiGanancias');
+    elGan.textContent = safe(d.ganancias, fmtMoney);
+    elGan.style.color = (d.ganancias ?? 0) >= 0 ? '#1cc88a' : '#e74a3b';
+
+    document.getElementById('kpiCompras').textContent = safe(d.compras, fmtMoney);
+}
+
+// ============================================================
+//  ACTUALIZAR GRÁFICOS — camelCase en propiedades
+// ============================================================
+function actualizarGraficos(d) {
+    // Día
+    setChartData(chartDia, 'chartDia', 'noDia',
+        (d.ventasPorDia   || []).map(x => x.label),
+        [{ data: (d.ventasPorDia || []).map(x => x.value) }]
+    );
+
+    // Cliente
+    setChartData(chartCliente, 'chartCliente', 'noCliente',
+        (d.ventasPorCliente   || []).map(x => x.label),
+        [{ data: (d.ventasPorCliente || []).map(x => x.value) }]
+    );
+
+    // Medios de pago
+    setChartData(chartMedios, 'chartMedios', 'noMedios',
+        (d.mediosPago   || []).map(x => x.label),
+        [{ data: (d.mediosPago || []).map(x => x.value) }]
+    );
+
+    // Proveedor
+    setChartData(chartProveedor, 'chartProveedor', 'noProveedor',
+        (d.ventasPorProveedor   || []).map(x => x.label),
+        [{ data: (d.ventasPorProveedor || []).map(x => x.value) }]
+    );
+
+    // Rubro
+    setChartData(chartRubro, 'chartRubro', 'noRubro',
+        (d.ventasPorRubro   || []).map(x => x.label),
+        [{ data: (d.ventasPorRubro || []).map(x => x.value) }]
+    );
+}
+
+function setChartData(chart, canvasId, noDataId, labels, datasets) {
+    const noData = document.getElementById(noDataId);
+    const canvas = document.getElementById(canvasId);
+    const hasData = labels.length > 0;
+
+    // Mostrar/ocultar mensaje "sin datos"
+    if (hasData) {
+        noData.classList.add('d-none');
+        canvas.style.display = '';
+    } else {
+        noData.classList.remove('d-none');
+        canvas.style.display = 'none';
+        return;
+    }
+
+    chart.data.labels = labels;
+    datasets.forEach((ds, i) => {
+        if (chart.data.datasets[i]) {
+            Object.assign(chart.data.datasets[i], ds);
+        }
+    });
+    chart.update();   // sin modo para forzar repintado completo
+}
+
+// ============================================================
+//  MENSAJES DE ERROR EN PANTALLA
+// ============================================================
+function mostrarError(msg) {
+    let el = document.getElementById('dashError');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'dashError';
+        el.className = 'alert alert-danger alert-dismissible fade show mt-2';
+        el.innerHTML = `<strong>Error:</strong> <span id="dashErrorMsg"></span>
+            <button type="button" class="btn-close" onclick="ocultarError()"></button>`;
+        document.querySelector('.dashboard-header').insertAdjacentElement('afterend', el);
+    }
+    document.getElementById('dashErrorMsg').textContent = msg;
+    el.style.display = 'block';
+}
+
+function ocultarError() {
+    const el = document.getElementById('dashError');
+    if (el) el.style.display = 'none';
+}
+
+// ============================================================
+//  INIT DASHBOARD VENTAS
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+    initCharts();
+    const btnEsteMes = document.querySelectorAll('.btn-periodo')[3];
+    setPeriodo('esteMes', btnEsteMes);
+});
+
+
+// ================================================================
+//  MODAL PROVEEDORES — estado
+// ================================================================
+let provChartCurvas = null, provChartTorta = null, provChartRubro = null;
+let provModalInit   = false;
+let provDropdownOk  = false;
+
+// ================================================================
+//  INIT MODAL — se ejecuta al mostrar (para dimensiones correctas)
+// ================================================================
+document.getElementById('modalProveedor').addEventListener('shown.bs.modal', async () => {
+    if (!provModalInit) {
+        initProvCharts();
+        provModalInit = true;
+    }
+    if (!provDropdownOk) {
+        await cargarProveedoresDropdown();
+        provDropdownOk = true;
+    }
+    // Auto-cargar "Este Mes" la primera vez
+    const btnEste = document.querySelector('#modalProveedor .btn-periodo-prov[data-tipo="esteMes"]');
+    if (btnEste) setPeriodoProveedor('esteMes', btnEste);
+});
+
+// ================================================================
+//  INICIALIZAR GRÁFICOS DEL MODAL
+// ================================================================
+function initProvCharts() {
+    provChartCurvas = new Chart(document.getElementById('chartProvCurvas'), {
+        type: 'line',
+        data: { labels: [], datasets: [] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { position: 'top', labels: { font: { size: 11 }, boxWidth: 14, padding: 10 } },
+                tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: $${fmtNum(ctx.parsed.y)}` }}
+            },
+            scales: {
+                x: { grid: { color: '#f0f0f0' }, ticks: { font: { size: 11 } } },
+                y: { grid: { color: '#f0f0f0' }, ticks: { callback: v => '$' + fmtNum(v), font: { size: 11 } } }
+            }
+        }
+    });
+
+    provChartTorta = new Chart(document.getElementById('chartProvTorta'), {
+        type: 'doughnut',
+        data: { labels: [], datasets: [{ data: [], backgroundColor: PALETTE, borderWidth: 2 }] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right', labels: { font: { size: 11 }, boxWidth: 14, padding: 8 } },
+                tooltip: { callbacks: { label: ctx => ` $${fmtNum(ctx.parsed)}` }}
+            }
+        }
+    });
+
+    provChartRubro = new Chart(document.getElementById('chartProvRubro'), {
+        type: 'pie',
+        data: { labels: [], datasets: [{ data: [], backgroundColor: PALETTE, borderWidth: 2 }] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right', labels: { font: { size: 11 }, boxWidth: 14, padding: 8 } },
+                tooltip: { callbacks: { label: ctx => ` $${fmtNum(ctx.parsed)}` }}
+            }
+        }
+    });
+}
+
+// ================================================================
+//  DROPDOWN DE PROVEEDORES (carga vía GET handler)
+// ================================================================
+async function cargarProveedoresDropdown() {
+    try {
+        const res  = await fetch('?handler=Proveedores');
+        const list = await res.json();
+        const cont = document.getElementById('listaProveedoresP');
+        cont.innerHTML = list.map(p => `
+            <div class="d-flex align-items-center gap-2 px-2 py-1 rounded provrow"
+                 style="cursor:pointer;" onclick="toggleProvP(this)">
+                <input type="checkbox" class="form-check-input m-0" value="${p.id}"
+                       style="width:16px;height:16px;pointer-events:none;" checked />
+                <span class="small" style="pointer-events:none;">${p.nombre}</span>
+            </div>`).join('');
+        actualizarLabelProvP();
+    } catch {
+        document.getElementById('listaProveedoresP').innerHTML =
+            '<div class="text-danger small px-2">Error al cargar proveedores</div>';
+    }
+}
+
+function toggleProvP(row) {
+    const cb = row.querySelector('input[type=checkbox]');
+    cb.checked = !cb.checked;
+    actualizarLabelProvP();
+}
+
+function seleccionarTodosP(todos) {
+    document.querySelectorAll('#listaProveedoresP input[type=checkbox]')
+        .forEach(cb => cb.checked = todos);
+    actualizarLabelProvP();
+}
+
+function actualizarLabelProvP() {
+    const total     = document.querySelectorAll('#listaProveedoresP input').length;
+    const marcados  = document.querySelectorAll('#listaProveedoresP input:checked').length;
+    const lbl       = document.getElementById('lblProvP');
+    lbl.textContent = marcados === 0       ? 'Ninguno' :
+                      marcados === total    ? 'Todos los proveedores' :
+                                             `${marcados} seleccionado${marcados > 1 ? 's' : ''}`;
+}
+
+function getProveedorIdsP() {
+    const checked = [...document.querySelectorAll('#listaProveedoresP input:checked')];
+    const total   = document.querySelectorAll('#listaProveedoresP input').length;
+    if (checked.length === 0 || checked.length === total) return null;   // null = todos
+    return checked.map(cb => parseInt(cb.value));
+}
+
+// ================================================================
+//  SELECTOR DE PERÍODO DEL MODAL
+// ================================================================
+function setPeriodoProveedor(tipo, btn) {
+    const hoy = new Date();
+    let desde, hasta;
+
+    if (tipo === 'hoy') {
+        desde = hasta = new Date(hoy);
+    } else if (tipo === '7d') {
+        desde = new Date(hoy); desde.setDate(hoy.getDate() - 6); hasta = new Date(hoy);
+    } else if (tipo === '30d') {
+        desde = new Date(hoy); desde.setDate(hoy.getDate() - 29); hasta = new Date(hoy);
+    } else if (tipo === 'esteMes') {
+        desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1); hasta = new Date(hoy);
+    } else if (tipo === 'mesPasado') {
+        desde = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+        hasta = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+    } else {
+        const dv = document.getElementById('inpDesdeP').value;
+        const hv = document.getElementById('inpHastaP').value;
+        if (!dv || !hv) { alert('Ingrese las fechas Desde y Hasta'); return; }
+        desde = new Date(dv + 'T00:00:00');
+        hasta = new Date(hv + 'T00:00:00');
+    }
+
+    document.getElementById('inpDesdeP').value = toInputDate(desde);
+    document.getElementById('inpHastaP').value = toInputDate(hasta);
+
+    document.querySelectorAll('#modalProveedor .btn-periodo-prov')
+        .forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    cargarProveedor(desde, hasta);
+}
+
+// ================================================================
+//  CARGA PARALELA DE MÉTRICAS + GRÁFICOS
+// ================================================================
+async function cargarProveedor(desde, hasta) {
+    const overlay  = document.getElementById('loadingProvModal');
+    overlay.style.display = 'flex';
+    document.getElementById('errProvModal').style.display = 'none';
+
+    const token        = document.querySelector('input[name="__RequestVerificationToken"]').value;
+    const proveedorIds = getProveedorIdsP();
+
+    const body = JSON.stringify({
+        Desde:        desde.toISOString(),
+        Hasta:        hasta.toISOString(),
+        ProveedorIds: proveedorIds
+    });
+
+    const opts = {
+        method : 'POST',
+        headers: {
+            'Content-Type'            : 'application/json',
+            'RequestVerificationToken': token
+        },
+        body
+    };
+
+    try {
+        const [resM, resG] = await Promise.all([
+            fetch('?handler=ProveedorMetricas',  opts),
+            fetch('?handler=ProveedorGraficos',  opts)
+        ]);
+
+        if (!resM.ok) throw new Error(`HTTP ${resM.status} en métricas`);
+        if (!resG.ok) throw new Error(`HTTP ${resG.status} en gráficos`);
+
+        const [metricas, graficos] = await Promise.all([resM.json(), resG.json()]);
+
+        if (metricas.error) throw new Error(metricas.error);
+        if (graficos.error) throw new Error(graficos.error);
+
+        actualizarKPIsProveedor(metricas);
+        actualizarGraficosProveedor(graficos);
+
+    } catch (e) {
+        console.error('[ModalProveedor]', e);
+        document.getElementById('errProvMsg').textContent  = e.message;
+        document.getElementById('errProvModal').style.display = 'block';
+    } finally {
+        overlay.style.display = 'none';
+    }
+}
+
+// ================================================================
+//  ACTUALIZAR KPIs DEL MODAL  (camelCase)
+// ================================================================
+function actualizarKPIsProveedor(d) {
+    const safe = (v, fn) => (v !== undefined && v !== null) ? fn(v) : '—';
+    document.getElementById('pkpiTotal').textContent    = safe(d.totalCompras,    fmtMoney);
+    document.getElementById('pkpiDias').textContent     = safe(d.cantidadCompras, v => Number(v).toLocaleString('es-AR'));
+    document.getElementById('pkpiPromedio').textContent = safe(d.promedioCompras,  fmtMoney);
+    document.getElementById('pkpiMejorDia').textContent = d.mejorDia || '—';
+}
+
+// ================================================================
+//  ACTUALIZAR GRÁFICOS DEL MODAL  (camelCase)
+// ================================================================
+function actualizarGraficosProveedor(d) {
+    const labels = d.curvasLabels || [];
+    const series = d.curvasSeries || [];
+
+    // ---- Curvas multi-serie (reemplaza datasets dinámicamente) ----
+    const hasCurvas = labels.length > 0 && series.length > 0;
+    document.getElementById('noProvCurvas').classList.toggle('d-none', hasCurvas);
+    document.getElementById('chartProvCurvas').style.display = hasCurvas ? '' : 'none';
+
+    if (hasCurvas) {
+        provChartCurvas.data.labels   = labels;
+        provChartCurvas.data.datasets = series.map((s, i) => ({
+            label          : s.label,
+            data           : s.data,
+            borderColor    : PALETTE[i % PALETTE.length],
+            backgroundColor: PALETTE[i % PALETTE.length] + '20',
+            fill           : false,
+            tension        : 0.4,
+            pointRadius    : 3,
+            pointHoverRadius: 5,
+            borderWidth    : 2.5
+        }));
+        provChartCurvas.update();
+    }
+
+    // ---- Torta Proveedor ----
+    setPieProvData(provChartTorta, 'chartProvTorta', 'noProvTorta', d.tortaProveedor || []);
+
+    // ---- Torta Rubro ----
+    setPieProvData(provChartRubro, 'chartProvRubro', 'noProvRubro', d.tortaRubro || []);
+}
+
+function setPieProvData(chart, canvasId, noDataId, items) {
+    const hasData = items.length > 0;
+    document.getElementById(noDataId).classList.toggle('d-none', hasData);
+    document.getElementById(canvasId).style.display = hasData ? '' : 'none';
+    if (!hasData) return;
+
+    chart.data.labels          = items.map(x => x.label);
+    chart.data.datasets[0].data = items.map(x => x.value);
+    chart.update();
+}
+
+
+// ================================================================
+//  MODAL CLIENTES — estado
+// ================================================================
+let cliChartCurvas = null, cliChartMedios = null, cliChartDeudores = null;
+let cliChartTortaProv = null, cliChartTortaRubro = null;
+let cliModalInit    = false;
+let cliDropdownOk   = false;
+
+// ================================================================
+//  INIT MODAL CLIENTES
+// ================================================================
+document.getElementById('modalCliente').addEventListener('shown.bs.modal', async () => {
+    if (!cliModalInit) {
+        initCliCharts();
+        cliModalInit = true;
+    }
+    if (!cliDropdownOk) {
+        await cargarClientesDropdown();
+        cliDropdownOk = true;
+    }
+    const btnEste = document.querySelector('#modalCliente .btn-periodo-cli[data-tipo="esteMes"]');
+    if (btnEste) setPeriodoCliente('esteMes', btnEste);
+});
+
+// ================================================================
+//  INICIALIZAR GRÁFICOS DEL MODAL CLIENTES
+// ================================================================
+function initCliCharts() {
+    cliChartCurvas = new Chart(document.getElementById('chartCliCurvas'), {
+        type: 'line',
+        data: { labels: [], datasets: [] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { position: 'top', labels: { font: { size: 11 }, boxWidth: 14, padding: 10 } },
+                tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: $${fmtNum(ctx.parsed.y)}` }}
+            },
+            scales: {
+                x: { grid: { color: '#f0f0f0' }, ticks: { font: { size: 11 } } },
+                y: { grid: { color: '#f0f0f0' }, ticks: { callback: v => '$' + fmtNum(v), font: { size: 11 } } }
+            }
+        }
+    });
+
+    cliChartMedios = new Chart(document.getElementById('chartCliMedios'), {
+        type: 'bar',
+        data: { labels: [], datasets: [{ label: 'Total', data: [], backgroundColor: PALETTE, borderRadius: 5 }] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: ctx => ' $' + fmtNum(ctx.parsed.y) }}
+            },
+            scales: {
+                x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                y: { grid: { color: '#f0f0f0' }, ticks: { callback: v => '$' + fmtNum(v), font: { size: 11 } } }
+            }
+        }
+    });
+
+    cliChartDeudores = new Chart(document.getElementById('chartCliDeudores'), {
+        type: 'bar',
+        data: { labels: [], datasets: [{ label: 'Saldo Deudor', data: [], backgroundColor: PALETTE.map(c => c + 'cc'), borderRadius: 5 }] },
+        options: {
+            indexAxis: 'y',   // barras horizontales para nombres largos
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: ctx => ' $ ' + fmtNum(ctx.parsed.x) }}
+            },
+            scales: {
+                x: { grid: { color: '#f0f0f0' }, ticks: { callback: v => '$' + fmtNum(v), font: { size: 10 } } },
+                y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+            }
+        }
+    });
+
+    cliChartTortaProv = new Chart(document.getElementById('chartCliTortaProv'), {
+        type: 'doughnut',
+        data: { labels: [], datasets: [{ data: [], backgroundColor: PALETTE, borderWidth: 2 }] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right', labels: { font: { size: 11 }, boxWidth: 14, padding: 8 } },
+                tooltip: { callbacks: { label: ctx => ` $${fmtNum(ctx.parsed)}` }}
+            }
+        }
+    });
+
+    cliChartTortaRubro = new Chart(document.getElementById('chartCliTortaRubro'), {
+        type: 'pie',
+        data: { labels: [], datasets: [{ data: [], backgroundColor: PALETTE, borderWidth: 2 }] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right', labels: { font: { size: 11 }, boxWidth: 14, padding: 8 } },
+                tooltip: { callbacks: { label: ctx => ` $${fmtNum(ctx.parsed)}` }}
+            }
+        }
+    });
+}
+
+// ================================================================
+//  DROPDOWN DE CLIENTES
+// ================================================================
+let _todosClientes = [];   // caché completo para filtrado local
+
+async function cargarClientesDropdown() {
+    try {
+        const res  = await fetch('?handler=Clientes');
+        _todosClientes = await res.json();
+        renderListaCli(_todosClientes);
+        actualizarLabelCli();
+    } catch {
+        document.getElementById('listaClientesC').innerHTML =
+            '<div class="text-danger small px-2">Error al cargar clientes</div>';
+    }
+}
+
+function renderListaCli(lista) {
+    const cont = document.getElementById('listaClientesC');
+    cont.innerHTML = lista.map(c => `
+        <div class="d-flex align-items-center gap-2 px-2 py-1 rounded clirow"
+             style="cursor:pointer;" onclick="toggleCliC(this)">
+            <input type="checkbox" class="form-check-input m-0" value="${c.id}"
+                   style="width:16px;height:16px;pointer-events:none;" checked />
+            <span class="small" style="pointer-events:none;">${c.nombre}</span>
+        </div>`).join('');
+}
+
+function filtrarListaCli(texto) {
+    const q = texto.trim().toLowerCase();
+    const filtrados = q ? _todosClientes.filter(c => c.nombre.toLowerCase().includes(q)) : _todosClientes;
+    renderListaCli(filtrados);
+}
+
+function toggleCliC(row) {
+    const cb = row.querySelector('input[type=checkbox]');
+    cb.checked = !cb.checked;
+    actualizarLabelCli();
+}
+
+function seleccionarTodosCli(todos) {
+    document.querySelectorAll('#listaClientesC input[type=checkbox]')
+        .forEach(cb => cb.checked = todos);
+    actualizarLabelCli();
+}
+
+function actualizarLabelCli() {
+    const total    = _todosClientes.length;
+    const marcados = document.querySelectorAll('#listaClientesC input:checked').length;
+    const lbl      = document.getElementById('lblCliC');
+    lbl.textContent = marcados === 0    ? 'Ninguno' :
+                      marcados === total ? 'Todos los clientes' :
+                                          `${marcados} seleccionado${marcados > 1 ? 's' : ''}`;
+}
+
+function getClienteIdsCli() {
+    const checked = [...document.querySelectorAll('#listaClientesC input:checked')];
+    const total   = _todosClientes.length;
+    if (checked.length === 0 || checked.length === total) return null;
+    return checked.map(cb => parseInt(cb.value));
+}
+
+// ================================================================
+//  SELECTOR DE PERÍODO DEL MODAL CLIENTES
+// ================================================================
+function setPeriodoCliente(tipo, btn) {
+    const hoy = new Date();
+    let desde, hasta;
+
+    if (tipo === 'hoy') {
+        desde = hasta = new Date(hoy);
+    } else if (tipo === '7d') {
+        desde = new Date(hoy); desde.setDate(hoy.getDate() - 6); hasta = new Date(hoy);
+    } else if (tipo === '30d') {
+        desde = new Date(hoy); desde.setDate(hoy.getDate() - 29); hasta = new Date(hoy);
+    } else if (tipo === 'esteMes') {
+        desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1); hasta = new Date(hoy);
+    } else if (tipo === 'mesPasado') {
+        desde = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+        hasta = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+    } else {
+        const dv = document.getElementById('inpDesdeCli').value;
+        const hv = document.getElementById('inpHastaCli').value;
+        if (!dv || !hv) { alert('Ingrese las fechas Desde y Hasta'); return; }
+        desde = new Date(dv + 'T00:00:00');
+        hasta = new Date(hv + 'T00:00:00');
+    }
+
+    document.getElementById('inpDesdeCli').value = toInputDate(desde);
+    document.getElementById('inpHastaCli').value = toInputDate(hasta);
+
+    document.querySelectorAll('#modalCliente .btn-periodo-cli')
+        .forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    cargarCliente(desde, hasta);
+}
+
+// ================================================================
+//  CARGA PARALELA DE MÉTRICAS + GRÁFICOS
+// ================================================================
+async function cargarCliente(desde, hasta) {
+    const overlay = document.getElementById('loadingCliModal');
+    overlay.style.display = 'flex';
+    document.getElementById('errCliModal').style.display = 'none';
+
+    const token      = document.querySelector('input[name="__RequestVerificationToken"]').value;
+    const clienteIds = getClienteIdsCli();
+
+    const body = JSON.stringify({
+        Desde:      desde.toISOString(),
+        Hasta:      hasta.toISOString(),
+        ClienteIds: clienteIds
+    });
+
+    const opts = {
+        method : 'POST',
+        headers: {
+            'Content-Type'            : 'application/json',
+            'RequestVerificationToken': token
+        },
+        body
+    };
+
+    try {
+        const [resM, resG] = await Promise.all([
+            fetch('?handler=ClienteMetricas',  opts),
+            fetch('?handler=ClienteGraficos',  opts)
+        ]);
+
+        if (!resM.ok) throw new Error(`HTTP ${resM.status} en métricas`);
+        if (!resG.ok) throw new Error(`HTTP ${resG.status} en gráficos`);
+
+        const [metricas, graficos] = await Promise.all([resM.json(), resG.json()]);
+
+        if (metricas.error) throw new Error(metricas.error);
+        if (graficos.error) throw new Error(graficos.error);
+
+        actualizarKPIsCliente(metricas);
+        actualizarGraficosCliente(graficos);
+
+    } catch (e) {
+        console.error('[ModalCliente]', e);
+        document.getElementById('errCliMsg').textContent    = e.message;
+        document.getElementById('errCliModal').style.display = 'block';
+    } finally {
+        overlay.style.display = 'none';
+    }
+}
+
+// ================================================================
+//  ACTUALIZAR KPIs DEL MODAL CLIENTES
+// ================================================================
+function actualizarKPIsCliente(d) {
+    const safe = (v, fn) => (v !== undefined && v !== null) ? fn(v) : '—';
+    document.getElementById('ckpiTotal').textContent    = safe(d.totalVentas,    fmtMoney);
+    document.getElementById('ckpiCantidad').textContent = safe(d.cantidadVentas, v => Number(v).toLocaleString('es-AR'));
+    document.getElementById('ckpiMejorDia').textContent = d.mejorDia || '—';
+    document.getElementById('ckpiPromedio').textContent = safe(d.promedio,        fmtMoney);
+    document.getElementById('ckpiCostos').textContent   = safe(d.costos,          fmtMoney);
+
+    const elGan = document.getElementById('ckpiGanancias');
+    elGan.textContent = safe(d.ganancias, fmtMoney);
+    elGan.style.color = (d.ganancias ?? 0) >= 0 ? '#1cc88a' : '#e74a3b';
+}
+
+// ================================================================
+//  ACTUALIZAR GRÁFICOS DEL MODAL CLIENTES
+// ================================================================
+function actualizarGraficosCliente(d) {
+    const labels = d.curvasLabels || [];
+    const series = d.curvasSeries || [];
+
+    // ---- Curvas multi-serie por cliente ----
+    const hasCurvas = labels.length > 0 && series.length > 0;
+    document.getElementById('noCliCurvas').classList.toggle('d-none', hasCurvas);
+    document.getElementById('chartCliCurvas').style.display = hasCurvas ? '' : 'none';
+
+    if (hasCurvas) {
+        cliChartCurvas.data.labels   = labels;
+        cliChartCurvas.data.datasets = series.map((s, i) => ({
+            label          : s.label,
+            data           : s.data,
+            borderColor    : PALETTE[i % PALETTE.length],
+            backgroundColor: PALETTE[i % PALETTE.length] + '20',
+            fill           : false,
+            tension        : 0.4,
+            pointRadius    : 3,
+            pointHoverRadius: 5,
+            borderWidth    : 2.5
+        }));
+        cliChartCurvas.update();
+    }
+
+    // ---- Barras: Medios de Pago ----
+    const medios = d.mediosPago || [];
+    const hasMedios = medios.length > 0;
+    document.getElementById('noCliMedios').classList.toggle('d-none', hasMedios);
+    document.getElementById('chartCliMedios').style.display = hasMedios ? '' : 'none';
+    if (hasMedios) {
+        cliChartMedios.data.labels = medios.map(x => x.label);
+        cliChartMedios.data.datasets[0].data = medios.map(x => x.value);
+        cliChartMedios.update();
+    }
+
+    // ---- Barras horizontales: Deudores ----
+    const deudores = d.deudores || [];
+    const hasDeudores = deudores.length > 0;
+    document.getElementById('noCliDeudores').classList.toggle('d-none', hasDeudores);
+    document.getElementById('chartCliDeudores').style.display = hasDeudores ? '' : 'none';
+    if (hasDeudores) {
+        cliChartDeudores.data.labels = deudores.map(x => x.label);
+        cliChartDeudores.data.datasets[0].data = deudores.map(x => x.value);
+        cliChartDeudores.update();
+    }
+
+    // ---- Tortas ----
+    setPieCliData(cliChartTortaProv,  'chartCliTortaProv',  'noCliTortaProv',  d.tortaProveedor || []);
+    setPieCliData(cliChartTortaRubro, 'chartCliTortaRubro', 'noCliTortaRubro', d.tortaRubro     || []);
+}
+
+function setPieCliData(chart, canvasId, noDataId, items) {
+    const hasData = items.length > 0;
+    document.getElementById(noDataId).classList.toggle('d-none', hasData);
+    document.getElementById(canvasId).style.display = hasData ? '' : 'none';
+    if (!hasData) return;
+    chart.data.labels           = items.map(x => x.label);
+    chart.data.datasets[0].data = items.map(x => x.value);
+    chart.update();
+}
+</script>

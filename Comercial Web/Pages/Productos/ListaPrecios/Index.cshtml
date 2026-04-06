@@ -1,0 +1,669 @@
+@page
+@model Comercial_Web.Pages.Productos.ListaPrecios.IndexModel
+@{
+    ViewData["Title"] = "Lista de Precios";
+}
+
+<style>
+    /* ---- PAGE HEADER ---- */
+    .page-header {
+        background: linear-gradient(135deg, #1a2a4a 0%, #2d4a7a 100%);
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+        color: #fff;
+    }
+    .page-header h4 { margin: 0; font-weight: 700; letter-spacing: .3px; }
+
+    /* ---- SECTION CARD ---- */
+    .section-card {
+        background: #fff;
+        border: 1px solid #e3e6f0;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,.06);
+        overflow: visible;
+        margin-bottom: 1.25rem;
+    }
+    .section-card-header {
+        background: linear-gradient(90deg,#f0f4ff 0%,#f8f9fc 100%);
+        border-bottom: 1px solid #e3e6f0;
+        padding: .65rem 1.1rem;
+        display: flex; align-items: center; gap: .5rem;
+        border-radius: 11px 11px 0 0;
+    }
+    .section-card-header span {
+        font-weight: 700; font-size: .75rem;
+        text-transform: uppercase; letter-spacing: .5px; color: #4e73df;
+    }
+    .section-card-body { padding: 1rem 1.1rem; }
+
+    /* ---- FORM ---- */
+    .form-label { font-size: .82rem; font-weight: 600; color: #4a5568; margin-bottom: 3px; }
+
+    /* ---- BUTTONS ---- */
+    .btn-lp {
+        border: none; border-radius: 8px;
+        padding: .42rem 1rem; font-size: .83rem; font-weight: 600;
+        display: inline-flex; align-items: center; gap: .4rem;
+        cursor: pointer; transition: all .18s; white-space: nowrap;
+    }
+    .btn-lp svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .btn-lp-primary   { background: #4e73df; color: #fff; }
+    .btn-lp-primary:hover   { background: #3a5bc7; color: #fff; }
+    .btn-lp-success   { background: #1cc88a; color: #fff; }
+    .btn-lp-success:hover   { background: #17a673; color: #fff; }
+    .btn-lp-danger    { background: #e74a3b; color: #fff; }
+    .btn-lp-danger:hover    { background: #c93627; color: #fff; }
+    .btn-lp-teal      { background: #36b9cc; color: #fff; }
+    .btn-lp-teal:hover      { background: #2a9faf; color: #fff; }
+    .btn-lp-secondary { background: #858796; color: #fff; }
+    .btn-lp-secondary:hover { background: #6a6b7a; color: #fff; }
+    .btn-lp-excel     { background: #1D6F42; color: #fff; }
+    .btn-lp-excel:hover     { background: #165a35; color: #fff; }
+    .btn-lp:disabled  { opacity: .55; cursor: not-allowed; }
+
+    /* ---- MULTI-SELECT DROPDOWN ---- */
+    .ms-wrap { position: relative; }
+    .ms-input {
+        display: flex; align-items: center; justify-content: space-between;
+        border: 1px solid #ced4da; border-radius: 8px;
+        padding: .38rem .75rem; font-size: .83rem; cursor: pointer;
+        background: #fff; user-select: none; min-height: 36px;
+        transition: border-color .15s, box-shadow .15s;
+    }
+    .ms-input:hover   { border-color: #4e73df; }
+    .ms-input.open    { border-color: #4e73df; box-shadow: 0 0 0 3px rgba(78,115,223,.15); }
+    .ms-input .ms-label { flex: 1; color: #495057; font-size: .82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ms-input .ms-label.placeholder { color: #adb5bd; }
+    .ms-chevron { color: #6c757d; flex-shrink: 0; transition: transform .2s; }
+    .ms-input.open .ms-chevron { transform: rotate(180deg); }
+
+    .ms-panel {
+        display: none;
+        position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+        background: #fff; border: 1px solid #d0d7e8;
+        border-radius: 8px; box-shadow: 0 4px 18px rgba(0,0,0,.12);
+        z-index: 1200; overflow: hidden;
+    }
+    .ms-panel.open { display: block; }
+    .ms-sel-ops {
+        display: flex; gap: .35rem; align-items: center;
+        padding: .3rem .7rem; border-bottom: 1px solid #eee;
+        background: #f8f9fc;
+    }
+    .ms-sel-ops span {
+        font-size: .73rem; font-weight: 600; cursor: pointer;
+        padding: .1rem .45rem; border-radius: 4px; transition: background .12s;
+    }
+    .ms-sel-ops .lnk-all  { color: #4e73df; }
+    .ms-sel-ops .lnk-all:hover  { background: #eef2ff; }
+    .ms-sel-ops .lnk-none { color: #e74a3b; }
+    .ms-sel-ops .lnk-none:hover { background: #fdecea; }
+    .ms-sel-ops .sep { color: #dee2e6; font-weight: 300; }
+
+    .ms-search-box {
+        padding: .5rem .65rem; border-bottom: 1px solid #eee;
+        position: sticky; top: 0; background: #fff; z-index: 1;
+    }
+    .ms-search-box input {
+        width: 100%; border: 1px solid #ced4da; border-radius: 6px;
+        padding: .28rem .6rem; font-size: .8rem; outline: none;
+    }
+    .ms-search-box input:focus { border-color: #4e73df; }
+    .ms-options {
+        max-height: 200px; overflow-y: auto; padding: .3rem 0;
+    }
+    .ms-option {
+        display: flex; align-items: center; gap: .5rem;
+        padding: .32rem .75rem; font-size: .82rem; cursor: pointer;
+        transition: background .12s;
+    }
+    .ms-option:hover { background: #f0f4ff; }
+    .ms-option input[type=checkbox] { width: 14px; height: 14px; accent-color: #4e73df; flex-shrink: 0; }
+    .ms-option.hidden { display: none; }
+    .ms-empty { padding: .5rem .75rem; font-size: .8rem; color: #aaa; text-align: center; }
+
+    /* ---- PRICE TABLE ---- */
+    .lp-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    .lp-table thead tr { background: linear-gradient(90deg,#1a2a4a 0%,#2d4a7a 100%); }
+    .lp-table th {
+        padding: .5rem .8rem; color: #fff;
+        font-size: .69rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .4px; white-space: nowrap;
+    }
+    .lp-table td {
+        padding: .42rem .8rem; color: #2d3748;
+        border-bottom: 1px solid #f0f0f0; vertical-align: middle;
+    }
+    .lp-table tbody tr:hover { background: #f8f9ff; }
+    .lp-table tbody tr:last-child td { border-bottom: none; }
+    .lp-table th.num, .lp-table td.num { text-align: right; }
+
+    .btn-del-row {
+        background: none; border: none; padding: .15rem .35rem;
+        border-radius: 5px; cursor: pointer; color: #e74a3b;
+        transition: all .15s; line-height: 1;
+    }
+    .btn-del-row:hover { background: #fdecea; }
+
+    /* ---- TOOLBAR ---- */
+    .lp-toolbar {
+        padding: .65rem 1rem; border-bottom: 1px solid #e3e6f0;
+        background: #f8f9fc; border-radius: 11px 11px 0 0;
+        display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem;
+    }
+    .lp-toolbar-left  { display: flex; align-items: center; gap: .5rem; }
+    .lp-toolbar-right { display: flex; align-items: center; gap: .5rem; }
+
+    /* ---- EMPTY STATE ---- */
+    .empty-state { text-align: center; padding: 2.5rem 1rem; color: #bbb; }
+    .empty-state svg { width: 44px; height: 44px; opacity: .3; margin-bottom: .6rem; }
+
+    /* ---- COUNTER BADGE ---- */
+    .cnt-badge {
+        background: #eef2ff; color: #4e73df; border-radius: 12px;
+        padding: .18rem .65rem; font-size: .75rem; font-weight: 700;
+    }
+
+    /* ---- SPINNER ---- */
+    .spinner-sm {
+        display: inline-block; width: 14px; height: 14px;
+        border: 2px solid rgba(255,255,255,.35);
+        border-top-color: #fff; border-radius: 50%;
+        animation: spin .7s linear infinite; flex-shrink: 0;
+    }
+    @@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+@* ---- PAGE HEADER ---- *@
+<div class="page-header d-flex align-items-center gap-3">
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2z"/>
+        <path d="M4.5 5.5A.5.5 0 0 1 5 5h7a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0 2A.5.5 0 0 1 5 7h7a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0 2A.5.5 0 0 1 5 9h4a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5z"/>
+    </svg>
+    <div>
+        <h4>Lista de Precios</h4>
+        <small class="opacity-75">Armá tu lista seleccionando productos por proveedor, rubro o búsqueda libre</small>
+    </div>
+</div>
+
+@* ===========================================================
+   SECCIÓN 1 — FILTROS
+   =========================================================== *@
+<div class="section-card">
+    <div class="section-card-header">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#4e73df" viewBox="0 0 16 16">
+            <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2z"/>
+        </svg>
+        <span>Filtros de Búsqueda</span>
+    </div>
+    <div class="section-card-body">
+        <div class="row g-3 align-items-end">
+
+            @* --- Multi-select Proveedores --- *@
+            <div class="col-md-4">
+                <label class="form-label">Proveedores</label>
+                <div class="ms-wrap" id="msWrapProv">
+                    <div class="ms-input" id="msInputProv" onclick="toggleMs('Prov')">
+                        <span class="ms-label placeholder" id="msLabelProv">Todos los proveedores</span>
+                        <svg class="ms-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+                        </svg>
+                    </div>
+                    <div class="ms-panel" id="msPanelProv">
+                        <div class="ms-sel-ops">
+                            <span class="lnk-all"  onclick="selTodos('Prov')">Seleccionar todo</span>
+                            <span class="sep">|</span>
+                            <span class="lnk-none" onclick="selNinguno('Prov')">Ninguno</span>
+                        </div>
+                        <div class="ms-search-box">
+                            <input type="text" placeholder="Buscar proveedor…"
+                                   oninput="filterMs('Prov', this.value)" />
+                        </div>
+                        <div class="ms-options" id="msOptionsProv">
+                            @foreach (var p in Model.Proveedores)
+                            {
+                                <label class="ms-option" data-label="@p.Text.ToUpper()">
+                                    <input type="checkbox" class="ms-chk-prov" value="@p.Value"
+                                           onchange="updateMsLabel('Prov')" />
+                                    @p.Text
+                                </label>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* --- Multi-select Rubros --- *@
+            <div class="col-md-3">
+                <label class="form-label">Rubros</label>
+                <div class="ms-wrap" id="msWrapRub">
+                    <div class="ms-input" id="msInputRub" onclick="toggleMs('Rub')">
+                        <span class="ms-label placeholder" id="msLabelRub">Todos los rubros</span>
+                        <svg class="ms-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+                        </svg>
+                    </div>
+                    <div class="ms-panel" id="msPanelRub">
+                        <div class="ms-sel-ops">
+                            <span class="lnk-all"  onclick="selTodos('Rub')">Seleccionar todo</span>
+                            <span class="sep">|</span>
+                            <span class="lnk-none" onclick="selNinguno('Rub')">Ninguno</span>
+                        </div>
+                        <div class="ms-search-box">
+                            <input type="text" placeholder="Buscar rubro…"
+                                   oninput="filterMs('Rub', this.value)" />
+                        </div>
+                        <div class="ms-options" id="msOptionsRub">
+                            @foreach (var r in Model.Rubros)
+                            {
+                                <label class="ms-option" data-label="@r.Text.ToUpper()">
+                                    <input type="checkbox" class="ms-chk-rub" value="@r.Value"
+                                           onchange="updateMsLabel('Rub')" />
+                                    @r.Text
+                                </label>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* --- Búsqueda libre --- *@
+            <div class="col-md-3">
+                <label class="form-label">Búsqueda libre</label>
+                <input type="text" id="txtBusqueda" class="form-control form-control-sm"
+                       placeholder="Cód. proveedor, cód. barras o descripción…"
+                       style="border-radius:8px;font-size:.83rem;"
+                       onkeydown="if(event.key==='Enter') buscar()" />
+            </div>
+
+            @* --- Botón Buscar --- *@
+            <div class="col-md-2 d-flex gap-2">
+                <button class="btn-lp btn-lp-primary w-100" id="btnBuscar" onclick="buscar()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                    </svg>
+                    Buscar
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@* ===========================================================
+   SECCIÓN 2 — LISTA (grilla)
+   =========================================================== *@
+<div class="section-card">
+    <div class="lp-toolbar">
+        <div class="lp-toolbar-left">
+            <span style="font-weight:700;font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;color:#4e73df;">
+                Lista de Precios
+            </span>
+            <span class="cnt-badge" id="cntFilas">0 producto(s)</span>
+        </div>
+        <div class="lp-toolbar-right">
+            <button class="btn-lp btn-lp-secondary" id="btnLimpiarGrilla" disabled onclick="limpiarGrilla()">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854z"/>
+                </svg>
+                Limpiar
+            </button>
+            <button class="btn-lp btn-lp-teal" id="btnExportarCsv" disabled onclick="exportarCsv()">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/>
+                    <path d="M8.5 6.5a.5.5 0 0 0-1 0v3.793L6.354 9.146a.5.5 0 1 0-.708.708l2 2a.5.5 0 0 0 .708 0l2-2a.5.5 0 0 0-.708-.708L8.5 10.293V6.5z"/>
+                </svg>
+                Exportar CSV
+            </button>
+            <button class="btn-lp btn-lp-excel" id="btnExportarExcel" disabled onclick="exportarExcel()">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                    <path d="M8.406 12.823 10.29 9.79l-1.98-3.08h1.463l1.04 1.886c.156.29.3.61.44.95h.03c.14-.34.28-.66.44-.95l1.04-1.887h1.379l-1.97 3.08 2.02 3.032h-1.46l-1.12-2.018a5.072 5.072 0 0 1-.44-1.02h-.03a4.87 4.87 0 0 1-.44 1.02L9.86 12.824H8.406z"/>
+                    <path d="M5 12.5v-6h4v1H6v1.5h2.5v1H6V12h3v1H5v-.5z"/>
+                </svg>
+                Exportar Excel
+            </button>
+            <button class="btn-lp btn-lp-danger" id="btnExportarPdf" disabled onclick="exportarPdf()">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                    <path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.697 19.697 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.65-.823.192-.077.4-.12.602-.077a.7.7 0 0 1 .477.365c.088.164.12.356.127.538.007.188-.012.396-.047.614-.084.51-.27 1.134-.52 1.794a10.954 10.954 0 0 0 .98 1.686 5.753 5.753 0 0 1 1.334.05c.364.066.734.195.96.465.12.144.193.32.2.518.007.192-.047.382-.138.563a1.04 1.04 0 0 1-.354.416.856.856 0 0 1-.51.138c-.331-.014-.654-.196-.933-.417a5.712 5.712 0 0 1-.911-.95 11.651 11.651 0 0 0-1.997.406 11.307 11.307 0 0 1-1.02 1.51c-.292.35-.609.656-.927.787a.793.793 0 0 1-.58.029zm1.379-1.901c-.166.076-.32.156-.459.238-.328.194-.541.383-.647.547-.094.145-.096.25-.04.361.01.022.02.036.026.044a.266.266 0 0 0 .035-.012c.137-.056.355-.235.635-.572a8.18 8.18 0 0 0 .45-.606zm1.64-1.33a12.71 12.71 0 0 1 1.01-.193 11.744 11.744 0 0 1-.51-.858 20.801 20.801 0 0 1-.5 1.05zm2.446.45c.15.163.296.3.435.41.24.19.407.253.498.256a.107.107 0 0 0 .07-.015.307.307 0 0 0 .094-.125.436.436 0 0 0 .059-.2.095.095 0 0 0-.026-.063c-.052-.062-.2-.152-.518-.209a3.876 3.876 0 0 0-.612-.053zM8.078 7.8a6.7 6.7 0 0 0 .2-.828c.031-.188.043-.343.038-.465a.613.613 0 0 0-.032-.198.517.517 0 0 0-.145.04c-.087.035-.158.106-.196.283-.04.192-.03.469.046.822.024.111.054.227.09.346z"/>
+                </svg>
+                Exportar PDF
+            </button>
+        </div>
+    </div>
+
+    <div style="max-height:520px;overflow-y:auto;">
+        <table class="lp-table" id="tablaLista">
+            <thead>
+                <tr>
+                    <th>Cód. Proveedor</th>
+                    <th>Cód. de Barras</th>
+                    <th>Descripción</th>
+                    <th class="num">Precio sin IVA</th>
+                    <th class="num">Precio con IVA (21%)</th>
+                    <th style="width:40px;"></th>
+                </tr>
+            </thead>
+            <tbody id="tbodyLista"></tbody>
+        </table>
+    </div>
+
+    @* Empty state — se muestra hasta que haya al menos una fila *@
+    <div id="emptyState" class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2z"/>
+            <path d="M4.5 5.5A.5.5 0 0 1 5 5h7a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0 2A.5.5 0 0 1 5 7h7a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0 2A.5.5 0 0 1 5 9h4a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5z"/>
+        </svg>
+        <div style="font-size:.88rem;font-weight:600;">La lista está vacía</div>
+        <div style="font-size:.78rem;margin-top:.25rem;">Usá los filtros y hacé clic en <strong>Buscar</strong> para agregar productos</div>
+    </div>
+</div>
+
+<script>
+// =================================================================
+// ESTADO
+// =================================================================
+const grilla = new Map();   // Map<productoId, ListaPrecioItemDto>
+
+// =================================================================
+// MULTI-SELECT
+// =================================================================
+function toggleMs(id) {
+    const input = document.getElementById('msInput' + id);
+    const panel = document.getElementById('msPanel' + id);
+    const isOpen = panel.classList.contains('open');
+
+    // Cerrar todos los otros dropdowns
+    document.querySelectorAll('.ms-panel.open').forEach(p => p.classList.remove('open'));
+    document.querySelectorAll('.ms-input.open').forEach(i => i.classList.remove('open'));
+
+    if (!isOpen) {
+        panel.classList.add('open');
+        input.classList.add('open');
+        const searchInput = panel.querySelector('.ms-search-box input');
+        if (searchInput) { searchInput.value = ''; filterMs(id, ''); searchInput.focus(); }
+    }
+}
+
+function filterMs(id, val) {
+    const q = val.trim().toUpperCase();
+    document.querySelectorAll('#msOptions' + id + ' .ms-option').forEach(opt => {
+        const label = (opt.dataset.label || '').toUpperCase();
+        opt.classList.toggle('hidden', q !== '' && !label.includes(q));
+    });
+    const empty = document.getElementById('msEmpty' + id);
+    const visible = document.querySelectorAll('#msOptions' + id + ' .ms-option:not(.hidden)').length;
+    if (empty) empty.style.display = visible === 0 ? 'block' : 'none';
+}
+
+function updateMsLabel(id) {
+    const checked = [...document.querySelectorAll('.ms-chk-' + id.toLowerCase() + ':checked')];
+    const lbl = document.getElementById('msLabel' + id);
+    if (checked.length === 0) {
+        lbl.textContent = id === 'Prov' ? 'Todos los proveedores' : 'Todos los rubros';
+        lbl.classList.add('placeholder');
+    } else if (checked.length === 1) {
+        const text = checked[0].closest('label').textContent.trim();
+        lbl.textContent = text;
+        lbl.classList.remove('placeholder');
+    } else {
+        lbl.textContent = `${checked.length} seleccionado(s)`;
+        lbl.classList.remove('placeholder');
+    }
+}
+
+// Cerrar al click fuera
+document.addEventListener('click', e => {
+    if (!e.target.closest('.ms-wrap')) {
+        document.querySelectorAll('.ms-panel.open').forEach(p => p.classList.remove('open'));
+        document.querySelectorAll('.ms-input.open').forEach(i => i.classList.remove('open'));
+    }
+});
+
+// =================================================================
+// BUSCAR
+// =================================================================
+async function buscar() {
+    const btn = document.getElementById('btnBuscar');
+    const prevHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-sm"></span> Buscando…';
+
+    try {
+        const provIds = [...document.querySelectorAll('.ms-chk-prov:checked')].map(c => c.value);
+        const rubIds  = [...document.querySelectorAll('.ms-chk-rub:checked')].map(c => c.value);
+        const texto   = document.getElementById('txtBusqueda').value.trim();
+
+        if (provIds.length === 0 && rubIds.length === 0 && texto === '') {
+            mostrarToast('Ingresá al menos un filtro antes de buscar.', false);
+            return;
+        }
+
+        const qs = new URLSearchParams();
+        provIds.forEach(v => qs.append('proveedores', v));
+        rubIds.forEach(v  => qs.append('rubros', v));
+        if (texto) qs.set('texto', texto);
+
+        const resp = await fetch(`/Productos/ListaPrecios?handler=Buscar&${qs.toString()}`);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const items = await resp.json();
+
+        if (items.length === 0) {
+            mostrarToast('No se encontraron productos con los filtros seleccionados.', false);
+            return;
+        }
+
+        let agregados = 0, omitidos = 0;
+        items.forEach(item => {
+            if (!grilla.has(item.productoId)) {
+                grilla.set(item.productoId, item);
+                agregarFilaTabla(item);
+                agregados++;
+            } else {
+                omitidos++;
+            }
+        });
+
+        actualizarEstadoGrilla();
+        let msg = `Se agregaron ${agregados} producto(s) a la lista.`;
+        if (omitidos > 0) msg += ` (${omitidos} ya estaban en la lista)`;
+        mostrarToast(msg, true);
+
+    } catch (err) {
+        mostrarToast('Error al buscar: ' + err.message, false);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = prevHtml;
+    }
+}
+
+// =================================================================
+// GRILLA
+// =================================================================
+function agregarFilaTabla(item) {
+    const tbody = document.getElementById('tbodyLista');
+    const tr = document.createElement('tr');
+    tr.id = `fila-${item.productoId}`;
+    tr.innerHTML = `
+        <td><code style="font-size:.78rem;">${esc(item.codProveedor)}</code></td>
+        <td><code style="font-size:.78rem;">${esc(item.codBarras)}</code></td>
+        <td style="max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(item.descripcion)}">${esc(item.descripcion)}</td>
+        <td class="num">${fmt(item.precioSinIva)}</td>
+        <td class="num"><strong>${fmt(item.precioConIva)}</strong></td>
+        <td>
+          <button class="btn-del-row" title="Quitar de la lista" onclick="eliminarFila(${item.productoId})">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+              <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+            </svg>
+          </button>
+        </td>`;
+    tbody.appendChild(tr);
+}
+
+function eliminarFila(productoId) {
+    grilla.delete(productoId);
+    const tr = document.getElementById(`fila-${productoId}`);
+    if (tr) tr.remove();
+    actualizarEstadoGrilla();
+}
+
+function limpiarGrilla() {
+    grilla.clear();
+    document.getElementById('tbodyLista').innerHTML = '';
+    actualizarEstadoGrilla();
+}
+
+function actualizarEstadoGrilla() {
+    const cnt = grilla.size;
+    document.getElementById('cntFilas').textContent = `${cnt} producto(s)`;
+    document.getElementById('emptyState').style.display  = cnt === 0 ? 'block' : 'none';
+    document.getElementById('btnLimpiarGrilla').disabled  = cnt === 0;
+    document.getElementById('btnExportarCsv').disabled    = cnt === 0;
+    document.getElementById('btnExportarExcel').disabled  = cnt === 0;
+    document.getElementById('btnExportarPdf').disabled    = cnt === 0;
+}
+
+// =================================================================
+// EXPORTAR CSV
+// =================================================================
+async function exportarCsv() {
+    if (grilla.size === 0) return;
+    const filas = [...grilla.values()];
+    const btn = document.getElementById('btnExportarCsv');
+    const prev = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-sm"></span> Generando…';
+    try {
+        const resp = await fetch('/Productos/ListaPrecios?handler=ExportarCsv', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify(filas)
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const blob = await resp.blob();
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        const ts   = new Date().toISOString().replace(/[^0-9]/g,'').slice(0,14);
+        a.href     = url;
+        a.download = `lista_precios_${ts}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        mostrarToast('CSV generado correctamente.', true);
+    } catch (err) {
+        mostrarToast('Error al exportar CSV: ' + err.message, false);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = prev;
+    }
+}
+
+// =================================================================
+// EXPORTAR EXCEL (.xls)
+// =================================================================
+async function exportarExcel() {
+    if (grilla.size === 0) return;
+    const filas = [...grilla.values()];
+    const btn = document.getElementById('btnExportarExcel');
+    const prev = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-sm"></span> Generando…';
+    try {
+        const resp = await fetch('/Productos/ListaPrecios?handler=ExportarExcel', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify(filas)
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const blob = await resp.blob();
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        const ts   = new Date().toISOString().replace(/[^0-9]/g,'').slice(0,14);
+        a.href     = url;
+        a.download = `lista_precios_${ts}.xls`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        mostrarToast('Excel generado correctamente.', true);
+    } catch (err) {
+        mostrarToast('Error al exportar Excel: ' + err.message, false);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = prev;
+    }
+}
+
+// =================================================================
+// EXPORTAR PDF (HTML imprimible)
+// =================================================================
+async function exportarPdf() {
+    if (grilla.size === 0) return;
+    const filas = [...grilla.values()];
+    const btn = document.getElementById('btnExportarPdf');
+    const prev = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-sm"></span> Generando…';
+    try {
+        const resp = await fetch('/Productos/ListaPrecios?handler=ExportarHtml', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify(filas)
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const html = await resp.text();
+        const win  = window.open('', '_blank');
+        if (win) {
+            win.document.write(html);
+            win.document.close();
+        } else {
+            mostrarToast('El navegador bloqueó la ventana emergente. Permitilo e intentá de nuevo.', false);
+        }
+    } catch (err) {
+        mostrarToast('Error al exportar PDF: ' + err.message, false);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = prev;
+    }
+}
+
+// =================================================================
+// HELPERS
+// =================================================================
+function esc(s) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmt(n) {
+    return Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// =================================================================
+// MULTI-SELECT: Seleccionar todo / Ninguno
+// =================================================================
+function selTodos(id) {
+    // Selecciona solo las opciones visibles (respeta el filtro de búsqueda activo)
+    document.querySelectorAll('#msOptions' + id + ' .ms-option:not(.hidden) input').forEach(c => c.checked = true);
+    updateMsLabel(id);
+}
+function selNinguno(id) {
+    // Desmarca todas (visibles y ocultas)
+    document.querySelectorAll('.ms-chk-' + id.toLowerCase()).forEach(c => c.checked = false);
+    updateMsLabel(id);
+}
+
+function mostrarToast(msg, exito) {
+    const area = document.createElement('div');
+    area.className = `alert alert-${exito ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+    area.style.cssText = 'bottom:1.2rem;right:1.2rem;z-index:9999;min-width:290px;font-size:.85rem;max-width:420px;';
+    area.innerHTML = `${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+    document.body.appendChild(area);
+    setTimeout(() => { try { area.remove(); } catch {} }, 4500);
+}
+
+// Inicializar estado vacío
+actualizarEstadoGrilla();
+</script>

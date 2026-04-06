@@ -1,10 +1,11 @@
-// Pages/Estadisticas/Ranking/Index.cshtml.cs
+using Application.Interfaces;
+using Comercial_Web.Helpers;
 using Domain.Contracts;
 using Domain.DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Reporting.NETCore;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Comercial_Web.Pages.Estadisticas.Ranking
 {
@@ -12,50 +13,108 @@ namespace Comercial_Web.Pages.Estadisticas.Ranking
     public class IndexModel : PageModel
     {
         private readonly IVentasRankingService _rankingService;
+        private readonly IProveedorService _proveedorService;
 
-        public IndexModel(IVentasRankingService rankingService)
+        public IndexModel(IVentasRankingService rankingService, IProveedorService proveedorService)
         {
             _rankingService = rankingService;
+            _proveedorService = proveedorService;
         }
 
         [BindProperty] public DateTime Desde { get; set; } = DateTime.Today;
         [BindProperty] public DateTime Hasta { get; set; } = DateTime.Today;
+        [BindProperty] public List<int> ProveedoresSeleccionados { get; set; } = new();
 
-        // Datos
-        public List<RankingItemDto> Items { get; set; } = new();
+        // Datos grillas
+        public List<RankingProductoDetalleDto> ItemsProductos { get; set; } = new();
+        public List<RankingClienteDetalleDto> ItemsClientes { get; set; } = new();
 
-        // Config de grilla reutilizable
-        public string Tipo { get; set; } = "Clientes";      // "Clientes" o "Productos"
-        public string ColCodigo { get; set; } = "Nro";
-        public string ColNombre { get; set; } = "Cliente";
-        public string ColValor { get; set; } = "Ventas";
-        public string FormatoValor { get; set; } = "N2";     // N2 para ventas; para productos podés usar "N0" o tu cantStock
+        // Tipo activo
+        public string TipoActivo { get; set; } = "";
 
-        public async Task OnGetAsync() { /* opcional: precarga */ }
+        // Combo proveedores
+        public List<SelectListItem> Proveedores { get; set; } = new();
+
+        public async Task OnGetAsync()
+        {
+            await CargarProveedoresAsync();
+        }
 
         public async Task<IActionResult> OnPostRankingClientesAsync()
         {
-            Tipo = "Clientes";
-            ColCodigo = "Nro";
-            ColNombre = "Cliente";
-            ColValor = "Ventas";
-            FormatoValor = "N2";
+            await CargarProveedoresAsync();
+            TipoActivo = "Clientes";
 
-            Items = await _rankingService.TraerVentasRankingClientesAsync(Desde, Hasta);
+            var ids = ProveedoresSeleccionados.Any() ? ProveedoresSeleccionados : null;
+            ItemsClientes = await _rankingService.TraerRankingClientesDetalleAsync(Desde, Hasta, ids);
+
             return Page();
         }
 
         public async Task<IActionResult> OnPostRankingProductosAsync()
         {
-            Tipo = "Productos";
-            ColCodigo = "Codigo Prov.";
-            ColNombre = "Producto";
-            ColValor = "Cantidad";
-            FormatoValor = "N2"; // si querés usar cantStock: "N" + cantStock
+            await CargarProveedoresAsync();
+            TipoActivo = "Productos";
 
-            Items = await _rankingService.TraerVentasRankingProductosAsync(Desde, Hasta);
+            var ids = ProveedoresSeleccionados.Any() ? ProveedoresSeleccionados : null;
+            ItemsProductos = await _rankingService.TraerRankingProductosDetalleAsync(Desde, Hasta, ids);
+
             return Page();
         }
-       
+
+        // ====== EXPORTAR CSV ======
+        public async Task<IActionResult> OnPostExportarClientesCsvAsync()
+        {
+            var ids = ProveedoresSeleccionados.Any() ? ProveedoresSeleccionados : null;
+            var datos = await _rankingService.TraerRankingClientesDetalleAsync(Desde, Hasta, ids);
+
+            var columnas = new Dictionary<string, string>
+            {
+                { "Cliente", "Cliente" },
+                { "TotalSinIva", "Total Sin IVA" },
+                { "TicketPromedio", "Ticket Promedio" },
+                { "CantCompras", "Cant Compras" },
+                { "ProdDistintos", "Prod Distintos" },
+                { "Participacion", "% ParticipaciÃ³n" },
+                { "Costo", "Costo" },
+                { "Rentabilidad", "Rentabilidad" },
+                { "Margen", "% Margen" }
+            };
+
+            var csv = CsvExporter.Generar(datos, columnas);
+            return File(csv, "text/csv", $"RankingClientes_{Desde:yyyyMMdd}_{Hasta:yyyyMMdd}.csv");
+        }
+
+        public async Task<IActionResult> OnPostExportarProductosCsvAsync()
+        {
+            var ids = ProveedoresSeleccionados.Any() ? ProveedoresSeleccionados : null;
+            var datos = await _rankingService.TraerRankingProductosDetalleAsync(Desde, Hasta, ids);
+
+            var columnas = new Dictionary<string, string>
+            {
+                { "Proveedor", "Proveedor" },
+                { "CodProv", "CÃ³digo Prov." },
+                { "Producto", "Producto" },
+                { "Cantidad", "Cantidad" },
+                { "TotalSinIva", "Total Sin IVA" },
+                { "PrecioPromedio", "Precio Promedio" },
+                { "Participacion", "% ParticipaciÃ³n" },
+                { "Costo", "Costo" },
+                { "Rentabilidad", "Rentabilidad" },
+                { "CantidadVentas", "Cant. Ventas" }
+            };
+
+            var csv = CsvExporter.Generar(datos, columnas);
+            return File(csv, "text/csv", $"RankingProductos_{Desde:yyyyMMdd}_{Hasta:yyyyMMdd}.csv");
+        }
+
+        // ====== Helpers ======
+        private async Task CargarProveedoresAsync()
+        {
+            var proveedores = await _proveedorService.GetAllAsync();
+            Proveedores = proveedores
+                .Select(p => new SelectListItem(p.NombreComercial, p.Id.ToString()))
+                .ToList();
+        }
     }
 }

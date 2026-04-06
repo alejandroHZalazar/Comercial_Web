@@ -26,4 +26,10 @@ public partial class VentasDetalle
     public decimal? Costo { get; set; }
 
     public decimal? Subtotal { get; set; }
+
+    public decimal? Descuento { get; set; }
+
+    public decimal? Recargo { get; set; }
+
+    public decimal? SubtotalSinIva { get; set; }
 }

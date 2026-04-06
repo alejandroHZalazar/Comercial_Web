@@ -26,4 +26,10 @@ public partial class DevolucionesDetalle
     public decimal? Subtotal { get; set; }
 
     public string? CodProveedor { get; set; }
+
+    public decimal? Descuento { get; set; }
+
+    public decimal? Recargo { get; set; }
+
+    public decimal? SubtotalSinIva { get; set; }
 }
