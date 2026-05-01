@@ -2,13 +2,16 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
+# NuGet config explícito para asegurar source correcto
+COPY nuget.config .
+
 # Copiar archivos de proyecto primero (layer caching de NuGet restore)
 COPY Domain/Domain.csproj             Domain/
 COPY Application/Application.csproj   Application/
 COPY Infrastructure/Infrastructure.csproj Infrastructure/
 COPY ComercialWeb/ComercialWeb.csproj  ComercialWeb/
 
-RUN dotnet restore ComercialWeb/ComercialWeb.csproj
+RUN dotnet restore ComercialWeb/ComercialWeb.csproj --verbosity normal
 
 # Copiar todo el código fuente y publicar
 COPY . .
