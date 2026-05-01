@@ -15,5 +15,6 @@ namespace Application.Interfaces
         Task<List<Cliente>> BuscarPorLocalidadAsync(string valor);
         Task<List<Cliente>> BuscarPorZonaAsync(string valor);
         Task<ClienteDetalleDTO> traerDetalleAsync(int id);
+        Task<List<ClienteDetalleDTO>> GetAllConDetalleAsync();
     }
 }

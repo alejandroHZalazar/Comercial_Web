@@ -36,4 +36,8 @@ public partial class PedidoDetalle
     public int FkColor { get; set; }
 
     public string? Observ { get; set; }
+
+    public decimal? Descuento      { get; set; }
+    public decimal? Recargo        { get; set; }
+    public decimal? SubtotalSinIva { get; set; }
 }

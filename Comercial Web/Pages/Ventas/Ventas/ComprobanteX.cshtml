@@ -1,0 +1,247 @@
+@page "{id:long}"
+@model Comercial_Web.Pages.Ventas.Ventas.ComprobanteXModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Comprobante de Venta";
+    var fmt  = (decimal v) => v.ToString("N2", new System.Globalization.CultureInfo("es-AR"));
+    var fmtC = (decimal v, int dec) => v.ToString("N" + dec, new System.Globalization.CultureInfo("es-AR"));
+}
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Comprobante X - Venta N° @(Model.Venta?.VentaId)</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; font-size: 11px; color: #222; margin: 0; padding: 1.5cm; background: #fff; }
+
+    /* Header dos columnas */
+    .header-wrap   { display: flex; gap: 0; border: 2px solid #1a3a5c; border-radius: 0; margin-bottom: .9rem; }
+    .header-emp    { flex: 1; padding: .6rem .9rem; border-right: 2px solid #1a3a5c; }
+    .header-comp   { width: 220px; padding: .6rem .9rem; text-align: center; }
+    .emp-logo      { margin-bottom: .4rem; }
+    .emp-nombre    { font-size: 14px; font-weight: 700; color: #1a3a5c; margin: 0 0 .15rem; }
+    .emp-sub       { font-size: 10px; color: #555; margin: 0; }
+    .comp-tipo     { font-size: 20px; font-weight: 900; color: #1a3a5c; letter-spacing: 2px; }
+    .comp-leyenda  { font-size: 8px; color: #e74a3b; font-weight: 700; text-transform: uppercase; border: 1px solid #e74a3b; border-radius: 3px; padding: 2px 4px; margin: .3rem 0; display: inline-block; }
+    .comp-num      { font-size: 15px; font-weight: 700; color: #1a3a5c; }
+    .comp-fecha    { font-size: 10px; color: #555; }
+    .comp-cuil     { font-size: 10px; color: #555; }
+
+    /* Datos cliente */
+    .cli-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .3rem .8rem; background: #f8f9fc; border: 1px solid #e3e6f0; border-radius: 6px; padding: .5rem .8rem; margin-bottom: .7rem; font-size: 10.5px; }
+    .cli-item label { display: block; color: #6c757d; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 1px; }
+    .cli-item span  { font-weight: 600; color: #2c3e50; }
+    .cli-full       { grid-column: 1 / -1; }
+
+    /* Forma de pago */
+    .pago-box { border: 1px solid #e3e6f0; border-radius: 6px; padding: .35rem .7rem; font-size: 10px; margin-bottom: .7rem; color: #444; }
+    .pago-box label { font-size: 9px; font-weight: 700; text-transform: uppercase; color: #6c757d; letter-spacing: .04em; margin-right: .3rem; }
+
+    /* Tabla detalle */
+    table.det { width: 100%; border-collapse: collapse; margin-bottom: .7rem; font-size: 10.5px; }
+    table.det thead tr { background: #1a3a5c; color: #fff; }
+    table.det thead th { padding: .35rem .45rem; text-align: left; font-weight: 600; white-space: nowrap; }
+    table.det thead th.num { text-align: right; }
+    table.det tbody tr:nth-child(even) { background: #f8f9fc; }
+    table.det tbody td { padding: .28rem .45rem; border-bottom: 1px solid #eee; vertical-align: top; }
+    table.det tbody td.num { text-align: right; white-space: nowrap; }
+
+    /* Totales */
+    .totales { margin-left: auto; width: 250px; border: 1px solid #e3e6f0; border-radius: 6px; overflow: hidden; font-size: 10.5px; margin-bottom: .9rem; }
+    .tot-row  { display: flex; justify-content: space-between; padding: .25rem .6rem; }
+    .tot-row:nth-child(even) { background: #f8f9fc; }
+    .tot-row.total { background: #1a3a5c; color: #fff; font-weight: 700; font-size: 12px; padding: .35rem .6rem; }
+
+    /* Firma */
+    .firma-area  { display: flex; justify-content: flex-end; margin-top: 2rem; }
+    .firma-box   { text-align: center; width: 180px; }
+    .firma-linea { border-top: 1px solid #555; padding-top: .3rem; font-size: 9px; color: #555; margin-top: 2.5rem; }
+
+    /* Error */
+    .error-msg { color: #c0392b; background: #fdf0ed; border: 1px solid #e74a3b; border-radius: 6px; padding: .7rem 1rem; font-size: 12px; }
+
+    @@media print {
+      body { padding: .8cm; }
+      .no-print { display: none !important; }
+      @@page { margin: 0; }
+    }
+  </style>
+</head>
+<body>
+
+@if (!string.IsNullOrEmpty(Model.Error))
+{
+  <div class="error-msg">@Model.Error</div>
+}
+else if (Model.Venta != null)
+{
+  var v = Model.Venta;
+
+  @* ── Encabezado tipo comprobante A ── *@
+  <div class="header-wrap">
+    <div class="header-emp">
+      @if (!string.IsNullOrEmpty(Model.LogoHtml))
+      {
+        <div class="emp-logo">@Html.Raw(Model.LogoHtml)</div>
+      }
+      <p class="emp-nombre">@Model.EmpresaNombre</p>
+      @if (!string.IsNullOrEmpty(Model.EmpresaDirec)) { <p class="emp-sub">@Model.EmpresaDirec</p> }
+      @if (!string.IsNullOrEmpty(Model.EmpresaTel))   { <p class="emp-sub">Tel: @Model.EmpresaTel</p> }
+      @if (!string.IsNullOrEmpty(Model.EmpresaCuil))  { <p class="emp-sub">CUIL/CUIT: @Model.EmpresaCuil</p> }
+    </div>
+    <div class="header-comp">
+      <div class="comp-tipo">X</div>
+      <div class="comp-leyenda">Documento no válido como factura</div>
+      <div class="comp-num">N° @v.VentaId.ToString("D8")</div>
+      <div class="comp-fecha">Fecha: @(v.Fecha.HasValue ? v.Fecha.Value.ToString("dd/MM/yyyy") : "")</div>
+      @if (!string.IsNullOrEmpty(Model.EmpresaCuil))
+      {
+        <div class="comp-cuil">CUIT: @Model.EmpresaCuil</div>
+      }
+    </div>
+  </div>
+
+  @* ── Datos del cliente ── *@
+  <div class="cli-grid">
+    <div class="cli-item">
+      <label>Cliente</label>
+      <span>@(v.NombreCliente ?? "")</span>
+    </div>
+    <div class="cli-item">
+      <label>Razón Social</label>
+      <span>@(v.RazonSocial ?? "")</span>
+    </div>
+    <div class="cli-item">
+      <label>CUIT</label>
+      <span>@(v.Cuil ?? "")</span>
+    </div>
+    <div class="cli-item cli-full">
+      <label>Dirección</label>
+      <span>@(v.DireccionCliente ?? "")</span>
+    </div>
+    <div class="cli-item">
+      <label>Condición IVA</label>
+      <span>@(v.CondIvaDescripcion ?? v.CondIvaAbrev ?? "")</span>
+    </div>
+    <div class="cli-item">
+      <label>IVA</label>
+      <span>@((v.Iva).ToString("N0"))%</span>
+    </div>
+    @if (v.Impuesto > 0)
+    {
+      <div class="cli-item">
+        <label>Ing. Brutos</label>
+        <span>@v.Impuesto.ToString("N2")%</span>
+      </div>
+    }
+  </div>
+
+  @* ── Condición de pago ── *@
+  @if (Model.ImputaEnVenta && v.FormasPagoDetalle.Count > 0)
+  {
+    <div class="pago-box">
+      <label>Formas de pago:</label>
+      <table style="width:100%;border-collapse:collapse;margin-top:.3rem;">
+        @foreach (var fp in v.FormasPagoDetalle)
+        {
+          <tr>
+            <td style="padding:.1rem .3rem;font-size:10px;">
+              @fp.Nombre@(fp.Plan != null && fp.Plan != fp.Nombre ? $" – {fp.Plan}" : "")
+            </td>
+            <td style="padding:.1rem .3rem;font-size:10px;text-align:right;font-weight:600;">
+              $@fmt(fp.Importe)
+            </td>
+          </tr>
+        }
+      </table>
+    </div>
+  }
+  else if (!string.IsNullOrWhiteSpace(v.FormaPago))
+  {
+    <div class="pago-box">
+      <label>Condición de pago:</label>
+      @v.FormaPago
+    </div>
+  }
+
+  @* ── Detalle ── *@
+  <table class="det">
+    <thead>
+      <tr>
+        <th>Descripción</th>
+        <th class="num">P.S/IVA</th>
+        <th class="num">Desc/Rec%</th>
+        <th class="num">SubT.S/IVA</th>
+        <th class="num">P.C/IVA</th>
+        <th class="num">Cantidad</th>
+        <th class="num">Subtotal</th>
+      </tr>
+    </thead>
+    <tbody>
+      @{
+        decimal ivaRate = v.Iva / 100m;
+        bool tieneGlobalDR = v.Descuento.HasValue;
+        decimal globalDR = tieneGlobalDR ? (v.Descuento ?? 0m) * -1m + (v.Recargo ?? 0m) : 0m;
+      }
+      @foreach (var d in v.Detalle)
+      {
+        decimal drPct  = tieneGlobalDR ? globalDR
+                       : (d.Recargo.HasValue && d.Recargo > 0   ?  d.Recargo.Value
+                        : d.Descuento.HasValue && d.Descuento > 0 ? -d.Descuento.Value
+                        : 0m);
+        decimal subSIva  = d.PrecioSinIva * (1m + drPct / 100m);
+        decimal precCIva = subSIva * (1m + ivaRate);
+        <tr>
+          <td>@(d.Descripcion ?? "")</td>
+          <td class="num">$@fmt(d.PrecioSinIva)</td>
+          <td class="num" style="@(drPct < 0 ? "color:#c0392b;" : drPct > 0 ? "color:#1a7a45;" : "")">@fmt(drPct)%</td>
+          <td class="num">$@fmt(subSIva)</td>
+          <td class="num">$@fmt(precCIva)</td>
+          <td class="num">@fmtC(d.Cantidad, 2)</td>
+          <td class="num" style="font-weight:600;">$@fmt(precCIva * d.Cantidad)</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  @* ── Totales ── *@
+  <div class="totales">
+    <div class="tot-row"><span>Precio Bruto</span><span>$@fmt(Model.TotPrecioBruto)</span></div>
+    <div class="tot-row"><span>Desc./Rec.</span><span style="@(Model.TotSubtSIva - Model.TotPrecioBruto < 0 ? "color:#c0392b;" : Model.TotSubtSIva - Model.TotPrecioBruto > 0 ? "color:#1a7a45;" : "")">$@fmt(Model.TotSubtSIva - Model.TotPrecioBruto)</span></div>
+    <div class="tot-row"><span>Subtotal s/IVA</span><span>$@fmt(Model.TotSubtSIva)</span></div>
+    <div class="tot-row"><span>IVA @v.Iva.ToString("N2")%</span><span>$@fmt(Model.TotIva)</span></div>
+    @if (v.Impuesto > 0)
+    {
+      <div class="tot-row"><span>Ing. Brutos @v.Impuesto.ToString("N2")%</span><span>$@fmt(Model.TotImpuesto)</span></div>
+    }
+    <div class="tot-row total"><span>TOTAL</span><span>$@fmt(Model.TotTotal)</span></div>
+  </div>
+
+  @* ── Firma ── *@
+  <div class="firma-area">
+    <div class="firma-box">
+      <div class="firma-linea">Firma y aclaración</div>
+    </div>
+  </div>
+
+  @* ── Botones pantalla ── *@
+  <div class="no-print" style="margin-top:1.2rem;display:flex;gap:.5rem;justify-content:flex-end;">
+    <button onclick="window.print()"
+            style="background:#1a3a5c;color:#fff;border:none;border-radius:6px;padding:.4rem 1.1rem;font-size:11px;font-weight:700;cursor:pointer;">
+      Imprimir
+    </button>
+    <button onclick="window.close()"
+            style="background:#858796;color:#fff;border:none;border-radius:6px;padding:.4rem 1rem;font-size:11px;cursor:pointer;">
+      Cerrar
+    </button>
+  </div>
+}
+
+<script>
+  // Auto-print si se abrió como ventana nueva
+  if (window.opener) { window.onload = () => window.print(); }
+</script>
+</body>
+</html>

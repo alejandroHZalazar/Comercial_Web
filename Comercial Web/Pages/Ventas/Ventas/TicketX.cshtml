@@ -1,0 +1,168 @@
+@page "{id:long}"
+@model Comercial_Web.Pages.Ventas.Ventas.TicketXModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Ticket X";
+    var fmt  = (decimal v) => v.ToString("N2", new System.Globalization.CultureInfo("es-AR"));
+    var fmtC = (decimal v, int dec) => v.ToString("N" + dec, new System.Globalization.CultureInfo("es-AR"));
+
+    // Escalas en función del ancho (mm). Mínimo razonable 48mm.
+    int anchoMm = Model.AnchoMm <= 0 ? 80 : Model.AnchoMm;
+    // Fuentes dinámicas
+    double fBase   = anchoMm <= 58 ? 10.0 : anchoMm <= 72 ? 11.0 : 12.0;
+    double fChica  = fBase - 1.5;
+    double fTit    = fBase + 3.0;
+    double fX      = anchoMm <= 58 ? 38.0 : 52.0;
+    double fTotal  = fBase + 4.0;
+    string pad     = anchoMm <= 58 ? "2mm" : "3mm";
+}
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8" />
+  <title>Ticket X - Venta N° @(Model.Venta?.VentaId)</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    @@page { size: @(anchoMm)mm auto; margin: 0; }
+    html, body { margin: 0; padding: 0; background: #fff; }
+    body { font-family: "Consolas","Courier New",monospace; font-size: @(fBase.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))pt; color: #000; }
+    .ticket { width: @(anchoMm)mm; padding: @pad; }
+    .center { text-align: center; }
+    .bold   { font-weight: 700; }
+    .sep    { border-top: 1px dashed #000; margin: 2mm 0; }
+    .sep-d  { border-top: 2px solid #000; margin: 2mm 0; }
+    .xbig   { font-size: @(fX.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))pt; font-weight: 900; line-height: 1; letter-spacing: 4px; }
+    .tit    { font-size: @(fTit.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))pt; font-weight: 700; }
+    .small  { font-size: @(fChica.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))pt; }
+    .row    { display: flex; justify-content: space-between; gap: 2mm; }
+    .leyenda{ border: 1px solid #000; padding: 1mm 2mm; display: inline-block; margin-top: 1mm; text-transform: uppercase; font-weight: 700; font-size: @(fChica.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))pt; }
+    .item   { margin-bottom: 1.2mm; }
+    .item .desc { word-wrap: break-word; }
+    .item .cb   { font-size: @(fChica.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))pt; color: #000; }
+    .total  { font-size: @(fTotal.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))pt; font-weight: 900; }
+
+    .error  { padding: 4mm; color: #a00; font-weight: 700; }
+    .no-print { text-align: center; margin: 4mm 0; }
+    .no-print button { padding: 2mm 4mm; font-size: 10pt; cursor: pointer; }
+    @@media print { .no-print { display: none !important; } }
+  </style>
+</head>
+<body>
+
+@if (!string.IsNullOrEmpty(Model.Error))
+{
+  <div class="error">@Model.Error</div>
+}
+else if (Model.Venta != null)
+{
+  var v = Model.Venta;
+
+  <div class="ticket">
+
+    @* ── Letra X y leyenda ───────────────────────────────── *@
+    <div class="center">
+      <div class="xbig">X</div>
+      <div class="leyenda">No válido como Documento Fiscal</div>
+    </div>
+
+    <div class="sep"></div>
+
+    @* ── Datos empresa ───────────────────────────────────── *@
+    <div class="center">
+      @if (!string.IsNullOrWhiteSpace(Model.EmpresaNombre))
+      { <div class="tit">@Model.EmpresaNombre</div> }
+      @if (!string.IsNullOrWhiteSpace(Model.EmpresaRazon))
+      { <div class="small">@Model.EmpresaRazon</div> }
+      @if (!string.IsNullOrWhiteSpace(Model.EmpresaDirec))
+      { <div class="small">@Model.EmpresaDirec</div> }
+      @if (!string.IsNullOrWhiteSpace(Model.EmpresaTel))
+      { <div class="small">Tel: @Model.EmpresaTel</div> }
+    </div>
+
+    <div class="sep"></div>
+
+    @* ── Datos venta / cliente ───────────────────────────── *@
+    <div class="row small">
+      <span>N° @v.VentaId.ToString("D8")</span>
+      <span>@(v.Fecha.HasValue ? v.Fecha.Value.ToString("dd/MM/yyyy HH:mm") : "")</span>
+    </div>
+    @if (!string.IsNullOrWhiteSpace(v.NombreCliente))
+    {
+      <div class="small"><span class="bold">Cliente:</span> @v.NombreCliente</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(v.DireccionCliente))
+    {
+      <div class="small"><span class="bold">Dirección:</span> @v.DireccionCliente</div>
+    }
+
+    <div class="sep"></div>
+
+    @* ── Detalle ─────────────────────────────────────────── *@
+    @{
+      decimal ivaRate = v.Iva / 100m;
+      bool tieneGlobalDR = v.Descuento.HasValue;
+      decimal globalDR = tieneGlobalDR ? (v.Descuento ?? 0m) * -1m + (v.Recargo ?? 0m) : 0m;
+    }
+    @foreach (var d in v.Detalle)
+    {
+      decimal drPct   = tieneGlobalDR ? globalDR
+                      : (d.Recargo.HasValue && d.Recargo > 0   ?  d.Recargo.Value
+                       : d.Descuento.HasValue && d.Descuento > 0 ? -d.Descuento.Value
+                       : 0m);
+      decimal subSIva = d.PrecioSinIva * (1m + drPct / 100m);
+      decimal precCIva= subSIva * (1m + ivaRate);
+      decimal subt    = precCIva * d.Cantidad;
+
+      <div class="item">
+        @if (!string.IsNullOrWhiteSpace(d.CodBarras))
+        {
+          <div class="cb">@d.CodBarras</div>
+        }
+        <div class="desc">@(d.Descripcion ?? "")</div>
+        <div class="row">
+          <span class="small">@fmtC(d.Cantidad, 2) x $@fmt(precCIva)</span>
+          <span class="bold">$@fmt(subt)</span>
+        </div>
+      </div>
+    }
+
+    <div class="sep-d"></div>
+
+    @* ── Total general ──────────────────────────────────── *@
+    <div class="row total">
+      <span>TOTAL</span>
+      <span>$@fmt(Model.TotTotal)</span>
+    </div>
+
+    @* ── Formas de pago con importe (si ImputaEnVenta = 1) ── *@
+    @if (Model.ImputaEnVenta && v.FormasPagoDetalle.Count > 0)
+    {
+      <div class="sep"></div>
+      @foreach (var fp in v.FormasPagoDetalle)
+      {
+        string planTxt = (fp.Plan != null && fp.Plan != fp.Nombre) ? $" – {fp.Plan}" : "";
+        <div class="row small">
+          <span>@(fp.Nombre + planTxt)</span>
+          <span class="bold">$@fmt(fp.Importe)</span>
+        </div>
+      }
+    }
+
+    <div class="sep"></div>
+    <div class="center small">¡Gracias por su compra!</div>
+
+    <div class="no-print">
+      <button onclick="window.print()">Imprimir</button>
+      <button onclick="window.close()">Cerrar</button>
+    </div>
+  </div>
+}
+
+<script>
+  // Auto-print al cargar — sale a la impresora por defecto del navegador.
+  window.addEventListener('load', function(){
+    setTimeout(function(){ try { window.print(); } catch(e){} }, 150);
+  });
+</script>
+</body>
+</html>

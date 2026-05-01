@@ -1,303 +1,1582 @@
-﻿@page
+@page
 @model Comercial_Web.Pages.Clientes.ABM.IndexModel
 @{
-    ViewData["Title"] = "Administración de Clientes";
+    ViewData["Title"] = "Gestión de Clientes";
 }
 
-@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+<style>
+    /* ===== PAGE HEADER ===== */
+    .page-header {
+        background: linear-gradient(135deg, #1a2a4a 0%, #2d4a7a 100%);
+        border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; color: #fff;
+    }
+    .page-header h4 { margin: 0; font-weight: 700; letter-spacing: .3px; }
 
-<input type="hidden"
-       id="antiForgeryToken"
-       value="@Antiforgery.GetAndStoreTokens(HttpContext).RequestToken" />
+    /* ===== SECTION CARDS ===== */
+    .section-card {
+        background: #fff; border: 1px solid #e3e6f0; border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,.06); overflow: hidden; margin-bottom: 1.25rem;
+    }
+    .section-card-header {
+        background: linear-gradient(90deg, #f0f4ff 0%, #f8f9fc 100%);
+        border-bottom: 1px solid #e3e6f0; padding: .65rem 1.1rem;
+        display: flex; align-items: center; justify-content: space-between;
+        flex-wrap: wrap; gap: .5rem;
+    }
+    .sch-left  { display: flex; align-items: center; gap: .5rem; }
+    .sch-title { font-weight: 700; font-size: .75rem; text-transform: uppercase; letter-spacing: .5px; color: #4e73df; }
+    .cnt-badge { background: #eef2ff; color: #4e73df; border-radius: 12px; padding: .15rem .55rem; font-size: .72rem; font-weight: 700; }
+    .form-label { font-size: .82rem; font-weight: 600; color: #4a5568; margin-bottom: 3px; }
 
-<div class="card shadow-lg border-0 rounded-3 mt-4">
-    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-        <h3 class="mb-0">Clientes</h3>      
-        <button type="button" class="btn btn-light btn-sm mb-0" onclick="abrirModalNuevo()">
-            <i class="bi bi-person-plus"></i> Agregar Cliente
-        </button>
+    /* ===== BUTTONS ===== */
+    .btn-cli {
+        border: none; border-radius: 8px; padding: .42rem 1rem; font-size: .83rem; font-weight: 600;
+        display: inline-flex; align-items: center; gap: .4rem;
+        cursor: pointer; transition: all .18s; white-space: nowrap;
+    }
+    .btn-cli svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .btn-cli-primary   { background: #4e73df; color: #fff; } .btn-cli-primary:hover   { background: #3a5bc7; }
+    .btn-cli-success   { background: #1cc88a; color: #fff; } .btn-cli-success:hover   { background: #17a673; }
+    .btn-cli-danger    { background: #e74a3b; color: #fff; } .btn-cli-danger:hover    { background: #c93627; }
+    .btn-cli-secondary { background: #858796; color: #fff; } .btn-cli-secondary:hover { background: #6a6b7a; }
+    .btn-cli-warning   { background: #f6c23e; color: #222; } .btn-cli-warning:hover   { background: #e0a800; }
+    .btn-cli-excel     { background: #217346; color: #fff; } .btn-cli-excel:hover     { background: #185c38; }
+    .btn-cli-info      { background: #36b9cc; color: #fff; } .btn-cli-info:hover      { background: #258f9e; }
+    .btn-cli-cobro     { background: #6f42c1; color: #fff; } .btn-cli-cobro:hover     { background: #59339d; }
+    .btn-cli-nc        { background: #0f766e; color: #fff; } .btn-cli-nc:hover        { background: #0d5c57; }
+    .btn-cli-nd { background: linear-gradient(135deg,#e67e22,#d35400); color:#fff; }
+    .btn-cli-nd:hover { background: linear-gradient(135deg,#d35400,#b94300); }
+    .nd-modal-header {
+        background: linear-gradient(135deg,#e67e22,#d35400);
+        padding:.75rem 1rem;
+        display:flex;align-items:center;
+    }
+    .btn-cli:disabled  { opacity: .55; cursor: not-allowed; }
+    .nc-modal-header   { background: linear-gradient(135deg, #0a4a44 0%, #0f766e 100%); padding: .9rem 1.25rem; display: flex; align-items: center; gap: .75rem; }
+    .nc-sep            { height: 1px; background: linear-gradient(90deg, #e9f5f4, #b2dfdb, #e9f5f4); margin: .75rem 0; }
 
+    /* ===== COBRO MODAL ===== */
+    .cobro-plan-row { display:flex; gap:.5rem; align-items:flex-end; flex-wrap:wrap; margin-bottom:.5rem; }
+    .cobro-plan-row .form-select, .cobro-plan-row .form-control { border-radius:8px; font-size:.83rem; }
+    .cobro-lineas-table { width:100%; border-collapse:collapse; font-size:.8rem; margin-top:.35rem; }
+    .cobro-lineas-table th { background:#1a2a4a; color:#fff; padding:.35rem .55rem; font-size:.68rem;
+                             text-transform:uppercase; letter-spacing:.3px; }
+    .cobro-lineas-table td { padding:.35rem .55rem; border-bottom:1px solid #f0f0f0; vertical-align:middle; }
+    .cobro-lineas-table tbody tr:hover { background:#f8f0ff; }
+    .cobro-total-bar { display:flex; justify-content:space-between; align-items:center;
+                       background:#f0f4ff; border:1px solid #e3e6f0; border-radius:8px;
+                       padding:.55rem 1rem; margin-top:.5rem; }
+    .cobro-alerta { background:#fff3cd; border:1px solid #ffc107; border-radius:8px;
+                    padding:.55rem .9rem; font-size:.82rem; color:#856404; margin-top:.4rem; display:none; }
+    .cobro-success { background:#d4edda; border:1px solid #1cc88a; border-radius:8px;
+                     padding:1rem 1.25rem; display:none; }
+    .cc-fila-cobro:hover { background:#f0eaff !important; }
+    .cc-fila-cobro.cc-fila-activa { background:#e8dff7 !important; outline:2px solid #6f42c1; }
+    .btn-cc-reprint { background:none; border:1px solid #6f42c1; border-radius:5px; color:#6f42c1;
+                      cursor:pointer; padding:2px 5px; line-height:1; }
+    .btn-cc-reprint:hover { background:#6f42c1; color:#fff; }
+    .cc-detalle-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+    .cc-detalle-table th { background:#6f42c1; color:#fff; padding:4px 8px; font-size:.72rem;
+                           text-transform:uppercase; letter-spacing:.3px; font-weight:600; }
+    .cc-detalle-table td { padding:4px 8px; border-bottom:1px solid #e3d9f5; }
+    .cc-detalle-table tr:last-child td { border-bottom:none; }
+
+    /* ===== CC TABLE ===== */
+    .cc-table thead tr { background: linear-gradient(90deg, #1a2a4a 0%, #2d4a7a 100%); }
+    .cc-table th { padding: .45rem .65rem; color: #fff; font-size: .67rem; font-weight: 700;
+                   text-transform: uppercase; letter-spacing: .4px; white-space: nowrap; }
+    .cc-table td { padding: .38rem .65rem; font-size: .8rem; color: #2d3748;
+                   border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+    .cc-table tbody tr:hover { filter: brightness(.97); }
+
+    /* ===== TABLE ===== */
+    .cli-table { width: 100%; border-collapse: collapse; font-size: .81rem; }
+    .cli-table thead tr { background: linear-gradient(90deg, #1a2a4a 0%, #2d4a7a 100%); }
+    .cli-table th { padding: .5rem .65rem; color: #fff; font-size: .69rem; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; white-space: nowrap; }
+    .cli-table td { padding: .4rem .65rem; color: #2d3748; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+    .cli-table tbody tr { cursor: pointer; transition: background .12s; }
+    .cli-table tbody tr:hover { background: #f0f4ff; }
+    .cli-table tbody tr.selected { background: #eef2ff; }
+    .btn-cli-edit {
+        background: none; border: none; padding: .2rem .35rem; border-radius: 5px;
+        cursor: pointer; color: #4e73df; transition: all .15s;
+    }
+    .btn-cli-edit:hover { background: #eef2ff; }
+
+    /* ===== SEARCH ===== */
+    .search-box { position: relative; }
+    .search-box input { padding-left: 2rem; border-radius: 8px; font-size: .83rem; border: 1px solid #ced4da; width: 100%; height: 34px; }
+    .search-box input:focus { border-color: #4e73df; box-shadow: 0 0 0 3px rgba(78,115,223,.12); outline: none; }
+    .search-box svg { position: absolute; left: .6rem; top: 50%; transform: translateY(-50%); color: #adb5bd; pointer-events: none; }
+
+    /* ===== DETAIL ===== */
+    .det-field { display: flex; flex-direction: column; padding: .5rem .75rem; border-bottom: 1px solid #f0f0f0; }
+    .det-field:last-child { border-bottom: none; }
+    .det-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #4e73df; margin-bottom: 2px; }
+    .det-value { font-size: .83rem; color: #2d3748; }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state { text-align: center; padding: 2.5rem 1rem; color: #bbb; }
+
+    /* ===== MODAL ===== */
+    .modal-header-cli {
+        background: linear-gradient(135deg, #1a2a4a 0%, #2d4a7a 100%);
+        padding: .9rem 1.25rem; display: flex; align-items: center; gap: .75rem;
+    }
+    .modal-header-cli h5 { margin: 0; color: #fff; font-weight: 700; font-size: .95rem; }
+    .modal-header-cli .btn-close { filter: invert(1); opacity: .8; margin-left: auto; }
+    .modal-content { border: none; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,.18); }
+    .modal-section-title {
+        font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+        color: #4e73df; padding: .35rem 0 .2rem; border-bottom: 1px solid #e3e6f0; margin-bottom: .75rem;
+    }
+    .modal-footer-cli {
+        background: #f8f9fc; border-top: 1px solid #e3e6f0;
+        padding: .85rem 1.25rem; display: flex; justify-content: flex-end; gap: .5rem;
+        border-radius: 0 0 12px 12px;
+    }
+    .modal-field-label { font-size: .8rem; font-weight: 600; color: #4a5568; margin-bottom: 3px; }
+</style>
+
+@* ===== PAGE HEADER ===== *@
+<div class="page-header d-flex align-items-center gap-3">
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+        <path fill-rule="evenodd" d="M5.216 14A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216z"/>
+        <path d="M4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/>
+    </svg>
+    <div>
+        <h4>Gestión de Clientes</h4>
+        <small class="opacity-75">Alta, baja y modificación de clientes</small>
     </div>
+</div>
 
-    <div class="card-body">
-        <!-- Filtro de búsqueda -->
-        <div class="row mb-3">
-            <div class="col-auto">
-                <label for="TipoBusqueda" class="form-label visually-hidden">Tipo</label>
-                <select id="TipoBusqueda" class="form-select form-select-sm">
+<div class="row g-3">
+
+    @* ===== GRILLA ===== *@
+    <div class="col-lg-7">
+        <div class="section-card" style="overflow:visible;">
+            <div class="section-card-header">
+                <div class="sch-left">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#4e73df" viewBox="0 0 16 16"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path fill-rule="evenodd" d="M5.216 14A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216z"/><path d="M4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg>
+                    <span class="sch-title">Clientes</span>
+                    <span class="cnt-badge" id="cntClientes">@Model.Clientes.Count</span>
+                </div>
+                <div class="d-flex align-items-center gap-2" style="flex-wrap:wrap;">
+                    @* Exportar Excel *@
+                    <button id="btnExportarExcel" class="btn-cli btn-cli-excel"
+                            onclick="exportarExcel()" title="Exportar listado a Excel">
+                        <svg id="icoExcel" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="15" height="15">
+                            <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/>
+                            <path d="M7.194 7.766a1.657 1.657 0 0 0-.227-.27 1.02 1.02 0 0 1 .909.538l.854 1.646.854-1.646a1.02 1.02 0 0 1 .909-.538 1.659 1.659 0 0 0-.228.27l-.914 1.76.914 1.76a1.659 1.659 0 0 0 .228.27 1.02 1.02 0 0 1-.909-.538L8.531 9.602l-.854 1.646a1.02 1.02 0 0 1-.909.538c.08-.086.16-.175.228-.27l.914-1.76-.914-1.76z"/>
+                        </svg>
+                        <span id="lblExcel">Excel</span>
+                    </button>
+                    @* Botón agregar *@
+                    <button class="btn-cli btn-cli-success" onclick="abrirModalNuevo()">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>
+                        Agregar
+                    </button>
+                </div>
+            </div>
+
+            @* Barra de búsqueda *@
+            <div style="padding:.65rem 1.1rem; background:#f8f9fc; border-bottom:1px solid #e3e6f0; display:flex; align-items:center; gap:.5rem; flex-wrap:wrap;">
+                <select id="TipoBusqueda" class="form-select form-select-sm"
+                        style="width:160px;border-radius:8px;font-size:.83rem;">
                     <option value="0">Nombre Comercial</option>
                     <option value="1">Razón Social</option>
                     <option value="2">CUIL</option>
                     <option value="3">Localidad</option>
                     <option value="4">Zona</option>
                 </select>
-            </div>
-            <div class="col-md-3">
-                <input type="text" id="txtBusqueda" class="form-control form-control-sm" placeholder="Buscar cliente..." />
-            </div>
-            <div class="col-auto">
-                <button type="button" class="btn btn-sm btn-primary" onclick="buscarClientes()">
-                    <i class="bi bi-search"></i> Buscar
+                <div class="search-box" style="flex:1;min-width:180px;max-width:300px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
+                    <input type="text" id="txtBusqueda" placeholder="Buscar…"
+                           onkeydown="if(event.key==='Enter') buscarClientes()" />
+                </div>
+                <button class="btn-cli btn-cli-primary" onclick="buscarClientes()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
+                    Buscar
                 </button>
             </div>
-        </div>
 
-
-        <!-- División en dos mitades -->
-        <div class="row">
-            <!-- Grilla -->
-            <div class="col-md-6">
-                <div class="table-responsive" style="max-height: 700px; overflow-y: auto;">
-                    <table class="table table-striped table-hover" id="tablaClientes">
-                        <thead class="table-light">
-                            <tr>
-                                <th>ID</th>
-                                <th>Nombre Comercial</th>
-                                <th>Razón Social</th>
-                                <th>Acciones</th>
+            @* Tabla *@
+            <div style="max-height:calc(100vh - 300px); overflow-y:auto;">
+                <table class="cli-table" id="tablaClientes">
+                    <thead>
+                        <tr>
+                            <th style="width:55px;">Cód.</th>
+                            <th>Nombre Comercial</th>
+                            <th>Razón Social</th>
+                            <th style="width:44px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyClientes">
+                        @foreach (var c in Model.Clientes)
+                        {
+                            <tr onclick="mostrarDetalle(@c.Id, this)" data-nombre="@c.NombreComercial?.ToUpper()">
+                                <td><code style="font-size:.75rem;">@c.Id</code></td>
+                                <td style="font-weight:600;">@c.NombreComercial</td>
+                                <td style="font-size:.79rem;color:#6c757d;">@c.RazonSocial</td>
+                                <td class="text-center">
+                                    <button class="btn-cli-edit" title="Editar"
+                                            onclick="event.stopPropagation(); abrirModalEditar(@c.Id)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/></svg>
+                                    </button>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var cliente in Model.Clientes)
-                            {
-                                <tr onclick="mostrarDetalle(@cliente.Id)">
-                                    <td>@cliente.Id</td>
-                                    <td>@cliente.NombreComercial</td>
-                                    <td>@cliente.RazonSocial</td>
-                                    <td>
-                                        <button class="btn btn-outline-danger btn-sm" onclick="eliminarCliente(event, @cliente.Id)">
-                                            Eliminar
-                                        </button>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                        }
+                    </tbody>
+                </table>
             </div>
-
-            <!-- Panel de detalles -->
-            <div class="col-md-6">
-                <div class="border rounded p-3 bg-light" id="panelDetalle">  
-                    <input type="hidden" id="IdClienteSeleccionado" name="Id" />
-                    <div id="detalleContenido">                        
-                        <p class="text-muted">Seleccione un cliente para ver sus datos.</p>
-                    </div>
-                </div>
+            <div id="emptyTabla" class="empty-state" style="display:none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="#ddd" viewBox="0 0 16 16" class="mb-2"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+                <div style="font-size:.84rem;">Sin resultados</div>
             </div>
-        </div>
-
-        <!-- Botón Editar -->
-        <div class="d-flex justify-content-end mt-3">
-            <button type="button" class="btn btn-primary" onclick="abrirModalEditar(document.getElementById('IdClienteSeleccionado').value)">                
-                <i class="bi bi-pencil-square"></i> Editar
-            </button>
-
         </div>
     </div>
-</div>
 
-
-<!-- Modal para Agregar/Editar Cliente -->
-<div class="modal fade" id="clienteModal" tabindex="-1" aria-labelledby="clienteModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content border-0 shadow-lg rounded-3">
-            <div class="card">               
-                <div class="card-header bg-primary text-white d-flex align-items-center justify-content-between">
-                    <h5 class="modal-title mb-0" id="clienteModalLabel">Cliente</h5>
-                    <button type="button"
-                            class="btn-close btn-close-white"
-                            data-bs-dismiss="modal"
-                            aria-label="Cerrar">
-                    </button>
-                </div>
-                <div class="card-body">
-                    <form id="clienteForm" method="post" asp-page-handler="Guardar">
-                        <input type="hidden" id="ClienteId" name="Cliente.Id" />
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Nombre Comercial</label>
-                                <input type="text" class="form-control" name="Cliente.NombreComercial" required />
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Razón Social</label>
-                                <input type="text" class="form-control" name="Cliente.RazonSocial"/>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <label class="form-label">CUIL</label>
-                                <input type="text" class="form-control" name="Cliente.Cuil" />
-                            </div>
-                            <div class="col-md-8">
-                                <label class="form-label">Dirección</label>
-                                <input type="text" class="form-control" name="Cliente.Direccion" required/>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Email</label>
-                                <input type="email" class="form-control" name="Cliente.Email" />
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Teléfono</label>
-                                <input type="text" class="form-control" name="Cliente.Telefono" />
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Celular</label>
-                                <input type="text" class="form-control" name="Cliente.Celular" />
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Contacto</label>
-                                <input type="text" class="form-control" name="Cliente.Contacto" />
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Condición IVA</label>
-                                <select class="form-select" name="Cliente.FkCondIva" asp-items="Model.CondicionIvas"></select>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Vendedor</label>
-                                <select class="form-select" name="Cliente.FkVendedor" asp-items="Model.Vendedores"></select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Localidad</label>
-                                <select class="form-select" name="Cliente.FkLocalidad" asp-items="Model.Localidades"></select>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Zona</label>
-                                <select class="form-select" name="Cliente.FkZona" asp-items="Model.Zonas"></select>
-                            </div>                            
-                        </div>
-
-                        <div class="d-flex justify-content-end">
-                            <button type="submit" class="btn btn-success me-2">Guardar</button>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        </div>
-                    </form>
+    @* ===== DETALLE ===== *@
+    <div class="col-lg-5">
+        <div class="section-card" id="cardDetalle">
+            <div class="section-card-header">
+                <div class="sch-left">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#4e73df" viewBox="0 0 16 16"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4z"/></svg>
+                    <span class="sch-title">Detalle del Cliente</span>
                 </div>
             </div>
+            <div id="panelDetalle" style="padding:.75rem 0; min-height:200px;">
+                <div class="empty-state">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="#ddd" viewBox="0 0 16 16" class="mb-2"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4z"/></svg>
+                    <div style="font-size:.84rem;">Seleccioná un cliente para ver su detalle</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@* ===== MODAL AGREGAR / EDITAR ===== *@
+<div class="modal fade" id="clienteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header-cli">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#fff" viewBox="0 0 16 16"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4z"/></svg>
+                <h5 id="clienteModalLabel">Cliente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form id="clienteForm" method="post" asp-page-handler="Guardar">
+                <input type="hidden" id="ClienteId" name="Cliente.Id" />
+
+                <div class="modal-body p-4">
+
+                    <div class="modal-section-title">Datos Generales</div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="modal-field-label">Nombre Comercial <span style="color:#e74a3b;">*</span></label>
+                            <input type="text" class="form-control form-control-sm" name="Cliente.NombreComercial"
+                                   style="border-radius:8px;" placeholder="Nombre o fantasía…" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="modal-field-label">Razón Social</label>
+                            <input type="text" class="form-control form-control-sm" name="Cliente.RazonSocial"
+                                   style="border-radius:8px;" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="modal-field-label">CUIL / CUIT</label>
+                            <input type="text" class="form-control form-control-sm" name="Cliente.Cuil"
+                                   style="border-radius:8px;" placeholder="XX-XXXXXXXX-X" />
+                        </div>
+                        <div class="col-md-8">
+                            <label class="modal-field-label">Dirección</label>
+                            <input type="text" class="form-control form-control-sm" name="Cliente.Direccion"
+                                   style="border-radius:8px;" />
+                        </div>
+                    </div>
+
+                    <div class="modal-section-title">Contacto</div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="modal-field-label">Email</label>
+                            <input type="email" class="form-control form-control-sm" name="Cliente.Email"
+                                   style="border-radius:8px;" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="modal-field-label">Teléfono</label>
+                            <input type="text" class="form-control form-control-sm" name="Cliente.Telefono"
+                                   style="border-radius:8px;" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="modal-field-label">Celular</label>
+                            <input type="text" class="form-control form-control-sm" name="Cliente.Celular"
+                                   style="border-radius:8px;" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="modal-field-label">Contacto</label>
+                            <input type="text" class="form-control form-control-sm" name="Cliente.Contacto"
+                                   style="border-radius:8px;" placeholder="Nombre del contacto…" />
+                        </div>
+                    </div>
+
+                    <div class="modal-section-title">Clasificación</div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="modal-field-label">Condición IVA</label>
+                            <select class="form-select form-select-sm" name="Cliente.FkCondIva"
+                                    asp-items="Model.CondicionIvas" style="border-radius:8px;">
+                                <option value="">-- Seleccione --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="modal-field-label">Vendedor</label>
+                            <select class="form-select form-select-sm" name="Cliente.FkVendedor"
+                                    asp-items="Model.Vendedores" style="border-radius:8px;">
+                                <option value="">-- Seleccione --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="modal-field-label">Localidad</label>
+                            <select class="form-select form-select-sm" name="Cliente.FkLocalidad"
+                                    asp-items="Model.Localidades" style="border-radius:8px;">
+                                <option value="">-- Seleccione --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="modal-field-label">Zona</label>
+                            <select class="form-select form-select-sm" name="Cliente.FkZona"
+                                    asp-items="Model.Zonas" style="border-radius:8px;">
+                                <option value="">-- Seleccione --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer-cli">
+                    <button type="button" class="btn-cli btn-cli-secondary" data-bs-dismiss="modal">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854z"/></svg>
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn-cli btn-cli-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4.5a.5.5 0 0 0-.146-.354l-3-3A.5.5 0 0 0 11.5 1H2zm0 1h9.293L14 4.707V14H2V2zM5 12a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H5zm1-1h4V9H6v2zM5 5a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1H5z"/></svg>
+                        <span id="btnGuardarTxt">Guardar</span>
+                    </button>
+                </div>
+            </form>
+
         </div>
     </div>
 </div>
 
 <script>
-    document.getElementById("TipoBusqueda").selectedIndex = @ViewData["FiltroDefecto"];
+    // ================================================================
+    // COBRO
+    // ================================================================
+    let _cobroClienteId = 0;
+    let _cobroLineas    = [];   // [{medioId, medioNombre, planNombre, importe, ref1, ref2, ref3, conDatos}]
+    let _cobroId        = 0;
+    let _planesData     = [];   // [{planId, planNombre, medioId, medioNombre, conDatos, recargo}]
 
-    function mostrarDetalle(id) {
-        fetch(`/Clientes/ABM/Index?handler=Detalle&id=${id}`)
-            .then(response => response.text())
+    async function abrirModalCobro(clienteId, nombreCliente) {
+        _cobroClienteId = clienteId;
+        _cobroLineas    = [];
+        _cobroId        = 0;
+
+        // Reset modal
+        document.getElementById('cobroModalSubtitle').textContent = nombreCliente;
+        document.getElementById('cobroLoading').style.display  = 'block';
+        document.getElementById('cobroPanel').style.display    = 'none';
+        document.getElementById('cobroSuccess').style.display  = 'none';
+        document.getElementById('cobroAlerta').style.display   = 'none';
+        document.getElementById('cobroLineasSection').style.display = 'none';
+        document.getElementById('cobroFooter').style.display   = 'flex';
+        document.getElementById('btnCobrar').disabled          = true;
+        document.getElementById('cobroLineasBody').innerHTML   = '';
+
+        new bootstrap.Modal(document.getElementById('cobroModal')).show();
+
+        try {
+            // 1. Verificar caja
+            const cajaR = await fetch('/Clientes/ABM?handler=VerificarCaja');
+            const caja  = await cajaR.json();
+            if (!caja.ok) {
+                document.getElementById('cobroLoading').innerHTML =
+                    '<div style="padding:2rem;text-align:center;">' +
+                    '<svg xmlns="http://www.w3.org/2000/svg" fill="#f6c23e" viewBox="0 0 16 16" width="36" height="36">' +
+                    '<path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>' +
+                    '<div style="margin-top:.75rem;font-weight:600;color:#e74a3b;">' + caja.msg + '</div></div>';
+                return;
+            }
+
+            // 2. Cargar datos del cobro (saldo + planes)
+            const datosR = await fetch('/Clientes/ABM?handler=DatosCobro&id=' + clienteId);
+            const datos  = await datosR.json();
+
+            _planesData = datos.planes;
+
+            // Llenar select de planes
+            const sel = document.getElementById('cbrPlan');
+            sel.innerHTML = '<option value="">-- Seleccione un plan --</option>';
+            _planesData.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value       = p.planId;
+                opt.textContent = p.medioNombre + ' — ' + p.planNombre;
+                opt.dataset.medioId    = p.medioId;
+                opt.dataset.medioNombre = p.medioNombre;
+                opt.dataset.conDatos   = p.conDatos;
+                sel.appendChild(opt);
+            });
+
+            // Mostrar saldo
+            const saldo = parseFloat(datos.saldo) || 0;
+            document.getElementById('cobroSaldoDisplay').textContent = formatMoney(saldo);
+            document.getElementById('cobroSaldoDisplay').style.color = saldo > 0 ? '#e74a3b' : '#1cc88a';
+            document.getElementById('cobroImporte').value = saldo > 0 ? saldo.toFixed(2) : '0.00';
+
+            // Limpiar campos
+            document.getElementById('cbrRef1').value = '';
+            document.getElementById('cbrRef2').value = '';
+            document.getElementById('cbrRef3').value = '';
+            document.getElementById('cbrImporte').value = '';
+            document.getElementById('cbrRefs').style.display = 'none';
+            document.getElementById('cbrPlan').value = '';
+
+            document.getElementById('cobroLoading').style.display = 'none';
+            document.getElementById('cobroPanel').style.display   = 'block';
+
+        } catch(e) {
+            document.getElementById('cobroLoading').innerHTML =
+                '<div style="padding:2rem;text-align:center;color:#e74a3b;">Error al cargar datos. Reintentá.</div>';
+        }
+    }
+
+    function onPlanChange() {
+        const sel = document.getElementById('cbrPlan');
+        const opt = sel.options[sel.selectedIndex];
+        const conDatos = opt && opt.dataset.conDatos === 'true';
+        document.getElementById('cbrRefs').style.display = conDatos ? 'block' : 'none';
+        if (!conDatos) {
+            document.getElementById('cbrRef1').value = '';
+            document.getElementById('cbrRef2').value = '';
+            document.getElementById('cbrRef3').value = '';
+        }
+    }
+
+    function agregarLineaCobro() {
+        const sel      = document.getElementById('cbrPlan');
+        const opt      = sel.options[sel.selectedIndex];
+        const importe  = parseFloat(document.getElementById('cbrImporte').value) || 0;
+        const ref1     = document.getElementById('cbrRef1').value.trim();
+        const ref2     = document.getElementById('cbrRef2').value.trim();
+        const ref3     = document.getElementById('cbrRef3').value.trim();
+
+        if (!opt || !opt.value) {
+            mostrarAlerta('cobroAlerta', 'Seleccioná un plan de pago.'); return;
+        }
+        if (importe <= 0) {
+            mostrarAlerta('cobroAlerta', 'Ingresá un importe mayor a cero.'); return;
+        }
+        const conDatos = opt.dataset.conDatos === 'true';
+        if (conDatos && !ref1) {
+            mostrarAlerta('cobroAlerta', 'Este medio de pago requiere datos. Completá al menos la Referencia 1.'); return;
+        }
+
+        _cobroLineas.push({
+            planId:     parseInt(opt.value),
+            medioId:    parseInt(opt.dataset.medioId),
+            medioNombre: opt.dataset.medioNombre,
+            planNombre: opt.textContent,
+            importe,
+            ref1, ref2, ref3
+        });
+
+        // Resetear campos
+        sel.value = '';
+        document.getElementById('cbrImporte').value = '';
+        document.getElementById('cbrRefs').style.display = 'none';
+        document.getElementById('cbrRef1').value = '';
+        document.getElementById('cbrRef2').value = '';
+        document.getElementById('cbrRef3').value = '';
+        document.getElementById('cobroAlerta').style.display = 'none';
+
+        renderLineasCobro();
+    }
+
+    function eliminarLineaCobro(idx) {
+        _cobroLineas.splice(idx, 1);
+        renderLineasCobro();
+    }
+
+    function renderLineasCobro() {
+        const tbody = document.getElementById('cobroLineasBody');
+        tbody.innerHTML = '';
+        _cobroLineas.forEach((l, i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML =
+                '<td>' + l.medioNombre + '<br><small style="color:#888;font-size:.72rem;">' + l.planNombre + '</small></td>' +
+                '<td style="text-align:right;font-weight:700;color:#6f42c1;">' + formatMoney(l.importe) + '</td>' +
+                '<td style="font-size:.75rem;">' + (l.ref1 || '—') + '</td>' +
+                '<td style="font-size:.75rem;">' + (l.ref2 || '—') + '</td>' +
+                '<td style="font-size:.75rem;">' + (l.ref3 || '—') + '</td>' +
+                '<td><button onclick="eliminarLineaCobro(' + i + ')" style="background:none;border:none;color:#e74a3b;cursor:pointer;font-size:.85rem;" title="Eliminar">✕</button></td>';
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('cobroLineasSection').style.display = _cobroLineas.length ? 'block' : 'none';
+        actualizarTotalCobro();
+    }
+
+    function actualizarTotalCobro() {
+        const importeACobrar = parseFloat(document.getElementById('cobroImporte').value) || 0;
+        const totalAsignado  = _cobroLineas.reduce((s, l) => s + l.importe, 0);
+        const diferencia     = importeACobrar - totalAsignado;
+
+        document.getElementById('cobroTotalAsignado').textContent = formatMoney(totalAsignado);
+
+        const divDif = document.getElementById('cobroDiferencia');
+        if (Math.abs(diferencia) < 0.01) {
+            divDif.innerHTML = '<span style="color:#1cc88a;font-weight:700;">✓ Completo</span>';
+            document.getElementById('btnCobrar').disabled = (_cobroLineas.length === 0 || importeACobrar <= 0);
+        } else {
+            const sign = diferencia > 0 ? 'Faltan' : 'Excede en';
+            divDif.innerHTML = '<span style="color:#e74a3b;font-size:.78rem;">' + sign + ' ' + formatMoney(Math.abs(diferencia)) + '</span>';
+            document.getElementById('btnCobrar').disabled = true;
+        }
+    }
+
+    async function procesarCobro() {
+        const btn = document.getElementById('btnCobrar');
+        btn.disabled = true;
+        btn.innerHTML = '<span style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:5px;"></span>Procesando…';
+
+        const importeTotal = parseFloat(document.getElementById('cobroImporte').value) || 0;
+        const payload = {
+            clienteId:    _cobroClienteId,
+            importeTotal: importeTotal,
+            detalle: _cobroLineas.map(l => ({
+                medioPagoId: l.medioId,
+                medioNombre: l.medioNombre,
+                importe:     l.importe,
+                referencia1: l.ref1 || null,
+                referencia2: l.ref2 || null,
+                referencia3: l.ref3 || null
+            }))
+        };
+
+        try {
+            const r = await fetch('/Clientes/ABM?handler=Cobro', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            let data;
+            const ct = r.headers.get('content-type') || '';
+            if (ct.includes('application/json')) {
+                data = await r.json();
+            } else {
+                const txt = await r.text();
+                btn.disabled = false;
+                btn.innerHTML = '💳 Confirmar Cobro';
+                mostrarAlerta('cobroAlerta', 'Error servidor (' + r.status + '): ' + txt.substring(0, 200));
+                return;
+            }
+
+            if (data.ok) {
+                _cobroId = data.cobroId;
+                document.getElementById('cobroLoading').style.display  = 'none';
+                document.getElementById('cobroPanel').style.display    = 'none';
+                document.getElementById('cobroFooter').style.display   = 'none';
+                document.getElementById('cobroSuccessMsg').innerHTML =
+                    'Cobro N° <strong>' + String(_cobroId).padStart(8,'0') + '</strong> registrado por ' +
+                    '<strong>' + formatMoney(importeTotal) + '</strong>';
+                document.getElementById('btnImprimirRecibo').style.display = 'inline-flex';
+                document.getElementById('cobroSuccess').style.display   = 'block';
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = '💳 Confirmar Cobro';
+                mostrarAlerta('cobroAlerta', data.msg || 'Error al procesar el cobro.');
+            }
+        } catch(e) {
+            btn.disabled = false;
+            btn.innerHTML = '💳 Confirmar Cobro';
+            mostrarAlerta('cobroAlerta', 'Error: ' + (e.message || e));
+        }
+    }
+
+    function imprimirRecibo() {
+        if (!_cobroId) return;
+        window.open('/Clientes/ABM?handler=ReciboCobro&id=' + _cobroId, '_blank');
+    }
+
+    // Helpers cobro
+    function mostrarAlerta(id, msg) {
+        const el = document.getElementById(id);
+        el.textContent = msg;
+        el.style.display = 'block';
+        setTimeout(() => { el.style.display = 'none'; }, 5000);
+    }
+
+    function formatMoney(n) {
+        return '$ ' + parseFloat(n).toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2});
+    }
+
+    // -------- CUENTA CORRIENTE --------
+    let _ccClienteId = 0;
+
+    function abrirModalCC(clienteId, nombreCliente) {
+        _ccClienteId = clienteId;
+        document.getElementById('ccModalLabel').textContent = 'Cuenta Corriente';
+        document.getElementById('ccModalSubtitle').textContent = nombreCliente;
+        cerrarDetalleCC();
+        document.getElementById('ccContent').innerHTML =
+            '<div style="text-align:center;padding:3rem;">' +
+            '<div style="display:inline-block;width:22px;height:22px;border:3px solid rgba(78,115,223,.2);' +
+            'border-top-color:#4e73df;border-radius:50%;animation:spin .7s linear infinite;"></div>' +
+            '</div>';
+
+        new bootstrap.Modal(document.getElementById('ccModal')).show();
+
+        fetch('/Clientes/ABM?handler=CuentaCorriente&id=' + clienteId)
+            .then(r => r.text())
             .then(html => {
-                document.getElementById("detalleContenido").innerHTML = html;
-                document.getElementById("IdClienteSeleccionado").value = id;
+                document.getElementById('ccContent').innerHTML = html;
+                // Delegación de eventos: click en fila cobro → mostrar detalle
+                document.getElementById('ccContent').addEventListener('click', function(e) {
+                    const fila = e.target.closest('tr.cc-fila-cobro');
+                    if (!fila) return;
+                    const cobroId = fila.getAttribute('data-cobro-id');
+                    if (!cobroId) return;
+                    mostrarDetalleCC(parseInt(cobroId), fila);
+                });
+            })
+            .catch(() => {
+                document.getElementById('ccContent').innerHTML =
+                    '<p style="color:#e74a3b;padding:1.5rem;">Error al cargar la cuenta corriente.</p>';
             });
     }
 
-               function eliminarCliente(event, id) {
-        event.stopPropagation();
+    function mostrarDetalleCC(cobroId, filaEl) {
+        // Marca la fila activa
+        document.querySelectorAll('#ccContent tr.cc-fila-activa')
+            .forEach(r => r.classList.remove('cc-fila-activa'));
+        if (filaEl) filaEl.classList.add('cc-fila-activa');
 
-        if (!confirm("¿Está seguro que desea eliminar este cliente?")) return;
+        const panel = document.getElementById('ccDetalle');
+        const body  = document.getElementById('ccDetalleBody');
+        document.getElementById('ccDetalleTitulo').textContent =
+            'Detalle del Cobro N° ' + String(cobroId).padStart(8, '0');
+        body.innerHTML =
+            '<div style="text-align:center;padding:1rem;">' +
+            '<div style="display:inline-block;width:16px;height:16px;border:2px solid rgba(111,66,193,.2);' +
+            'border-top-color:#6f42c1;border-radius:50%;animation:spin .7s linear infinite;"></div></div>';
+        panel.style.display = 'block';
 
-        const token = document.getElementById("antiForgeryToken").value;
+        fetch('/Clientes/ABM?handler=DetalleCobro&id=' + cobroId)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.ok) { body.innerHTML = '<p style="color:#e74a3b;font-size:.82rem;">Error al cargar el detalle.</p>'; return; }
 
-        fetch(`/Clientes/ABM?handler=Eliminar`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "RequestVerificationToken": token
-            },
-            body: `id=${encodeURIComponent(id)}`
-        })
-        .then(r => {
-            if (!r.ok) throw new Error("Error al eliminar");
-            return r.json();
-        })
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            }
-        })
-        .catch(err => console.error(err));
+                let html = '<div style="display:flex;gap:1.5rem;font-size:.8rem;margin-bottom:.6rem;flex-wrap:wrap;">' +
+                    '<span><strong style="color:#6f42c1;">Fecha:</strong> ' + data.fecha + '</span>' +
+                    '<span><strong style="color:#6f42c1;">Total:</strong> ' + fmtCC(data.importeTotal) + '</span>' +
+                    '</div>';
+                html += '<table class="cc-detalle-table"><thead><tr>' +
+                    '<th>Medio de Pago</th>' +
+                    '<th style="text-align:right;">Importe</th>' +
+                    '<th>Dato 1</th><th>Dato 2</th><th>Dato 3</th>' +
+                    '</tr></thead><tbody>';
+                data.detalle.forEach(d => {
+                    html += '<tr>' +
+                        '<td>' + escHTML(d.medioPago) + '</td>' +
+                        '<td style="text-align:right;font-weight:600;">' + fmtCC(d.importe) + '</td>' +
+                        '<td style="text-align:right;">' + escHTML(d.dato1) + '</td>' +
+                        '<td style="text-align:right;">' + escHTML(d.dato2) + '</td>' +
+                        '<td style="text-align:right;">' + escHTML(d.dato3) + '</td>' +
+                        '</tr>';
+                });
+                html += '</tbody></table>';
+                body.innerHTML = html;
+            })
+            .catch(() => { body.innerHTML = '<p style="color:#e74a3b;font-size:.82rem;">Error de conexión.</p>'; });
     }
 
+    function cerrarDetalleCC() {
+        document.getElementById('ccDetalle').style.display = 'none';
+        document.querySelectorAll('#ccContent tr.cc-fila-activa')
+            .forEach(r => r.classList.remove('cc-fila-activa'));
+    }
 
+    function verEstadoCC() {
+        if (!_ccClienteId) return;
+        window.open('/Clientes/ABM?handler=EstadoCC&id=' + _ccClienteId, '_blank');
+    }
 
+    function reimprimirRecibo(cobroId) {
+        window.open('/Clientes/ABM?handler=ReciboCobro&id=' + cobroId, '_blank');
+    }
 
+    function fmtCC(n) {
+        return '$ ' + parseFloat(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
 
+    function escHTML(s) {
+        if (!s) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // -------- EXPORTAR EXCEL --------
+    async function exportarExcel() {
+        const btn   = document.getElementById('btnExportarExcel');
+        const lbl   = document.getElementById('lblExcel');
+        const ico   = document.getElementById('icoExcel');
+
+        // Estado: generando
+        btn.disabled = true;
+        ico.style.display = 'none';
+        lbl.innerHTML = '<span style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:4px;"></span>Generando…';
+
+        mostrarToast(
+            '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="14" height="14" style="margin-right:6px;vertical-align:middle;"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg> Generando Excel…', 'info');
+
+        try {
+            const response = await fetch('/Clientes/ABM?handler=ExportarExcel');
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+
+            const blob = await response.blob();
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            const hoy  = new Date();
+            const dd   = String(hoy.getDate()).padStart(2,'0');
+            const mm   = String(hoy.getMonth()+1).padStart(2,'0');
+            const yy   = hoy.getFullYear();
+            a.href     = url;
+            a.download = 'Clientes_' + dd + mm + yy + '.xls';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+            mostrarToast(
+                '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="14" height="14" style="margin-right:6px;vertical-align:middle;"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg> ¡Excel listo! La descarga comenzó.', 'success');
+
+        } catch (e) {
+            console.error(e);
+            mostrarToast('&#9888; Error al generar el Excel. Reintentá.', 'error');
+        } finally {
+            // Restaurar botón
+            btn.disabled = false;
+            ico.style.display = '';
+            lbl.textContent = 'Excel';
+        }
+    }
+
+    // -------- TOAST --------
+    function mostrarToast(htmlMsg, tipo) {
+        const existing = document.getElementById('cli-toast');
+        if (existing) { clearTimeout(existing._timer); existing.remove(); }
+
+        const paleta = {
+            info:    { bg: '#1a2a4a', bdr: '#4e73df' },
+            success: { bg: '#155724', bdr: '#1cc88a' },
+            error:   { bg: '#721c24', bdr: '#e74a3b' }
+        };
+        const c = paleta[tipo] || paleta.info;
+
+        const t = document.createElement('div');
+        t.id = 'cli-toast';
+        t.style.cssText =
+            'position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;' +
+            'background:' + c.bg + ';color:#fff;' +
+            'padding:.7rem 1.1rem;border-radius:10px;' +
+            'box-shadow:0 4px 20px rgba(0,0,0,.3);' +
+            'font-size:.84rem;font-weight:600;' +
+            'display:flex;align-items:center;' +
+            'border-left:4px solid ' + c.bdr + ';' +
+            'max-width:340px;min-width:220px;' +
+            'animation:toastIn .22s ease;';
+        t.innerHTML = htmlMsg;
+        document.body.appendChild(t);
+
+        t._timer = setTimeout(() => {
+            t.style.animation = 'toastOut .22s ease forwards';
+            setTimeout(() => t.remove(), 230);
+        }, 4000);
+    }
+
+    // Inicializar filtro defecto
+    document.getElementById('TipoBusqueda').selectedIndex = @ViewData["FiltroDefecto"];
+
+    // -------- DETALLE --------
+    function mostrarDetalle(id, tr) {
+        document.querySelectorAll('#tbodyClientes tr').forEach(r => r.classList.remove('selected'));
+        if (tr) tr.classList.add('selected');
+
+        const panel = document.getElementById('panelDetalle');
+        panel.innerHTML = '<div style="text-align:center;padding:2rem;"><div style="display:inline-block;width:20px;height:20px;border:2px solid rgba(78,115,223,.25);border-top-color:#4e73df;border-radius:50%;animation:spin .7s linear infinite;"></div></div>';
+
+        fetch('/Clientes/ABM?handler=Detalle&id=' + id)
+            .then(r => r.text())
+            .then(html => { panel.innerHTML = html; })
+            .catch(() => { panel.innerHTML = '<p style="color:#e74a3b;padding:.75rem;">Error al cargar.</p>'; });
+    }
+
+    // -------- BUSCAR --------
     async function buscarClientes() {
-        const tipo = parseInt(document.getElementById("TipoBusqueda").value);
-        const valor = document.getElementById("txtBusqueda").value.trim();
-
+        const tipo  = parseInt(document.getElementById('TipoBusqueda').value);
+        const valor = document.getElementById('txtBusqueda').value.trim();
         if (!valor) return;
 
-        const response = await fetch(`/Clientes/ABM/Index?handler=BuscarClientes&tipo=${tipo}&valor=${encodeURIComponent(valor)}`);
+        const response = await fetch('/Clientes/ABM?handler=BuscarClientes&tipo=' + tipo + '&valor=' + encodeURIComponent(valor));
         const html = await response.text();
 
-        const tbody = document.querySelector("#tablaClientes tbody");
+        const tbody = document.getElementById('tbodyClientes');
         tbody.innerHTML = html;
 
-        // Si solo hay un resultado, mostrar detalle automáticamente
-        const filas = tbody.querySelectorAll("tr");
-        if (filas.length === 1) {
-            const id = filas[0].querySelector("td").innerText;
-            mostrarDetalle(id);
+        // Agregar evento de selección a las filas nuevas
+        tbody.querySelectorAll('tr').forEach(tr => {
+            tr.addEventListener('click', () => mostrarDetalle(
+                tr.querySelector('td code')?.textContent || 0, tr));
+        });
+
+        const n = tbody.querySelectorAll('tr').length;
+        document.getElementById('emptyTabla').style.display = n === 0 ? 'block' : 'none';
+        document.getElementById('cntClientes').textContent = n;
+
+        if (n === 1) {
+            const id = tbody.querySelector('td code')?.textContent;
+            if (id) mostrarDetalle(id, tbody.querySelector('tr'));
         }
     }
 
-        // Abrir modal en modo "Nuevo"
-        function abrirModalNuevo() {
-        document.getElementById("clienteForm").reset();
-        document.getElementById("ClienteId").value = 0;
-        document.getElementById("clienteModalLabel").innerText = "Agregar Cliente";
-        new bootstrap.Modal(document.getElementById("clienteModal")).show();
+    // -------- ELIMINAR --------
+    async function eliminarCliente(id) {
+        if (!confirm('¿Eliminar este cliente?')) return;
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                   || document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+        try {
+            const r = await fetch('/Clientes/ABM?handler=Eliminar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded',
+                           'RequestVerificationToken': token },
+                body: 'id=' + encodeURIComponent(id)
+            });
+            const data = await r.json();
+            if (data.success) location.reload();
+        } catch (e) { console.error(e); }
     }
 
+    // -------- MODAL NUEVO --------
+    function abrirModalNuevo() {
+        document.getElementById('clienteForm').reset();
+        document.getElementById('ClienteId').value = 0;
+        document.getElementById('clienteModalLabel').textContent = 'Agregar Cliente';
+        document.getElementById('btnGuardarTxt').textContent = 'Agregar';
+        new bootstrap.Modal(document.getElementById('clienteModal')).show();
+    }
 
-    // Abrir modal en modo "Editar"
-       async function abrirModalEditar(id) {
-        // Pedimos los datos del cliente en JSON
-        const response = await fetch(`/Clientes/ABM?handler=Cliente&id=${id}`);
-        if (!response.ok) {
-            alert("No se pudo obtener el cliente");
-            return;
+    // -------- MODAL EDITAR --------
+    async function abrirModalEditar(id) {
+        const r = await fetch('/Clientes/ABM?handler=Cliente&id=' + id);
+        if (!r.ok) { alert('No se pudo obtener el cliente'); return; }
+        const c = await r.json();
+
+        document.getElementById('ClienteId').value = c.id;
+        document.querySelector('input[name="Cliente.NombreComercial"]').value = c.nombreComercial ?? '';
+        document.querySelector('input[name="Cliente.RazonSocial"]').value     = c.razonSocial     ?? '';
+        document.querySelector('input[name="Cliente.Cuil"]').value            = c.cuil            ?? '';
+        document.querySelector('input[name="Cliente.Direccion"]').value       = c.direccion       ?? '';
+        document.querySelector('input[name="Cliente.Email"]').value           = c.email           ?? '';
+        document.querySelector('input[name="Cliente.Telefono"]').value        = c.telefono        ?? '';
+        document.querySelector('input[name="Cliente.Celular"]').value         = c.celular         ?? '';
+        document.querySelector('input[name="Cliente.Contacto"]').value        = c.contacto        ?? '';
+        document.querySelector('select[name="Cliente.FkCondIva"]').value      = c.fkCondIva       ?? '';
+        document.querySelector('select[name="Cliente.FkVendedor"]').value     = c.fkVendedor      ?? '';
+        document.querySelector('select[name="Cliente.FkLocalidad"]').value    = c.fkLocalidad     ?? '';
+        document.querySelector('select[name="Cliente.FkZona"]').value         = c.fkZona          ?? '';
+
+        document.getElementById('clienteModalLabel').textContent = 'Editar Cliente';
+        document.getElementById('btnGuardarTxt').textContent = 'Guardar cambios';
+        new bootstrap.Modal(document.getElementById('clienteModal')).show();
+    }
+</script>
+
+@* ===== MODAL COBRO ===== *@
+<div class="modal fade" id="cobroModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+
+            @* Header *@
+            <div class="modal-header-cli" style="background:linear-gradient(135deg,#3d1a6e 0%,#6f42c1 100%);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#fff" viewBox="0 0 16 16">
+                    <path d="M4 10.781c.148 1.667 1.513 2.85 3.591 3.003V15h1.043v-1.216c2.27-.179 3.678-1.438 3.678-3.3 0-1.59-.947-2.51-2.956-3.028l-.722-.187V3.467c1.122.11 1.879.714 2.07 1.616h1.47c-.166-1.6-1.54-2.748-3.54-2.875V1H7.591v1.233c-1.939.23-3.27 1.472-3.27 3.156 0 1.454.966 2.483 2.661 2.917l.61.162v4.031c-1.149-.17-1.94-.8-2.131-1.718H4zm3.391-3.836c-1.043-.263-1.6-.825-1.6-1.616 0-.944.704-1.641 1.8-1.828v3.495l-.2-.051zm1.591 1.872c1.287.323 1.852.859 1.852 1.769 0 1.097-.826 1.828-2.2 1.939V8.73l.348.086z"/>
+                </svg>
+                <div style="flex:1;padding-left:.5rem;">
+                    <h5 style="margin:0;color:#fff;font-weight:700;font-size:.95rem;">Registrar Cobro</h5>
+                    <small id="cobroModalSubtitle" style="color:rgba(255,255,255,.65);font-size:.75rem;"></small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);opacity:.8;" id="btnCerrarCobro"></button>
+            </div>
+
+            <div class="modal-body p-0">
+
+                @* Panel cargando *@
+                <div id="cobroLoading" style="text-align:center;padding:3rem;">
+                    <div style="display:inline-block;width:22px;height:22px;border:3px solid rgba(111,66,193,.2);
+                                border-top-color:#6f42c1;border-radius:50%;animation:spin .7s linear infinite;"></div>
+                    <div style="margin-top:.75rem;font-size:.84rem;color:#6c757d;">Verificando caja…</div>
+                </div>
+
+                @* Panel principal del cobro *@
+                <div id="cobroPanel" style="display:none;padding:1.25rem;">
+
+                    @* ── Sección resumen ── *@
+                    <div style="background:linear-gradient(90deg,#f5f0ff,#faf8ff);border:1px solid #d8c9f5;
+                                border-radius:10px;padding:.85rem 1.1rem;margin-bottom:1rem;
+                                display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6f42c1;margin-bottom:2px;">Saldo pendiente del cliente</div>
+                            <div id="cobroSaldoDisplay" style="font-size:1.15rem;font-weight:700;color:#e74a3b;">$ 0,00</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6f42c1;margin-bottom:2px;">Importe a cobrar</div>
+                            <input type="number" id="cobroImporte" min="0" step="0.01"
+                                   style="width:140px;text-align:right;font-size:1rem;font-weight:700;
+                                          border:2px solid #6f42c1;border-radius:8px;padding:.3rem .6rem;
+                                          color:#3d1a6e;background:#fff;" oninput="actualizarTotalCobro()" />
+                        </div>
+                    </div>
+
+                    @* ── Agregar forma de pago ── *@
+                    <div style="background:#f8f9fc;border:1px solid #e3e6f0;border-radius:10px;padding:.85rem 1.1rem;margin-bottom:.75rem;">
+                        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6f42c1;margin-bottom:.6rem;border-bottom:1px solid #e3e6f0;padding-bottom:.4rem;">
+                            Agregar Forma de Pago
+                        </div>
+                        <div class="cobro-plan-row">
+                            <div style="flex:1;min-width:180px;">
+                                <label style="font-size:.78rem;font-weight:600;color:#4a5568;display:block;margin-bottom:3px;">Plan de Pago</label>
+                                <select id="cbrPlan" class="form-select form-select-sm" onchange="onPlanChange()">
+                                    <option value="">-- Seleccione --</option>
+                                </select>
+                            </div>
+                            <div style="width:120px;">
+                                <label style="font-size:.78rem;font-weight:600;color:#4a5568;display:block;margin-bottom:3px;">Importe</label>
+                                <input type="number" id="cbrImporte" min="0" step="0.01" placeholder="0,00"
+                                       class="form-control form-control-sm" style="text-align:right;" />
+                            </div>
+                            <div>
+                                <label style="font-size:.78rem;display:block;margin-bottom:3px;">&nbsp;</label>
+                                <button class="btn-cli btn-cli-cobro" onclick="agregarLineaCobro()" style="height:31px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" height="13"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>
+                                    Agregar
+                                </button>
+                            </div>
+                        </div>
+
+                        @* Campos de referencia (visibles si conDatos=true) *@
+                        <div id="cbrRefs" style="display:none;margin-top:.5rem;">
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <label style="font-size:.75rem;font-weight:600;color:#6f42c1;">Referencia 1 *</label>
+                                    <input type="text" id="cbrRef1" class="form-control form-control-sm" style="border-radius:8px;" placeholder="Nro. cheque / comprobante…" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label style="font-size:.75rem;font-weight:600;color:#4a5568;">Referencia 2</label>
+                                    <input type="text" id="cbrRef2" class="form-control form-control-sm" style="border-radius:8px;" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label style="font-size:.75rem;font-weight:600;color:#4a5568;">Referencia 3</label>
+                                    <input type="text" id="cbrRef3" class="form-control form-control-sm" style="border-radius:8px;" />
+                                </div>
+                            </div>
+                            <div style="font-size:.71rem;color:#e74a3b;margin-top:3px;">
+                                ⚠ Este medio de pago requiere al menos un dato de referencia.
+                            </div>
+                        </div>
+                    </div>
+
+                    @* ── Tabla de líneas agregadas ── *@
+                    <div id="cobroLineasSection" style="display:none;">
+                        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6f42c1;margin-bottom:.4rem;">
+                            Formas de Pago Agregadas
+                        </div>
+                        <table class="cobro-lineas-table">
+                            <thead><tr>
+                                <th>Medio de Pago</th>
+                                <th style="text-align:right;">Importe</th>
+                                <th>Ref. 1</th><th>Ref. 2</th><th>Ref. 3</th>
+                                <th style="width:36px;"></th>
+                            </tr></thead>
+                            <tbody id="cobroLineasBody"></tbody>
+                        </table>
+
+                        <div class="cobro-total-bar">
+                            <span style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#4e73df;">Total asignado</span>
+                            <div style="display:flex;align-items:center;gap:.75rem;">
+                                <span id="cobroTotalAsignado" style="font-size:1rem;font-weight:700;color:#6f42c1;">$ 0,00</span>
+                                <span id="cobroDiferencia" style="font-size:.8rem;"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* Alerta *@
+                    <div class="cobro-alerta" id="cobroAlerta"></div>
+
+                </div>
+
+                @* Panel éxito (fuera de cobroPanel para no quedar oculto) *@
+                <div class="cobro-success" id="cobroSuccess" style="display:none;margin:1.25rem;">
+                    <div style="font-size:1rem;font-weight:700;color:#155724;margin-bottom:.5rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="18" height="18" style="vertical-align:middle;margin-right:6px;"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>
+                        ¡Cobro registrado con éxito!
+                    </div>
+                    <div style="font-size:.84rem;color:#155724;margin-bottom:.85rem;" id="cobroSuccessMsg"></div>
+                    <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+                        <button class="btn-cli btn-cli-primary" id="btnImprimirRecibo" onclick="imprimirRecibo()" style="display:none;">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="14" height="14"><path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/><path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/></svg>
+                            Imprimir Recibo
+                        </button>
+                        <button class="btn-cli btn-cli-secondary" data-bs-dismiss="modal" onclick="location.reload()">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" height="13"><path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+                            Actualizar
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            @* Footer *@
+            <div style="background:#f8f9fc;border-top:1px solid #e3e6f0;padding:.7rem 1rem;
+                        border-radius:0 0 12px 12px;display:flex;justify-content:space-between;align-items:center;"
+                 id="cobroFooter">
+                <button type="button" class="btn-cli btn-cli-secondary" data-bs-dismiss="modal">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" height="13"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854z"/></svg>
+                    Cancelar
+                </button>
+                <button id="btnCobrar" class="btn-cli btn-cli-cobro" onclick="procesarCobro()" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="14" height="14"><path d="M4 10.781c.148 1.667 1.513 2.85 3.591 3.003V15h1.043v-1.216c2.27-.179 3.678-1.438 3.678-3.3 0-1.59-.947-2.51-2.956-3.028l-.722-.187V3.467c1.122.11 1.879.714 2.07 1.616h1.47c-.166-1.6-1.54-2.748-3.54-2.875V1H7.591v1.233c-1.939.23-3.27 1.472-3.27 3.156 0 1.454.966 2.483 2.661 2.917l.61.162v4.031c-1.149-.17-1.94-.8-2.131-1.718H4zm3.391-3.836c-1.043-.263-1.6-.825-1.6-1.616 0-.944.704-1.641 1.8-1.828v3.495l-.2-.051zm1.591 1.872c1.287.323 1.852.859 1.852 1.769 0 1.097-.826 1.828-2.2 1.939V8.73l.348.086z"/></svg>
+                    Confirmar Cobro
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@* ===== MODAL CUENTA CORRIENTE ===== *@
+<div class="modal fade" id="ccModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <div class="modal-header-cli" style="background:linear-gradient(135deg,#0d1f3c 0%,#1a3a6a 100%);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#fff" viewBox="0 0 16 16">
+                    <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1H0V4zm0 3h16v5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V7zm3 2a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1H3zm2.5 0a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5z"/>
+                </svg>
+                <div style="flex:1;padding-left:.5rem;">
+                    <h5 id="ccModalLabel" style="margin:0;color:#fff;font-weight:700;font-size:.95rem;">Cuenta Corriente</h5>
+                    <small id="ccModalSubtitle" style="color:rgba(255,255,255,.65);font-size:.75rem;"></small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);opacity:.8;"></button>
+            </div>
+
+            @* Barra de estado *@
+            <div style="background:linear-gradient(90deg,#f0f4ff,#f8f9fc);border-bottom:1px solid #e3e6f0;
+                        padding:.45rem 1rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
+                <div style="display:flex;align-items:center;gap:.35rem;font-size:.78rem;color:#4e73df;font-weight:600;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="12" height="12">
+                        <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                        <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                    </svg>
+                    Movimientos ordenados por fecha
+                </div>
+                <div style="margin-left:auto;display:flex;gap:.5rem;font-size:.74rem;">
+                    <span style="display:inline-flex;align-items:center;gap:.25rem;">
+                        <span style="display:inline-block;width:10px;height:10px;background:#fff8f8;border:1px solid #fcc;border-radius:2px;"></span>
+                        Debe
+                    </span>
+                    <span style="display:inline-flex;align-items:center;gap:.25rem;">
+                        <span style="display:inline-block;width:10px;height:10px;background:#f8fff9;border:1px solid #b2dfdb;border-radius:2px;"></span>
+                        Haber
+                    </span>
+                </div>
+            </div>
+
+            <div class="modal-body p-0">
+                <div id="ccContent" style="min-height:180px;">
+                    <div style="text-align:center;padding:3rem;">
+                        <div style="display:inline-block;width:22px;height:22px;border:3px solid rgba(78,115,223,.2);
+                                    border-top-color:#4e73df;border-radius:50%;animation:spin .7s linear infinite;"></div>
+                    </div>
+                </div>
+
+                @* Panel de detalle del cobro (visible al clickear una fila cobro) *@
+                <div id="ccDetalle" style="display:none;border-top:2px solid #6f42c1;background:#faf8ff;padding:.85rem 1rem;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem;">
+                        <span id="ccDetalleTitulo" style="font-size:.78rem;font-weight:700;text-transform:uppercase;
+                              letter-spacing:.5px;color:#6f42c1;">Detalle del Cobro</span>
+                        <button type="button" onclick="cerrarDetalleCC()"
+                                style="background:none;border:none;cursor:pointer;color:#6c757d;font-size:1rem;line-height:1;padding:0 4px;"
+                                title="Cerrar detalle">&#x2715;</button>
+                    </div>
+                    <div id="ccDetalleBody">
+                        <div style="text-align:center;padding:1rem;">
+                            <div style="display:inline-block;width:16px;height:16px;border:2px solid rgba(111,66,193,.2);
+                                        border-top-color:#6f42c1;border-radius:50%;animation:spin .7s linear infinite;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background:#f8f9fc;border-top:1px solid #e3e6f0;padding:.7rem 1rem;
+                        border-radius:0 0 12px 12px;display:flex;justify-content:space-between;align-items:center;">
+                <button type="button" id="btnEstadoCC" class="btn-cli btn-cli-primary"
+                        onclick="verEstadoCC()" title="Exportar estado de cuenta como PDF imprimible">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" height="13">
+                        <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                        <path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.697 19.697 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.65-.823.192-.077.4-.12.602-.077a.7.7 0 0 1 .477.365c.088.164.12.356.127.538.007.188-.012.396-.047.614-.084.51-.27 1.134-.52 1.794a10.954 10.954 0 0 0 .98 1.686 5.753 5.753 0 0 1 1.334.05c.364.066.734.195.96.465.12.144.193.32.2.518.007.192-.047.382-.138.563a1.04 1.04 0 0 1-.354.416.856.856 0 0 1-.51.138c-.331-.014-.654-.196-.933-.417a5.712 5.712 0 0 1-.911-.95 11.651 11.651 0 0 0-1.997.406 11.307 11.307 0 0 1-1.02 1.51c-.292.35-.609.656-.927.787a.793.793 0 0 1-.58.029z"/>
+                    </svg>
+                    Estado de Cuenta PDF
+                </button>
+                <button type="button" id="btnNC" class="btn-cli btn-cli-nc" onclick="abrirModalNC()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" height="13">
+                        <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5z"/>
+                        <path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
+                    </svg>
+                    Nota de Crédito
+                </button>
+                <button type="button" id="btnND" class="btn-cli btn-cli-nd" onclick="abrirModalND()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" height="13">
+                        <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/>
+                        <path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
+                    </svg>
+                    Nota de Débito
+                </button>
+                <button type="button" class="btn-cli btn-cli-secondary" data-bs-dismiss="modal">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" height="13">
+                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854z"/>
+                    </svg>
+                    Cerrar
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@* ===== MODAL NOTA DE DÉBITO ===== *@
+<div class="modal fade" id="ndModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:440px;">
+    <div class="modal-content" style="border-radius:12px;overflow:hidden;border:none;box-shadow:0 8px 32px rgba(0,0,0,.18);">
+
+      <div class="nd-modal-header">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="20" height="20" style="flex-shrink:0;">
+          <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/>
+          <path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
+        </svg>
+        <div style="flex:1;padding-left:.5rem;">
+          <h5 id="ndModalLabel" style="margin:0;color:#fff;font-weight:700;font-size:.95rem;">Nueva Nota de Débito</h5>
+          <small id="ndModalSubtitle" style="color:rgba(255,255,255,.65);font-size:.75rem;"></small>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);opacity:.8;"></button>
+      </div>
+
+      <div class="modal-body p-0">
+        <div id="ndPanel" style="padding:1.25rem 1.5rem;">
+
+          <div id="ndAlerta" style="display:none;background:#fff3cd;border:1px solid #ffc107;
+               border-radius:6px;padding:.6rem .9rem;margin-bottom:1rem;font-size:.82rem;color:#856404;"></div>
+
+          <div class="mb-3">
+            <label style="font-size:.82rem;font-weight:600;color:#5a5c69;">Importe <span style="color:#e74a3b;">*</span></label>
+            <input type="number" id="ndImporte" class="form-control form-control-sm" min="0.01" step="0.01"
+                   placeholder="0.00" oninput="validarFormND()" />
+          </div>
+
+          <div class="mb-3">
+            <label style="font-size:.82rem;font-weight:600;color:#5a5c69;">Observaciones <span style="color:#e74a3b;">*</span></label>
+            <textarea id="ndObs" class="form-control form-control-sm" rows="3"
+                      placeholder="Motivo de la nota de débito…" maxlength="100"
+                      oninput="validarFormND()"></textarea>
+          </div>
+        </div>
+
+        <div id="ndSuccess" style="display:none;background:#fff8e1;border-top:2px solid #e67e22;padding:1.25rem;">
+          <div style="font-size:.95rem;font-weight:700;color:#7d4e00;margin-bottom:.4rem;">
+            &#x2705; Nota de Débito registrada
+          </div>
+          <div id="ndSuccessMsg" style="font-size:.83rem;color:#7d4e00;"></div>
+        </div>
+      </div>
+
+      <div id="ndFooter" style="background:#f8f9fc;border-top:1px solid #e3e6f0;padding:.7rem 1rem;
+                   border-radius:0 0 12px 12px;display:flex;justify-content:flex-end;gap:.5rem;">
+        <button type="button" class="btn-cli btn-cli-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button id="btnGuardarND" class="btn-cli btn-cli-nd" onclick="guardarND()" disabled>
+          Guardar Nota de Débito
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+@* ===== MODAL NOTA DE CRÉDITO ===== *@
+<div class="modal fade" id="ncModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:520px;">
+    <div class="modal-content" style="border-radius:12px;overflow:hidden;border:none;box-shadow:0 8px 32px rgba(0,0,0,.18);">
+
+      <div class="nc-modal-header">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#fff" viewBox="0 0 16 16">
+          <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5z"/>
+          <path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
+        </svg>
+        <div style="flex:1;padding-left:.5rem;">
+          <h5 id="ncModalLabel" style="margin:0;color:#fff;font-weight:700;font-size:.95rem;">Nueva Nota de Crédito</h5>
+          <small id="ncModalSubtitle" style="color:rgba(255,255,255,.65);font-size:.75rem;"></small>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);opacity:.8;"></button>
+      </div>
+
+      <div class="modal-body p-0">
+        <div id="ncLoading" style="text-align:center;padding:2.5rem;">
+          <div style="display:inline-block;width:22px;height:22px;border:3px solid rgba(15,118,110,.2);border-top-color:#0f766e;border-radius:50%;animation:spin .7s linear infinite;"></div>
+          <div style="margin-top:.6rem;font-size:.83rem;color:#6c757d;">Cargando…</div>
+        </div>
+
+        <div id="ncPanel" style="display:none;padding:1.25rem;">
+          <div id="ncAlerta" class="cobro-alerta" style="background:#fef2f2;border-color:#fca5a5;color:#991b1b;"></div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label style="font-size:.75rem;font-weight:600;color:#0f766e;">Importe *</label>
+              <input type="number" id="ncImporte" min="0.01" step="0.01" class="form-control form-control-sm"
+                     style="border:1.5px solid #0f766e;border-radius:8px;" placeholder="0,00" />
+            </div>
+            <div class="col-6">
+              <label style="font-size:.75rem;font-weight:600;color:#555;">Factura Asociada</label>
+              <input type="number" id="ncFactAsociada" min="0" step="1" class="form-control form-control-sm"
+                     style="border-radius:8px;" placeholder="(opcional)" />
+            </div>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label style="font-size:.75rem;font-weight:600;color:#555;">Fecha Comprobante Asoc.</label>
+              <input type="date" id="ncFecha" class="form-control form-control-sm" style="border-radius:8px;" />
+            </div>
+            <div class="col-6">
+              <label style="font-size:.75rem;font-weight:600;color:#555;">IVA</label>
+              <select id="ncIva" class="form-select form-select-sm" style="border-radius:8px;">
+                <option value="0">Sin IVA (0%)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label style="font-size:.75rem;font-weight:600;color:#555;">Ingresos Brutos</label>
+              <select id="ncIIBB" class="form-select form-select-sm" style="border-radius:8px;">
+                <option value="0">Sin IIBB (0%)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-1">
+            <label style="font-size:.75rem;font-weight:600;color:#555;">Observaciones *</label>
+            <textarea id="ncObs" rows="2" class="form-control form-control-sm" style="border-radius:8px;resize:none;"
+                      placeholder="Motivo de la nota de crédito…" maxlength="100"></textarea>
+          </div>
+        </div>
+
+        <div id="ncSuccess" style="display:none;background:#f0fdf4;border-top:2px solid #1a8754;padding:1.25rem;">
+          <div style="font-size:.95rem;font-weight:700;color:#155724;margin-bottom:.4rem;">
+            &#x2705; Nota de Crédito registrada
+          </div>
+          <div id="ncSuccessMsg" style="font-size:.83rem;color:#155724;"></div>
+        </div>
+      </div>
+
+      <div id="ncFooter" style="background:#f8f9fc;border-top:1px solid #e3e6f0;padding:.7rem 1rem;
+                   border-radius:0 0 12px 12px;display:flex;justify-content:flex-end;gap:.5rem;">
+        <button type="button" class="btn-cli btn-cli-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button id="btnGuardarNC" class="btn-cli btn-cli-nc" onclick="guardarNC()" disabled>
+          Guardar Nota de Crédito
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+@* Antiforgery para el POST de eliminar *@
+<form id="__AntiForgeryForm" method="post" style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+
+<script>
+    // Inyectar token en la función eliminarCliente
+    (function(){
+        const tokenInput = document.querySelector('#__AntiForgeryForm input[name="__RequestVerificationToken"]');
+        if (!tokenInput) return;
+        const token = tokenInput.value;
+        // Re-definir con token correcto
+        window._csrfToken = token;
+    })();
+    // Override eliminarCliente to use correct token
+    async function eliminarCliente(id) {
+        if (!confirm('¿Eliminar este cliente?')) return;
+        const token = window._csrfToken || '';
+        try {
+            const r = await fetch('/Clientes/ABM?handler=Eliminar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded',
+                           'RequestVerificationToken': token },
+                body: 'id=' + encodeURIComponent(id)
+            });
+            const data = await r.json();
+            if (data.success) location.reload();
+        } catch (e) { console.error(e); }
+    }
+
+    @@keyframes spin not here - defined inline style
+</script>
+<style>
+    @@keyframes spin    { to { transform: rotate(360deg); } }
+    @@keyframes toastIn  { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+    @@keyframes toastOut { from { opacity:1; transform:translateY(0); } to { opacity:0; transform:translateY(12px); } }
+</style>
+
+<script>
+    // -------- NOTA DE CRÉDITO --------
+    let _ncClienteId = 0;
+
+    function abrirModalNC() {
+        if (!_ccClienteId) return;
+        _ncClienteId = _ccClienteId;
+
+        const subtitle = document.getElementById('ccModalSubtitle').textContent;
+        document.getElementById('ncModalSubtitle').textContent = subtitle;
+
+        document.getElementById('ncLoading').style.display = 'block';
+        document.getElementById('ncPanel').style.display   = 'none';
+        document.getElementById('ncSuccess').style.display = 'none';
+        document.getElementById('ncFooter').style.display  = 'flex';
+        document.getElementById('ncAlerta').style.display  = 'none';
+        document.getElementById('btnGuardarNC').disabled   = true;
+
+        // Reset campos
+        document.getElementById('ncImporte').value      = '';
+        document.getElementById('ncFactAsociada').value = '';
+        document.getElementById('ncFecha').value        = '';
+        document.getElementById('ncObs').value          = '';
+
+        new bootstrap.Modal(document.getElementById('ncModal')).show();
+
+        fetch('/Clientes/ABM?handler=DatosNC')
+            .then(r => r.json())
+            .then(data => {
+                // Llenar selects IVA
+                const selIva = document.getElementById('ncIva');
+                selIva.innerHTML = '<option value="0">Sin IVA (0%)</option>';
+                data.ivas.forEach(i => {
+                    selIva.innerHTML += `<option value="${i.valor}">${i.valor}%</option>`;
+                });
+                // Llenar selects IIBB
+                const selIIBB = document.getElementById('ncIIBB');
+                selIIBB.innerHTML = '<option value="0">Sin IIBB (0%)</option>';
+                data.impuestos.forEach(i => {
+                    selIIBB.innerHTML += `<option value="${i.valor}">${i.valor}%</option>`;
+                });
+                document.getElementById('ncLoading').style.display = 'none';
+                document.getElementById('ncPanel').style.display   = 'block';
+                document.getElementById('btnGuardarNC').disabled   = false;
+            })
+            .catch(() => {
+                document.getElementById('ncLoading').innerHTML =
+                    '<p style="color:#e74a3b;padding:1rem;">Error al cargar datos.</p>';
+            });
+    }
+
+    async function guardarNC() {
+        const btn     = document.getElementById('btnGuardarNC');
+        const importe = parseFloat(document.getElementById('ncImporte').value) || 0;
+        const factNum = document.getElementById('ncFactAsociada').value.trim();
+        const obs     = document.getElementById('ncObs').value.trim();
+        const iva     = parseFloat(document.getElementById('ncIva').value) || 0;
+        const iibb    = parseFloat(document.getElementById('ncIIBB').value) || 0;
+        const fecha   = document.getElementById('ncFecha').value;
+
+        // Validaciones
+        if (importe <= 0)    { mostrarAlertaNC('El importe debe ser mayor a 0.'); return; }
+        if (!obs)            { mostrarAlertaNC('Las observaciones son obligatorias.'); return; }
+        if (factNum && isNaN(parseInt(factNum))) { mostrarAlertaNC('La factura asociada debe ser numérica.'); return; }
+
+        // Formatear fecha a dd/MM/yyyy
+        let fechaStr = null;
+        if (fecha) {
+            const [y, m, d] = fecha.split('-');
+            fechaStr = `${d}/${m}/${y}`;
         }
-        const cliente = await response.json();
 
-        // Rellenamos los campos del formulario
-        document.getElementById("ClienteId").value = cliente.id;
-        document.querySelector("input[name='Cliente.NombreComercial']").value = cliente.nombreComercial ?? "";
-        document.querySelector("input[name='Cliente.RazonSocial']").value = cliente.razonSocial ?? "";
-        document.querySelector("input[name='Cliente.Cuil']").value = cliente.cuil ?? "";
-        document.querySelector("input[name='Cliente.Direccion']").value = cliente.direccion ?? "";
-        document.querySelector("input[name='Cliente.Email']").value = cliente.email ?? "";
-        document.querySelector("input[name='Cliente.Telefono']").value = cliente.telefono ?? "";
-        document.querySelector("input[name='Cliente.Celular']").value = cliente.celular ?? "";
-        document.querySelector("input[name='Cliente.Contacto']").value = cliente.contacto ?? "";
+        btn.disabled = true;
+        btn.innerHTML = '<span style="display:inline-block;width:11px;height:11px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:4px;"></span>Procesando\u2026';
 
-        document.querySelector("select[name='Cliente.FkCondIva']").value = cliente.fkCondIva ?? "";
-        document.querySelector("select[name='Cliente.FkVendedor']").value = cliente.fkVendedor ?? "";
-        document.querySelector("select[name='Cliente.FkLocalidad']").value = cliente.fkLocalidad ?? "";
-        document.querySelector("select[name='Cliente.FkZona']").value = cliente.fkZona ?? "";
+        const payload = {
+            clienteId:        _ncClienteId,
+            importe:          importe,
+            facturaAsociada:  factNum ? parseInt(factNum) : null,
+            fechaFacturaAsoc: fechaStr,
+            ivaPorcentaje:    iva,
+            iIBBPorcentaje:   iibb,
+            observaciones:    obs
+        };
 
-        // Cambiamos el título del modal
-        document.getElementById("clienteModalLabel").innerText = "Editar Cliente";
+        try {
+            const r = await fetch('/Clientes/ABM?handler=NotaCredito', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const ct = r.headers.get('content-type') || '';
+            if (!ct.includes('application/json')) {
+                mostrarAlertaNC('Error servidor (' + r.status + ')');
+                btn.disabled = false;
+                btn.innerHTML = 'Guardar Nota de Crédito';
+                return;
+            }
+            const data = await r.json();
+            if (data.ok) {
+                document.getElementById('ncPanel').style.display   = 'none';
+                document.getElementById('ncFooter').style.display  = 'none';
+                document.getElementById('ncSuccessMsg').innerHTML  =
+                    'Nota de Crédito N° <strong>' + String(data.cobroId).padStart(8,'0') + '</strong> registrada por <strong>' + formatMoney(importe) + '</strong>';
+                document.getElementById('ncSuccess').style.display = 'block';
 
-        // Mostramos el modal
-        new bootstrap.Modal(document.getElementById("clienteModal")).show();
+                // Refrescar la grilla de Cuenta Corriente en el modal de fondo
+                cerrarDetalleCC();
+                fetch('/Clientes/ABM?handler=CuentaCorriente&id=' + _ccClienteId)
+                    .then(res => res.text())
+                    .then(html => {
+                        document.getElementById('ccContent').innerHTML = html;
+                        document.getElementById('ccContent').addEventListener('click', function(e) {
+                            const fila = e.target.closest('tr.cc-fila-cobro');
+                            if (!fila) return;
+                            const cobroId = fila.getAttribute('data-cobro-id');
+                            if (cobroId) mostrarDetalleCC(cobroId, fila);
+                        });
+                    })
+                    .catch(() => { /* si falla el refresh, no pasa nada crítico */ });
+            } else {
+                mostrarAlertaNC(data.msg || 'Error al procesar.');
+                btn.disabled = false;
+                btn.innerHTML = 'Guardar Nota de Crédito';
+            }
+        } catch(e) {
+            mostrarAlertaNC('Error: ' + e.message);
+            btn.disabled = false;
+            btn.innerHTML = 'Guardar Nota de Crédito';
+        }
     }
 
+    function mostrarAlertaNC(msg) {
+        const el = document.getElementById('ncAlerta');
+        el.textContent = msg;
+        el.style.display = 'block';
+        setTimeout(() => { el.style.display = 'none'; }, 5000);
+    }
 
+    // -------- NOTA DE DÉBITO --------
+    let _ndClienteId = 0;
 
+    function abrirModalND() {
+        if (!_ccClienteId) return;
+        _ndClienteId = _ccClienteId;
 
+        const subtitle = document.getElementById('ccModalSubtitle').textContent;
+        document.getElementById('ndModalSubtitle').textContent = subtitle;
+
+        document.getElementById('ndPanel').style.display   = 'block';
+        document.getElementById('ndSuccess').style.display = 'none';
+        document.getElementById('ndFooter').style.display  = 'flex';
+        document.getElementById('ndAlerta').style.display  = 'none';
+        document.getElementById('ndImporte').value         = '';
+        document.getElementById('ndObs').value             = '';
+        document.getElementById('btnGuardarND').disabled   = true;
+
+        new bootstrap.Modal(document.getElementById('ndModal')).show();
+    }
+
+    function validarFormND() {
+        const imp = parseFloat(document.getElementById('ndImporte').value) || 0;
+        const obs = document.getElementById('ndObs').value.trim();
+        document.getElementById('btnGuardarND').disabled = !(imp > 0 && obs.length > 0);
+    }
+
+    async function guardarND() {
+        const btn     = document.getElementById('btnGuardarND');
+        const importe = parseFloat(document.getElementById('ndImporte').value) || 0;
+        const obs     = document.getElementById('ndObs').value.trim();
+
+        if (importe <= 0) { mostrarAlertaND('El importe debe ser mayor a 0.'); return; }
+        if (!obs)         { mostrarAlertaND('Las observaciones son obligatorias.'); return; }
+
+        btn.disabled = true;
+        btn.innerHTML = '<span style="display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;"></span> Procesando…';
+
+        try {
+            const r = await fetch('/Clientes/ABM?handler=NotaDebito', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ clienteId: _ndClienteId, importe, observaciones: obs })
+            });
+            const ct = r.headers.get('content-type') || '';
+            if (!ct.includes('application/json')) {
+                mostrarAlertaND('Error servidor (' + r.status + ')');
+                btn.disabled = false;
+                btn.innerHTML = 'Guardar Nota de Débito';
+                return;
+            }
+            const data = await r.json();
+            if (data.ok) {
+                document.getElementById('ndPanel').style.display   = 'none';
+                document.getElementById('ndFooter').style.display  = 'none';
+                document.getElementById('ndSuccessMsg').innerHTML  =
+                    'Nota de Débito N° <strong>' + String(data.ndId).padStart(8,'0') + '</strong> registrada por <strong>' + formatMoney(importe) + '</strong>';
+                document.getElementById('ndSuccess').style.display = 'block';
+
+                // Refrescar la grilla de Cuenta Corriente en el modal de fondo
+                cerrarDetalleCC();
+                fetch('/Clientes/ABM?handler=CuentaCorriente&id=' + _ccClienteId)
+                    .then(res => res.text())
+                    .then(html => {
+                        document.getElementById('ccContent').innerHTML = html;
+                        document.getElementById('ccContent').addEventListener('click', function(e) {
+                            const fila = e.target.closest('tr.cc-fila-cobro');
+                            if (!fila) return;
+                            const cobroId = fila.getAttribute('data-cobro-id');
+                            if (cobroId) mostrarDetalleCC(cobroId, fila);
+                        });
+                    })
+                    .catch(() => {});
+            } else {
+                mostrarAlertaND(data.msg || 'Error al procesar.');
+                btn.disabled = false;
+                btn.innerHTML = 'Guardar Nota de Débito';
+            }
+        } catch(e) {
+            mostrarAlertaND('Error: ' + e.message);
+            btn.disabled = false;
+            btn.innerHTML = 'Guardar Nota de Débito';
+        }
+    }
+
+    function mostrarAlertaND(msg) {
+        const el = document.getElementById('ndAlerta');
+        el.textContent = msg;
+        el.style.display = 'block';
+        setTimeout(() => { el.style.display = 'none'; }, 4000);
+    }
 </script>

@@ -1,0 +1,629 @@
+@page
+@model Comercial_Web.Pages.Ventas.ReportesVentas.IndexModel
+@{
+    ViewData["Title"] = "Reportes de Ventas";
+    var clientes = await Model.GetClientesListAsync();
+}
+
+<style>
+/* ── Layout general ──────────────────────────────────────────────────────── */
+.rv-header {
+  background: linear-gradient(135deg, #1a3a5c 0%, #2e6da4 100%);
+  border-radius: 12px; padding: 1.1rem 1.5rem; margin-bottom: 1.2rem;
+  color: #fff; display: flex; align-items: center; gap: .8rem;
+}
+.rv-header h4 { margin: 0; font-weight: 700; font-size: 1.1rem; }
+.rv-header small { opacity: .75; font-size: .78rem; }
+.rv-card {
+  background: #fff; border: 1px solid #e3e6f0;
+  border-radius: 10px; padding: 1rem 1.2rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05);
+}
+.rv-label { font-size: .78rem; font-weight: 600; color: #5a5c69; margin-bottom: .2rem; display: block; }
+.rv-input { font-size: .82rem; }
+
+/* ── Multi-select ────────────────────────────────────────────────────────── */
+.bp-multisel-wrap { position: relative; }
+.bp-multisel-btn {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: .4rem;
+  background: #fff; border: 1px solid #d1d3e2; border-radius: 6px; padding: .3rem .6rem;
+  font-size: .8rem; color: #5a5c69; cursor: pointer; text-align: left;
+}
+.bp-multisel-btn:hover { border-color: #4e73df; }
+.bp-multisel-drop {
+  display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 2100;
+  background: #fff; border: 1px solid #d1d3e2; border-radius: 0 0 8px 8px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.12); max-height: 220px; overflow-y: auto;
+}
+.bp-multisel-drop.open { display: block; }
+.bp-multisel-item {
+  display: flex; align-items: center; gap: .4rem; padding: .3rem .6rem;
+  font-size: .78rem; cursor: pointer; margin: 0;
+}
+.bp-multisel-item:hover { background: #f0f4ff; }
+.bp-multisel-item input[type=checkbox] { margin: 0; cursor: pointer; }
+
+/* ── Tabla resultados ────────────────────────────────────────────────────── */
+#tblResultados { font-size: .79rem; width: 100%; }
+#tblResultados thead tr { background: #1a3a5c; color: #fff; }
+#tblResultados thead th { padding: .45rem .55rem; white-space: nowrap; font-weight: 600; }
+#tblResultados tbody tr.data-row:nth-child(even) { background: #f8f9fc; }
+#tblResultados tbody td { padding: .32rem .5rem; vertical-align: middle; }
+#tblResultados tbody tr.data-row:hover { background: #eef3ff; cursor: pointer; }
+#tblResultados tfoot tr { background: #1a3a5c; color: #fff; font-weight: 700; font-size: .82rem; }
+#tblResultados tfoot td { padding: .45rem .55rem; }
+
+/* ── Modal ───────────────────────────────────────────────────────────────── */
+.rv-modal-header {
+  background: linear-gradient(135deg, #1a3a5c, #2e6da4);
+  padding: .75rem 1rem; display: flex; align-items: center; gap: .6rem; color: #fff;
+}
+.rv-modal-header h5 { margin: 0; font-size: .92rem; font-weight: 700; }
+#tblDetModal { font-size: .78rem; width: 100%; }
+#tblDetModal thead tr { background: #1a3a5c; color: #fff; }
+#tblDetModal thead th { padding: .4rem .5rem; white-space: nowrap; font-weight: 600; }
+#tblDetModal tbody tr:nth-child(even) { background: #f8f9fc; }
+#tblDetModal tbody td { padding: .3rem .45rem; vertical-align: middle; }
+.rv-totales-box {
+  background: #f8f9fc; border: 1px solid #e3e6f0; border-radius: 8px;
+  padding: .75rem 1rem; font-size: .82rem; margin-top: .75rem;
+}
+.rv-tot-row { display: flex; justify-content: space-between; padding: .14rem 0; }
+.rv-tot-row.total {
+  font-weight: 700; font-size: .95rem; color: #1a3a5c;
+  border-top: 1px solid #dee2e6; margin-top: .3rem; padding-top: .4rem;
+}
+.rv-fp-card {
+  background: #fff8e8; border: 1px solid #f0d080; border-radius: 8px;
+  padding: .65rem .9rem; margin-top: .75rem; font-size: .82rem;
+}
+.rv-fp-card .rv-fp-title {
+  font-size: .73rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: #856404; margin-bottom: .4rem;
+  display: flex; align-items: center; gap: .3rem;
+}
+.rv-fp-row { padding: .12rem 0; color: #5a4200; }
+
+/* ── Misc ────────────────────────────────────────────────────────────────── */
+#loadingRow, #emptyRow { display: none; }
+.badge-factura { background: #4e73df; color: #fff; font-size: .68rem; padding: .18em .45em; border-radius: 4px; }
+.badge-sinfac  { background: #e9ecef; color: #6c757d; font-size: .68rem; padding: .18em .45em; border-radius: 4px; }
+</style>
+
+@* ══════════════════════════════════════════════════════════ HEADER ══ *@
+<div class="rv-header">
+  <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="28" height="28">
+    <path d="M0 0h1v15h15v1H0V0zm14.817 3.113a.5.5 0 0 1 .07.704l-4.5 5.5a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61 4.15-5.073a.5.5 0 0 1 .704-.07z"/>
+  </svg>
+  <div>
+    <h4>Reportes de Ventas</h4>
+    <small>Consulta y análisis de ventas realizadas</small>
+  </div>
+</div>
+
+@* ══════════════════════════════════════════════════════════ FILTROS ══ *@
+<div class="rv-card mb-3">
+  <div class="row g-2 align-items-end">
+
+    <div class="col-md-2 col-sm-6">
+      <label class="rv-label">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="11" style="vertical-align:-.1em;margin-right:.2rem;">
+          <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+        </svg>Fecha desde
+      </label>
+      <input type="date" id="txtDesde" class="form-control form-control-sm rv-input" />
+    </div>
+
+    <div class="col-md-2 col-sm-6">
+      <label class="rv-label">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="11" style="vertical-align:-.1em;margin-right:.2rem;">
+          <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+        </svg>Fecha hasta
+      </label>
+      <input type="date" id="txtHasta" class="form-control form-control-sm rv-input" />
+    </div>
+
+    <div class="col-md-5 col-sm-8">
+      <label class="rv-label">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="11" style="vertical-align:-.1em;margin-right:.2rem;">
+          <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+          <path fill-rule="evenodd" d="M5.216 14A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216z"/>
+          <path d="M4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/>
+        </svg>Clientes
+      </label>
+      <div class="bp-multisel-wrap" id="wrapCli">
+        <button type="button" class="bp-multisel-btn" onclick="toggleDrop('dropCli','wrapCli')">
+          <span id="lblCli">Todos</span>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="10">
+            <path d="M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+          </svg>
+        </button>
+        <div class="bp-multisel-drop" id="dropCli">
+          <div style="padding:.3rem .5rem;border-bottom:1px solid #e3e6f0;display:flex;flex-direction:column;gap:.3rem;">
+            <input type="text" placeholder="Buscar cliente..." class="form-control form-control-sm"
+                   oninput="bpFilterItems(this,'chk-cli')" style="font-size:.75rem;" />
+            <div style="display:flex;gap:.3rem;">
+              <button type="button" onclick="bpSelAll('chk-cli','lblCli','clientes')"
+                style="font-size:.7rem;padding:.1rem .35rem;background:#e9ecef;border:none;border-radius:4px;cursor:pointer;">Todos</button>
+              <button type="button" onclick="bpSelNone('chk-cli','lblCli')"
+                style="font-size:.7rem;padding:.1rem .35rem;background:#e9ecef;border:none;border-radius:4px;cursor:pointer;">Ninguno</button>
+            </div>
+          </div>
+          @foreach (var c in clientes)
+          {
+            <label class="bp-multisel-item">
+              <input type="checkbox" class="chk-cli" value="@c.Value" /> @c.Text
+            </label>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 col-sm-4 d-flex gap-2 align-items-end">
+      <button class="btn btn-primary btn-sm flex-fill" style="font-size:.82rem;" onclick="buscarVentas()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" style="margin-right:.25rem;vertical-align:-.1em;">
+          <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85-.017.016zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+        </svg>Buscar
+      </button>
+      <button class="btn btn-outline-secondary btn-sm" style="font-size:.82rem;" onclick="limpiarFiltros()" title="Limpiar filtros">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" style="vertical-align:-.1em;">
+          <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"/>
+          <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z"/>
+        </svg>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+@* ══════════════════════════════════════════════════════ TABLA RESULTADOS ══ *@
+<div class="rv-card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
+    <span style="font-size:.75rem;font-weight:700;color:#6c757d;text-transform:uppercase;letter-spacing:.06em;">Resultados</span>
+    <div style="display:flex;align-items:center;gap:.75rem;">
+      <span id="lblConteo" style="font-size:.75rem;color:#6c757d;"></span>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table id="tblResultados" class="table table-bordered mb-0">
+      <thead>
+        <tr>
+          <th style="width:65px;">#Venta</th>
+          <th style="width:90px;">Fecha</th>
+          <th>Cliente</th>
+          <th style="width:110px;">Factura</th>
+          <th style="text-align:right;width:100px;">Total Gral.</th>
+          <th style="text-align:right;width:90px;">Costo</th>
+          <th style="text-align:right;width:65px;">IVA %</th>
+          <th style="text-align:right;width:65px;">IIBB %</th>
+          <th style="text-align:center;width:90px;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyResultados">
+        <tr id="loadingRow">
+          <td colspan="9" style="text-align:center;padding:1.5rem;color:#6c757d;">
+            <div class="spinner-border spinner-border-sm me-2"></div>Buscando...
+          </td>
+        </tr>
+        <tr id="emptyRow">
+          <td colspan="9" style="text-align:center;padding:1.8rem;color:#aaa;font-size:.82rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="28" height="28" style="display:block;margin:.5rem auto;opacity:.3;">
+              <path d="M0 0h1v15h15v1H0V0zm14.817 3.113a.5.5 0 0 1 .07.704l-4.5 5.5a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61 4.15-5.073a.5.5 0 0 1 .704-.07z"/>
+            </svg>
+            Use los filtros para buscar ventas.
+          </td>
+        </tr>
+      </tbody>
+      <tfoot id="tfootTotales" style="display:none;">
+        <tr>
+          <td colspan="4" style="font-size:.8rem;">TOTALES</td>
+          <td style="text-align:right;" id="ftTotal"></td>
+          <td style="text-align:right;" id="ftCosto"></td>
+          <td style="text-align:right;" id="ftIva"></td>
+          <td style="text-align:right;" id="ftIibb"></td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+
+@* ══════════════════════════════════════════════════════════ MODAL DETALLE ══ *@
+<div class="modal fade" id="modalDetalle" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content" style="border-radius:12px;overflow:hidden;">
+
+      <div class="rv-modal-header">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="18" height="18">
+          <path d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/>
+          <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3z"/>
+        </svg>
+        <h5 id="modalTitulo">Detalle de Venta</h5>
+        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body" style="padding:1rem 1.25rem;">
+
+        @* Cabecera *@
+        <div class="row g-2 mb-3" style="font-size:.82rem;">
+          <div class="col-sm-5 col-md-4">
+            <span style="color:#6c757d;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Cliente</span>
+            <div id="det-cliente" style="font-weight:700;color:#2c3e50;font-size:.9rem;"></div>
+          </div>
+          <div class="col-sm-3 col-md-2">
+            <span style="color:#6c757d;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Fecha</span>
+            <div id="det-fecha"></div>
+          </div>
+          <div class="col-sm-4 col-md-3">
+            <span style="color:#6c757d;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Factura</span>
+            <div id="det-factura" style="font-family:monospace;"></div>
+          </div>
+          <div class="col-sm-4 col-md-3">
+            <span style="color:#6c757d;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Condición IVA</span>
+            <div id="det-condiva"></div>
+          </div>
+        </div>
+
+        @* Detalle productos *@
+        <div id="detLoadingRow" style="text-align:center;padding:1.5rem;color:#6c757d;display:none;">
+          <div class="spinner-border spinner-border-sm me-2"></div>Cargando detalle...
+        </div>
+        <div id="detContenido" style="display:none;">
+          <div class="table-responsive">
+            <table id="tblDetModal" class="table table-bordered mb-0">
+              <thead>
+                <tr>
+                  <th>Descripción</th>
+                  <th style="text-align:right;width:85px;">P.S/IVA</th>
+                  <th style="text-align:right;width:75px;">Desc/Rec%</th>
+                  <th style="text-align:right;width:90px;">SubT.S/IVA</th>
+                  <th style="text-align:right;width:85px;">P.C/IVA</th>
+                  <th style="text-align:right;width:65px;">Cant.</th>
+                  <th style="text-align:right;width:95px;">Total</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyDetModal"></tbody>
+            </table>
+          </div>
+
+          @* Totales *@
+          <div class="row g-2 mt-1">
+            <div class="col-md-6 offset-md-6">
+              <div class="rv-totales-box">
+                <div class="rv-tot-row"><span>Subtotal Bruto</span><span id="det-subtBruto"></span></div>
+                <div class="rv-tot-row" id="rowDescRec" style="display:none;"><span id="det-lbl-descRec">Desc/Rec</span><span id="det-descRecAmt"></span></div>
+                <div class="rv-tot-row"><span>Subtotal s/IVA</span><span id="det-subtSIva"></span></div>
+                <div class="rv-tot-row"><span id="det-lbl-iva">IVA %</span><span id="det-ivaAmt"></span></div>
+                <div class="rv-tot-row"><span id="det-lbl-iibb">IIBB %</span><span id="det-iibbAmt"></span></div>
+                <div class="rv-tot-row total"><span>TOTAL GENERAL</span><span id="det-total"></span></div>
+              </div>
+            </div>
+          </div>
+
+          @* Formas de pago *@
+          <div id="seccionFormasPago" style="display:none;">
+            <div class="rv-fp-card">
+              <div class="rv-fp-title">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="12" height="12">
+                  <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v1h14V4a1 1 0 0 0-1-1H2zm13 4H1v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7z"/>
+                  <path d="M2 10a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-1z"/>
+                </svg>
+                Formas de Pago
+              </div>
+              <div id="listaFormasPago"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer" style="background:#f8f9fc;border-top:1px solid #e3e6f0;gap:.5rem;">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-sm btn-success" id="btnImprimirComp" onclick="imprimirComprobante()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" height="13" style="margin-right:.3rem;vertical-align:-.1em;">
+            <path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/>
+            <path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7zm2.5 1a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+          </svg>Imprimir Comprobante
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+  'use strict';
+
+  // ── Parámetros del sistema ─────────────────────────────────────────────────
+  const HACE_TK  = @Model.HaceNotaVentaTK;
+  const ANCHO_TK = @Model.AnchoTk;
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  let _ventaIdActual = 0;
+  let _fpActual      = []; // formasPago del registro actual
+
+  // ── Helpers formato ────────────────────────────────────────────────────────
+  function fmt(n) {
+    return new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n ?? 0);
+  }
+  function fmtDate(iso) {
+    if (!iso) return '';
+    return new Date(iso).toLocaleDateString('es-AR');
+  }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // ── Multi-select ───────────────────────────────────────────────────────────
+  window.toggleDrop = function (dropId, wrapId) {
+    const drop   = document.getElementById(dropId);
+    const isOpen = drop.classList.contains('open');
+    document.querySelectorAll('.bp-multisel-drop.open').forEach(el => el.classList.remove('open'));
+    if (!isOpen) drop.classList.add('open');
+  };
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.bp-multisel-wrap'))
+      document.querySelectorAll('.bp-multisel-drop.open').forEach(el => el.classList.remove('open'));
+  });
+
+  function getChecked(cls) {
+    return [...document.querySelectorAll('.' + cls + ':checked')].map(c => c.value).join(',');
+  }
+  function updateLabel(cls, lblId, plural) {
+    const checked = [...document.querySelectorAll('.' + cls + ':checked')];
+    document.getElementById(lblId).textContent =
+      checked.length === 0    ? 'Todos' :
+      checked.length === 1    ? checked[0].closest('label').textContent.trim() :
+                                checked.length + ' ' + plural;
+  }
+  document.querySelectorAll('.chk-cli').forEach(c =>
+    c.addEventListener('change', () => updateLabel('chk-cli', 'lblCli', 'clientes'))
+  );
+  window.bpSelAll = function (cls, lblId, plural) {
+    document.querySelectorAll('.' + cls).forEach(c => {
+      if (c.closest('label').style.display !== 'none') c.checked = true;
+    });
+    updateLabel(cls, lblId, plural);
+  };
+  window.bpSelNone = function (cls, lblId) {
+    document.querySelectorAll('.' + cls).forEach(c => c.checked = false);
+    document.getElementById(lblId).textContent = 'Todos';
+  };
+  window.bpFilterItems = function (input, cls) {
+    const q = input.value.trim().toLowerCase();
+    document.querySelectorAll('.' + cls).forEach(c => {
+      const lbl = c.closest('label');
+      lbl.style.display = (!q || lbl.textContent.toLowerCase().includes(q)) ? '' : 'none';
+    });
+  };
+
+  // ── Limpiar filtros ────────────────────────────────────────────────────────
+  window.limpiarFiltros = function () {
+    document.getElementById('txtDesde').value = '';
+    document.getElementById('txtHasta').value = '';
+    document.querySelectorAll('.chk-cli').forEach(c => c.checked = false);
+    document.getElementById('lblCli').textContent = 'Todos';
+  };
+
+  // ── Buscar ventas ──────────────────────────────────────────────────────────
+  window.buscarVentas = function () {
+    const desde    = document.getElementById('txtDesde').value;
+    const hasta    = document.getElementById('txtHasta').value;
+    const clientes = getChecked('chk-cli');
+
+    const tbody = document.getElementById('tbodyResultados');
+    tbody.querySelectorAll('tr.data-row').forEach(r => r.remove());
+    document.getElementById('loadingRow').style.display  = '';
+    document.getElementById('emptyRow').style.display    = 'none';
+    document.getElementById('tfootTotales').style.display = 'none';
+    document.getElementById('lblConteo').textContent     = '';
+
+    fetch('?handler=BuscarVentas&desde=' + encodeURIComponent(desde)
+          + '&hasta='    + encodeURIComponent(hasta)
+          + '&clientes=' + encodeURIComponent(clientes))
+      .then(r => r.json())
+      .then(data => {
+        document.getElementById('loadingRow').style.display = 'none';
+
+        if (!data || data.length === 0) {
+          document.getElementById('emptyRow').style.display = '';
+          document.getElementById('emptyRow').querySelector('td').textContent =
+            'Sin resultados para los filtros seleccionados.';
+          return;
+        }
+
+        document.getElementById('lblConteo').textContent = data.length + ' venta(s)';
+
+        let totTotal = 0, totCosto = 0;
+
+        data.forEach((v, idx) => {
+          totTotal += v.totalGeneral;
+          totCosto += v.totalCosto;
+
+          const hasFac = v.factura && v.factura.trim();
+          const tr = document.createElement('tr');
+          tr.className = 'data-row';
+          tr.dataset.idx = idx;
+          tr.innerHTML =
+            '<td style="font-weight:600;color:#1a3a5c;">#' + v.ventaId + '</td>' +
+            '<td>' + fmtDate(v.fecha) + '</td>' +
+            '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(v.nombreCliente || '') + '">' + esc(v.nombreCliente || '—') + '</td>' +
+            '<td>' + (hasFac ? '<span class="badge-factura">' + esc(v.factura) + '</span>' : '<span class="badge-sinfac">—</span>') + '</td>' +
+            '<td style="text-align:right;font-weight:700;color:#1a3a5c;">$' + fmt(v.totalGeneral) + '</td>' +
+            '<td style="text-align:right;color:#555;">$' + fmt(v.totalCosto) + '</td>' +
+            '<td style="text-align:right;color:#2e6da4;">' + fmt(v.ivaPct) + '%</td>' +
+            '<td style="text-align:right;color:#856404;">' + fmt(v.iibbPct) + '%</td>' +
+            '<td style="text-align:center;">' +
+              '<button class="btn btn-xs btn-outline-primary" style="font-size:.71rem;padding:.2rem .5rem;" ' +
+                'onclick="verDetalle(' + idx + ',' + v.ventaId + ')"> ' +
+                '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="11" height="11" style="vertical-align:-.1em;">' +
+                '<path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>' +
+                '<path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>' +
+                '</svg> Ver</button>' +
+            '</td>';
+          tbody.appendChild(tr);
+        });
+
+        // Fila de totales
+        document.getElementById('ftTotal').textContent = '$' + fmt(totTotal);
+        document.getElementById('ftCosto').textContent = '$' + fmt(totCosto);
+        document.getElementById('ftIva').textContent   = '';
+        document.getElementById('ftIibb').textContent  = '';
+        document.getElementById('tfootTotales').style.display = '';
+
+        // Cache results para formasPago sin re-fetch
+        window._rvResultados = data;
+      })
+      .catch(() => {
+        document.getElementById('loadingRow').style.display = 'none';
+        document.getElementById('emptyRow').style.display   = '';
+        document.getElementById('emptyRow').querySelector('td').textContent = 'Error al buscar ventas.';
+      });
+  };
+
+  // ── Ver detalle ────────────────────────────────────────────────────────────
+  window.verDetalle = function (idx, ventaId) {
+    _ventaIdActual = ventaId;
+    const item = window._rvResultados ? window._rvResultados[idx] : null;
+    _fpActual  = item ? (item.formasPago || []) : [];
+
+    document.getElementById('modalTitulo').textContent = 'Venta #' + ventaId;
+    document.getElementById('det-cliente').textContent = '';
+    document.getElementById('det-fecha').textContent   = item ? fmtDate(item.fecha) : '';
+    document.getElementById('det-factura').textContent = (item && item.factura) ? item.factura : '—';
+    document.getElementById('det-condiva').textContent = '';
+
+    document.getElementById('detLoadingRow').style.display = '';
+    document.getElementById('detContenido').style.display  = 'none';
+
+    new bootstrap.Modal(document.getElementById('modalDetalle')).show();
+
+    fetch('?handler=VentaDetalle&id=' + ventaId)
+      .then(r => r.json())
+      .then(res => {
+        document.getElementById('detLoadingRow').style.display = 'none';
+        if (!res.ok) { alert('No se pudo cargar el detalle de la venta.'); return; }
+
+        const v   = res.venta;
+        const iva = v.iva      ?? 0;
+        const imp = v.impuesto ?? 0;
+
+        document.getElementById('det-cliente').textContent = v.nombreCliente || '—';
+        document.getElementById('det-condiva').textContent = v.condIvaDescripcion || '—';
+
+        // Desc/Rec global o por línea
+        // Si venta.descuento no es null → usa global: descuento * -1 + recargo
+        // Si venta.descuento es null    → usa por línea
+        const descGlobal = (v.descuento != null)
+          ? (v.descuento * -1 + (v.recargo ?? 0))
+          : null;
+
+        // Detalle de productos
+        const tbody = document.getElementById('tbodyDetModal');
+        tbody.innerHTML = '';
+        let subtBruto = 0, subtSIvaT = 0;
+
+        (v.detalle || []).forEach(d => {
+          const dr      = descGlobal !== null
+            ? descGlobal
+            : ((d.descuento ?? 0) * -1 + (d.recargo ?? 0));
+          const pSIva   = d.precioSinIva  ?? 0;   // P.S/IVA (base por unidad)
+          const subSIva = pSIva * (1 + dr / 100);  // SubT.S/IVA (por unidad)
+          const pConIva = subSIva * (1 + iva / 100);// P.C/IVA (por unidad)
+          const cant    = d.cantidad ?? 0;
+          const totLin  = pConIva * cant;
+
+          subtBruto += pSIva * cant;
+          subtSIvaT += subSIva * cant;
+
+          const drColor = dr < 0 ? 'color:#e74a3b;' : dr > 0 ? 'color:#1cc88a;' : '';
+          const tr = document.createElement('tr');
+          tr.innerHTML =
+            '<td>' + esc(d.descripcion || '') + '</td>' +
+            '<td style="text-align:right;">$' + fmt(pSIva) + '</td>' +
+            '<td style="text-align:right;' + drColor + '">' + fmt(dr) + '%</td>' +
+            '<td style="text-align:right;">$' + fmt(subSIva) + '</td>' +
+            '<td style="text-align:right;">$' + fmt(pConIva) + '</td>' +
+            '<td style="text-align:right;">' + fmt(cant) + '</td>' +
+            '<td style="text-align:right;font-weight:600;">$' + fmt(totLin) + '</td>';
+          tbody.appendChild(tr);
+        });
+
+        // ── Totales box ──────────────────────────────────────────────────────
+        const descRecNom = subtSIvaT - subtBruto;   // nominal (negativo=desc, positivo=rec)
+        const ivaAmt     = subtSIvaT * iva / 100;
+        const iibbAmt    = subtSIvaT * imp / 100;
+
+        document.getElementById('det-subtBruto').textContent  = '$' + fmt(subtBruto);
+
+        const rowDR = document.getElementById('rowDescRec');
+        if (Math.abs(descRecNom) > 0.001) {
+          document.getElementById('det-lbl-descRec').textContent =
+            descRecNom < 0 ? 'Descuento' : 'Recargo';
+          document.getElementById('det-descRecAmt').textContent =
+            (descRecNom < 0 ? '–$' : '+$') + fmt(Math.abs(descRecNom));
+          document.getElementById('det-descRecAmt').style.color = descRecNom < 0 ? '#e74a3b' : '#1cc88a';
+          rowDR.style.display = '';
+        } else {
+          rowDR.style.display = 'none';
+        }
+
+        document.getElementById('det-subtSIva').textContent = '$' + fmt(subtSIvaT);
+        document.getElementById('det-lbl-iva').textContent  = 'IVA ' + fmt(iva) + '%';
+        document.getElementById('det-ivaAmt').textContent   = '$' + fmt(ivaAmt);
+        document.getElementById('det-lbl-iibb').textContent = 'IIBB ' + fmt(imp) + '%';
+        document.getElementById('det-iibbAmt').textContent  = iibbAmt > 0 ? '$' + fmt(iibbAmt) : '—';
+        document.getElementById('det-total').textContent    = '$' + fmt(subtSIvaT + ivaAmt + iibbAmt);
+
+        // Formas de pago
+        const secFP = document.getElementById('seccionFormasPago');
+        const listaFP = document.getElementById('listaFormasPago');
+        listaFP.innerHTML = '';
+        if (_fpActual.length > 0) {
+          _fpActual.forEach(fp => {
+            const row = document.createElement('div');
+            row.className = 'rv-fp-row';
+            row.innerHTML = '<span>' + esc(fp.medioPago || 'Efectivo') + '</span>';
+            listaFP.appendChild(row);
+          });
+          secFP.style.display = '';
+        } else {
+          secFP.style.display = 'none';
+        }
+
+        document.getElementById('detContenido').style.display = '';
+      })
+      .catch(() => {
+        document.getElementById('detLoadingRow').style.display = 'none';
+        alert('Error al cargar el detalle.');
+      });
+  };
+
+  // ── Imprimir comprobante ───────────────────────────────────────────────────
+  window.imprimirComprobante = function () {
+    if (!_ventaIdActual) return;
+    const url = HACE_TK === 1
+      ? '/Ventas/Ventas/TicketX/'     + _ventaIdActual
+      : '/Ventas/Ventas/ComprobanteX/' + _ventaIdActual;
+    window.open(url, '_blank');
+  };
+
+  // ── Inicializar fechas: mes actual ─────────────────────────────────────────
+  (function initFechas() {
+    const hoy   = new Date();
+    const anio  = hoy.getFullYear();
+    const mes   = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dia   = String(hoy.getDate()).padStart(2, '0');
+    const desde = anio + '-' + mes + '-01';
+    const hasta = anio + '-' + mes + '-' + dia;
+    document.getElementById('txtDesde').value = desde;
+    document.getElementById('txtHasta').value = hasta;
+  })();
+
+})();
+</script>
+}

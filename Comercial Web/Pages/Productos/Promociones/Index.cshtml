@@ -1,0 +1,235 @@
+@page
+@model Comercial_Web.Pages.Productos.Promociones.IndexModel
+@{
+    ViewData["Title"] = "Promociones / Combos";
+}
+
+<style>
+    .promo-card        { border:1px solid #e0e4ea; border-radius:.6rem; background:#fff; }
+    .promo-header      { background:linear-gradient(135deg,#1a5276,#2980b9); color:#fff;
+                         padding:.85rem 1.2rem; border-radius:.6rem .6rem 0 0;
+                         display:flex; align-items:center; gap:.6rem; }
+    .promo-header h5   { margin:0; font-size:1rem; font-weight:600; }
+    .badge-activa      { background:#27ae60; color:#fff; }
+    .badge-inactiva    { background:#7f8c8d; color:#fff; }
+    .badge-slots       { background:#2980b9; color:#fff; }
+    .tbl-promos th     { background:#f0f4f8; font-size:.78rem; text-transform:uppercase;
+                         letter-spacing:.04em; color:#445; border-bottom:2px solid #d5dce6; }
+    .tbl-promos td     { font-size:.86rem; vertical-align:middle; }
+    .tbl-promos tr:hover { background:#f8fbff; }
+    .btn-accion        { font-size:.75rem; padding:.22rem .55rem; }
+    .empty-state       { text-align:center; padding:3rem 1rem; color:#7f8c8d; }
+    .empty-state svg   { opacity:.35; margin-bottom:.8rem; }
+</style>
+
+<div class="container-fluid py-3">
+
+  <!-- Encabezado ─────────────────────────────────────────── -->
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div class="d-flex align-items-center gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="#1a5276" viewBox="0 0 16 16">
+        <path d="M2 1a1 1 0 0 0-1 1v4.586a1 1 0 0 0 .293.707l7 7a1 1 0 0 0 1.414 0l4.586-4.586a1 1 0 0 0
+                 0-1.414l-7-7A1 1 0 0 0 6.586 1zm4 3.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"/>
+      </svg>
+      <div>
+        <h4 class="mb-0 fw-bold text-dark" style="font-size:1.15rem;">Promociones / Combos</h4>
+        <small style="color:#fff;background:#1a5276;border-radius:.3rem;padding:.1rem .45rem;font-size:.74rem;font-weight:500;">
+          Gestión de productos combo con slots configurables
+        </small>
+      </div>
+    </div>
+    <a href="/Productos/Promociones/Edit" class="btn btn-sm btn-primary d-flex align-items-center gap-1" style="font-size:.82rem;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8 1a.5.5 0 0 1 .5.5V7.5H14a.5.5 0 0 1 0 1H8.5V14a.5.5 0 0 1-1 0V8.5H2a.5.5 0 0 1 0-1h5.5V1.5A.5.5 0 0 1 8 1"/>
+      </svg>
+      Nueva Promoción
+    </a>
+  </div>
+
+  <!-- Alerta ─────────────────────────────────────────────── -->
+  <div id="alertDiv" class="alert alert-danger alert-dismissible d-flex align-items-center gap-2 mb-3"
+       style="display:none!important; font-size:.83rem;" role="alert">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+      <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+      <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
+    </svg>
+    <span id="alertMsg"></span>
+    <button type="button" class="btn-close btn-close-sm ms-auto" onclick="cerrarAlert()"></button>
+  </div>
+
+  <!-- Tabla ──────────────────────────────────────────────── -->
+  <div class="promo-card shadow-sm">
+    <div class="promo-header">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5zm8 0A1.5 1.5 0 0 1 10.5 9h3A1.5 1.5 0 0 1 15 10.5v3A1.5 1.5 0 0 1 13.5 15h-3A1.5 1.5 0 0 1 9 13.5z"/>
+      </svg>
+      <h5>Listado de Promociones</h5>
+      <span class="badge bg-white text-primary ms-auto">@Model.Promociones.Count registros</span>
+    </div>
+
+    @if (!Model.Promociones.Any())
+    {
+      <div class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="#aaa" viewBox="0 0 16 16">
+          <path d="M2 1a1 1 0 0 0-1 1v4.586a1 1 0 0 0 .293.707l7 7a1 1 0 0 0 1.414 0l4.586-4.586a1 1 0 0
+                   0 0-1.414l-7-7A1 1 0 0 0 6.586 1zm4 3.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"/>
+        </svg>
+        <p class="fw-semibold mb-1" style="font-size:.95rem;">No hay promociones configuradas</p>
+        <p style="font-size:.82rem;">Haga clic en <strong>Nueva Promoción</strong> para comenzar.</p>
+      </div>
+    }
+    else
+    {
+      <div class="table-responsive">
+        <table class="table tbl-promos table-hover mb-0">
+          <thead>
+            <tr>
+              <th style="width:50px;">#</th>
+              <th>Producto / Combo</th>
+              <th>Cód. Barras</th>
+              <th class="text-center">Slots</th>
+              <th>Vigencia</th>
+              <th class="text-center">Estado</th>
+              <th class="text-center" style="width:160px;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @foreach (var p in Model.Promociones)
+            {
+              <tr id="fila-@p.Id">
+                <td class="text-muted">@p.Id</td>
+                <td class="fw-semibold">@p.NombreProducto</td>
+                <td class="text-muted" style="font-size:.8rem;">@(p.CodBarras ?? "—")</td>
+                <td class="text-center">
+                  <span class="badge badge-slots rounded-pill">@p.CantidadSlots</span>
+                </td>
+                <td style="font-size:.82rem;">
+                  @if (p.FechaDesde.HasValue || p.FechaHasta.HasValue)
+                  {
+                    <span>
+                      @(p.FechaDesde.HasValue ? p.FechaDesde.Value.ToString("dd/MM/yyyy") : "Siempre")
+                      &nbsp;→&nbsp;
+                      @(p.FechaHasta.HasValue ? p.FechaHasta.Value.ToString("dd/MM/yyyy") : "Siempre")
+                    </span>
+                  }
+                  else { <span class="text-muted">Sin límite</span> }
+                </td>
+                <td class="text-center">
+                  <span id="badge-@p.Id" class="badge rounded-pill @(p.Activa ? "badge-activa" : "badge-inactiva")">
+                    @(p.Activa ? "Activa" : "Inactiva")
+                  </span>
+                </td>
+                <td class="text-center d-flex gap-1 justify-content-center">
+                  <a href="/Productos/Promociones/Edit/@p.Id"
+                     class="btn btn-sm btn-outline-primary btn-accion" title="Editar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                      <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293z"/>
+                    </svg>
+                    Editar
+                  </a>
+                  <button class="btn btn-sm @(p.Activa ? "btn-outline-secondary" : "btn-outline-success") btn-accion"
+                          title="@(p.Activa ? "Desactivar" : "Activar")"
+                          onclick="toggleActiva(@p.Id, @p.Activa.ToString().ToLower())">
+                    @if (p.Activa)
+                    {
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M5.5 2A3.5 3.5 0 0 0 2 5.5v5A3.5 3.5 0 0 0 5.5 14h5a3.5 3.5 0 0 0 3.5-3.5V5.5A3.5 3.5 0 0 0 10.5 2zm-4.5 3.5A4.5 4.5 0 0 1 5.5 1h5A4.5 4.5 0 0 1 15 5.5v5a4.5 4.5 0 0 1-4.5 4.5h-5A4.5 4.5 0 0 1 1 10.5z"/>
+                        <path d="M5 6.5A1.5 1.5 0 0 1 6.5 5h3A1.5 1.5 0 0 1 11 6.5v3A1.5 1.5 0 0 1 9.5 11h-3A1.5 1.5 0 0 1 5 9.5z"/>
+                      </svg>
+                      <span>Pausar</span>
+                    }
+                    else
+                    {
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                        <path d="M6.271 5.055a.5.5 0 0 1 .52.038L11 7.386a.5.5 0 0 1 0 .828L6.79 10.906a.5.5 0 0 1-.79-.407V5.5a.5.5 0 0 1 .271-.445"/>
+                      </svg>
+                      <span>Activar</span>
+                    }
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger btn-accion" title="Eliminar"
+                          onclick="confirmarEliminar(@p.Id, '@p.NombreProducto.Replace("'","\\'")')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                      <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                      <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                    </svg>
+                    Eliminar
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Modal confirmación eliminar ─────────────────────────────────────────────── -->
+<div class="modal fade" id="modalEliminar" tabindex="-1">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-danger text-white py-2">
+        <h6 class="modal-title mb-0">Confirmar eliminación</h6>
+      </div>
+      <div class="modal-body" style="font-size:.85rem;">
+        <p class="mb-1">¿Eliminar la promoción:</p>
+        <p class="fw-semibold mb-0" id="lblNombrePromo"></p>
+      </div>
+      <div class="modal-footer py-2 gap-2">
+        <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-sm btn-danger" id="btnConfirmarEliminar">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+  var _idEliminar = 0;
+
+  function showAlert(msg){
+    var el = document.getElementById('alertDiv');
+    document.getElementById('alertMsg').textContent = msg;
+    el.style.cssText = 'display:flex!important;';
+    el.scrollIntoView({ behavior:'smooth', block:'nearest' });
+    setTimeout(function(){ el.style.cssText = 'display:none!important;'; }, 6000);
+  }
+  function cerrarAlert(){
+    document.getElementById('alertDiv').style.cssText = 'display:none!important;';
+  }
+
+  async function toggleActiva(id, esActiva){
+    var res = await fetch('?handler=Toggle&id='+id, { method:'POST' });
+    if(!res.ok){ showAlert('Error al cambiar estado.'); return; }
+    // Actualizar badge y botón sin recargar
+    var badge = document.getElementById('badge-'+id);
+    var btn   = badge.closest('tr').querySelector('button[title]');
+    if(esActiva){
+      badge.className = 'badge rounded-pill badge-inactiva';
+      badge.textContent = 'Inactiva';
+      btn.title = 'Activar';
+      btn.setAttribute('onclick', 'toggleActiva('+id+', false)');
+    } else {
+      badge.className = 'badge rounded-pill badge-activa';
+      badge.textContent = 'Activa';
+      btn.title = 'Pausar';
+      btn.setAttribute('onclick', 'toggleActiva('+id+', true)');
+    }
+  }
+
+  function confirmarEliminar(id, nombre){
+    _idEliminar = id;
+    document.getElementById('lblNombrePromo').textContent = nombre;
+    new bootstrap.Modal(document.getElementById('modalEliminar')).show();
+  }
+
+  document.getElementById('btnConfirmarEliminar').addEventListener('click', async function(){
+    bootstrap.Modal.getInstance(document.getElementById('modalEliminar'))?.hide();
+    var res = await fetch('?handler=Eliminar&id='+_idEliminar, { method:'POST' });
+    if(!res.ok){ showAlert('Error al eliminar.'); return; }
+    var fila = document.getElementById('fila-'+_idEliminar);
+    if(fila) fila.remove();
+  });
+</script>
+}

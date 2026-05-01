@@ -1,0 +1,324 @@
+@page
+@model Comercial_Web.Pages.Clientes.SaldosClientes.IndexModel
+@{
+    ViewData["Title"] = "Saldos Deudores";
+}
+
+<style>
+  .page-header-saldos {
+    background: linear-gradient(135deg, #1a2a4a 0%, #2d4a7a 100%);
+    border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; color: #fff;
+  }
+  .page-header-saldos h4 { margin: 0; font-weight: 700; letter-spacing: .3px; }
+</style>
+
+@* ===== PAGE HEADER ===== *@
+<div class="page-header-saldos d-flex align-items-center gap-3">
+  <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"
+       width="28" height="28">
+    <path d="M4 10.781c.148 1.667 1.513 2.85 3.591 3.003V15h1.043v-1.216c2.27-.179 3.678-1.438 3.678-3.3 0-1.59-.947-2.51-2.956-3.028l-.722-.187V3.467c1.122.11 1.879.714 2.07 1.616h1.47c-.166-1.6-1.54-2.748-3.54-2.875V1H7.591v1.233c-1.939.23-3.27 1.472-3.27 3.156 0 1.454.966 2.483 2.661 2.917l.61.162v4.031c-1.149-.17-1.94-.8-2.07-1.718H4zm2.589-7.379c0-.971.677-1.59 1.968-1.732v3.055l-.527-.139c-.993-.26-1.441-.793-1.441-1.184zm2.546 5.445c0 1.055-.73 1.72-2.003 1.85V9.567l.587.153c1.117.29 1.416.81 1.416 1.126z"/>
+  </svg>
+  <h4>Clientes con Saldo Deudor</h4>
+</div>
+
+  @* ── Panel de filtros ── *@
+  <form method="get" id="frmFiltros">
+    <div style="background:#fff;border:1px solid #e3e6f0;border-radius:10px;padding:1.25rem;margin-bottom:1.25rem;
+                box-shadow:0 2px 8px rgba(0,0,0,.05);">
+      <div style="font-size:.82rem;font-weight:700;color:#6c757d;text-transform:uppercase;
+                  letter-spacing:.05em;margin-bottom:1rem;">Filtros</div>
+
+      <div class="row g-3">
+        @* Provincia *@
+        <div class="col-md-3">
+          <label class="form-label" style="font-size:.82rem;font-weight:600;color:#5a5c69;">Provincia</label>
+          <div class="multisel-wrap" id="wrap-prov">
+            <button type="button" class="multisel-btn" onclick="toggleDrop('drop-prov','wrap-prov')">
+              <span id="lbl-prov">Todas</span>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="12" height="12"><path d="M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/></svg>
+            </button>
+            <div class="multisel-drop" id="drop-prov">
+              <div class="multisel-search"><input type="text" placeholder="Buscar…" oninput="filtrarOpciones(this,'drop-prov')"></div>
+              <div class="multisel-opts">
+                @foreach (var item in Model.Provincias)
+                {
+                  <label class="multisel-item">
+                    <input type="checkbox" name="SelProvincias" value="@item.Value"
+                           @(Model.SelProvincias.Contains(int.Parse(item.Value)) ? "checked" : "")
+                           onchange="actualizarLabel('drop-prov','lbl-prov','Todas')">
+                    @item.Text
+                  </label>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        @* Localidad *@
+        <div class="col-md-3">
+          <label class="form-label" style="font-size:.82rem;font-weight:600;color:#5a5c69;">Localidad</label>
+          <div class="multisel-wrap" id="wrap-loc">
+            <button type="button" class="multisel-btn" onclick="toggleDrop('drop-loc','wrap-loc')">
+              <span id="lbl-loc">Todas</span>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="12" height="12"><path d="M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/></svg>
+            </button>
+            <div class="multisel-drop" id="drop-loc">
+              <div class="multisel-search"><input type="text" placeholder="Buscar…" oninput="filtrarOpciones(this,'drop-loc')"></div>
+              <div class="multisel-opts">
+                @foreach (var item in Model.Localidades)
+                {
+                  <label class="multisel-item">
+                    <input type="checkbox" name="SelLocalidades" value="@item.Value"
+                           @(Model.SelLocalidades.Contains(int.Parse(item.Value)) ? "checked" : "")
+                           onchange="actualizarLabel('drop-loc','lbl-loc','Todas')">
+                    @item.Text
+                  </label>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        @* Vendedor *@
+        <div class="col-md-3">
+          <label class="form-label" style="font-size:.82rem;font-weight:600;color:#5a5c69;">Vendedor</label>
+          <div class="multisel-wrap" id="wrap-vend">
+            <button type="button" class="multisel-btn" onclick="toggleDrop('drop-vend','wrap-vend')">
+              <span id="lbl-vend">Todos</span>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="12" height="12"><path d="M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/></svg>
+            </button>
+            <div class="multisel-drop" id="drop-vend">
+              <div class="multisel-search"><input type="text" placeholder="Buscar…" oninput="filtrarOpciones(this,'drop-vend')"></div>
+              <div class="multisel-opts">
+                @foreach (var item in Model.Vendedores)
+                {
+                  <label class="multisel-item">
+                    <input type="checkbox" name="SelVendedores" value="@item.Value"
+                           @(Model.SelVendedores.Contains(int.Parse(item.Value)) ? "checked" : "")
+                           onchange="actualizarLabel('drop-vend','lbl-vend','Todos')">
+                    @item.Text
+                  </label>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        @* Zona *@
+        <div class="col-md-3">
+          <label class="form-label" style="font-size:.82rem;font-weight:600;color:#5a5c69;">Zona de Clientes</label>
+          <div class="multisel-wrap" id="wrap-zona">
+            <button type="button" class="multisel-btn" onclick="toggleDrop('drop-zona','wrap-zona')">
+              <span id="lbl-zona">Todas</span>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="12" height="12"><path d="M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/></svg>
+            </button>
+            <div class="multisel-drop" id="drop-zona">
+              <div class="multisel-search"><input type="text" placeholder="Buscar…" oninput="filtrarOpciones(this,'drop-zona')"></div>
+              <div class="multisel-opts">
+                @foreach (var item in Model.Zonas)
+                {
+                  <label class="multisel-item">
+                    <input type="checkbox" name="SelZonas" value="@item.Value"
+                           @(Model.SelZonas.Contains(int.Parse(item.Value)) ? "checked" : "")
+                           onchange="actualizarLabel('drop-zona','lbl-zona','Todas')">
+                    @item.Text
+                  </label>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:1rem;display:flex;gap:.6rem;align-items:center;">
+        <input type="hidden" name="buscar" value="1" />
+        <button type="submit" class="btn btn-primary btn-sm" style="padding:.35rem .9rem;font-size:.83rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" height="13" style="margin-right:.3rem;vertical-align:-.1em;">
+            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+          </svg>
+          Buscar
+        </button>
+        <a href="/Clientes/SaldosClientes" class="btn btn-outline-secondary btn-sm" style="padding:.35rem .9rem;font-size:.83rem;">
+          Limpiar filtros
+        </a>
+        @if (Model.BusquedaRealizada && Model.Resultados.Count > 0)
+        {
+          <a href="@Url.Page("Index", "ExportarExcel", new {
+               SelProvincias  = Model.SelProvincias,
+               SelLocalidades = Model.SelLocalidades,
+               SelVendedores  = Model.SelVendedores,
+               SelZonas       = Model.SelZonas,
+               buscar         = 1
+             })"
+             class="btn btn-success btn-sm" style="padding:.35rem .9rem;font-size:.83rem;margin-left:auto;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" height="13" style="margin-right:.3rem;vertical-align:-.1em;">
+              <path d="M2.5 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V4.5L11 1H2.5zm8.5 0v3h3l-3-3zM3 8h10v1H3V8zm0 2h7v1H3v-1zm0-4h4v1H3V6z"/>
+            </svg>
+            Exportar Excel
+          </a>
+        }
+      </div>
+    </div>
+  </form>
+
+  @* ── Resultados ── *@
+  @if (Model.BusquedaRealizada)
+  {
+    if (Model.Resultados.Count == 0)
+    {
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:1.25rem;
+                  text-align:center;color:#166534;font-size:.9rem;">
+        No se encontraron clientes con saldo deudor para los filtros seleccionados.
+      </div>
+    }
+    else
+    {
+      <div style="background:#fff;border:1px solid #e3e6f0;border-radius:10px;
+                  box-shadow:0 2px 8px rgba(0,0,0,.05);overflow:hidden;">
+
+        <div style="padding:.75rem 1rem;border-bottom:1px solid #e3e6f0;
+                    display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:.83rem;color:#6c757d;">
+            <strong style="color:#2c3e50;">@Model.Resultados.Count</strong> cliente(s) con saldo deudor
+          </span>
+          <span style="font-size:.83rem;color:#e74a3b;font-weight:700;">
+            Total adeudado: $@Model.Resultados.Sum(r => r.Saldo).ToString("N2")
+          </span>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table class="table table-sm table-hover mb-0" style="font-size:.8rem;min-width:1100px;">
+            <thead style="background:#4e73df;color:#fff;position:sticky;top:0;">
+              <tr>
+                <th style="padding:.5rem .7rem;white-space:nowrap;">N°</th>
+                <th style="padding:.5rem .7rem;white-space:nowrap;">Nombre Comercial</th>
+                <th style="padding:.5rem .7rem;white-space:nowrap;">Razón Social</th>
+                <th style="padding:.5rem .7rem;white-space:nowrap;">CUIL/CUIT</th>
+                <th style="padding:.5rem .7rem;white-space:nowrap;">Dirección</th>
+                <th style="padding:.5rem .7rem;white-space:nowrap;">Localidad</th>
+                <th style="padding:.5rem .7rem;white-space:nowrap;">Provincia</th>
+                <th style="padding:.5rem .7rem;white-space:nowrap;">Zona</th>
+                <th style="padding:.5rem .7rem;white-space:nowrap;">Vendedor</th>
+                <th style="padding:.5rem .7rem;white-space:nowrap;">Teléfono</th>
+                <th style="padding:.5rem .7rem;text-align:right;white-space:nowrap;">Total Debe</th>
+                <th style="padding:.5rem .7rem;text-align:right;white-space:nowrap;">Total Haber</th>
+                <th style="padding:.5rem .7rem;text-align:right;white-space:nowrap;">Saldo Deudor</th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach (var r in Model.Resultados)
+              {
+                var dir = string.Join(", ",
+                  new[] { r.Direccion }.Where(s => !string.IsNullOrWhiteSpace(s)));
+                <tr>
+                  <td style="padding:.4rem .7rem;">@r.ClienteId</td>
+                  <td style="padding:.4rem .7rem;font-weight:600;">@r.NombreComercial</td>
+                  <td style="padding:.4rem .7rem;">@r.RazonSocial</td>
+                  <td style="padding:.4rem .7rem;white-space:nowrap;">@r.Cuil</td>
+                  <td style="padding:.4rem .7rem;">@dir</td>
+                  <td style="padding:.4rem .7rem;">@r.LocalidadDescripcion</td>
+                  <td style="padding:.4rem .7rem;">@r.ProvinciaDescripcion</td>
+                  <td style="padding:.4rem .7rem;">@r.ZonaDescripcion</td>
+                  <td style="padding:.4rem .7rem;">@r.Vendedor</td>
+                  <td style="padding:.4rem .7rem;white-space:nowrap;">@r.Telefono</td>
+                  <td style="padding:.4rem .7rem;text-align:right;">$@r.TotalDebe.ToString("N2")</td>
+                  <td style="padding:.4rem .7rem;text-align:right;">$@r.TotalHaber.ToString("N2")</td>
+                  <td style="padding:.4rem .7rem;text-align:right;font-weight:700;color:#e74a3b;">$@r.Saldo.ToString("N2")</td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr style="background:#f8f9fc;font-weight:700;border-top:2px solid #4e73df;">
+                <td colspan="10" style="padding:.5rem .7rem;text-align:right;font-size:.82rem;color:#5a5c69;">TOTALES</td>
+                <td style="padding:.5rem .7rem;text-align:right;">$@Model.Resultados.Sum(r => r.TotalDebe).ToString("N2")</td>
+                <td style="padding:.5rem .7rem;text-align:right;">$@Model.Resultados.Sum(r => r.TotalHaber).ToString("N2")</td>
+                <td style="padding:.5rem .7rem;text-align:right;color:#e74a3b;">$@Model.Resultados.Sum(r => r.Saldo).ToString("N2")</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    }
+  }
+
+@* ── CSS de los multiselect ── *@
+<style>
+  .multisel-wrap { position:relative; }
+  .multisel-btn {
+    width:100%;display:flex;justify-content:space-between;align-items:center;
+    padding:.35rem .7rem;font-size:.82rem;background:#fff;border:1px solid #d1d3e2;
+    border-radius:6px;cursor:pointer;color:#5a5c69;
+  }
+  .multisel-btn:hover { border-color:#4e73df; }
+  .multisel-drop {
+    display:none;position:absolute;top:calc(100% + 3px);left:0;z-index:1050;
+    background:#fff;border:1px solid #d1d3e2;border-radius:6px;min-width:100%;
+    max-width:280px;box-shadow:0 4px 16px rgba(0,0,0,.12);
+  }
+  .multisel-drop.open { display:block; }
+  .multisel-search { padding:.4rem .5rem;border-bottom:1px solid #e3e6f0; }
+  .multisel-search input {
+    width:100%;border:1px solid #d1d3e2;border-radius:4px;
+    padding:.25rem .5rem;font-size:.78rem;outline:none;
+  }
+  .multisel-opts { max-height:200px;overflow-y:auto;padding:.3rem 0; }
+  .multisel-item {
+    display:flex;align-items:center;gap:.4rem;padding:.25rem .7rem;
+    font-size:.8rem;cursor:pointer;color:#5a5c69;
+  }
+  .multisel-item:hover { background:#f0f4ff; }
+  .multisel-item input[type=checkbox] { margin:0;cursor:pointer; }
+</style>
+
+@section Scripts {
+<script>
+  // ── Multi-select dropdown ──────────────────────────────────────────────
+  function toggleDrop(dropId, wrapId) {
+    const drop = document.getElementById(dropId);
+    const isOpen = drop.classList.contains('open');
+    // cerrar todos
+    document.querySelectorAll('.multisel-drop.open').forEach(d => d.classList.remove('open'));
+    document.querySelectorAll('.multisel-wrap').forEach(w => w.classList.remove('open'));
+    if (!isOpen) {
+      drop.classList.add('open');
+      document.getElementById(wrapId).classList.add('open');
+      const inp = drop.querySelector('input[type=text]');
+      if (inp) inp.focus();
+    }
+  }
+
+  function filtrarOpciones(input, dropId) {
+    const q = input.value.toLowerCase();
+    document.querySelectorAll('#' + dropId + ' .multisel-item').forEach(item => {
+      item.style.display = item.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  }
+
+  function actualizarLabel(dropId, lblId, textoVacio) {
+    const checked = document.querySelectorAll('#' + dropId + ' input[type=checkbox]:checked');
+    const lbl = document.getElementById(lblId);
+    if (checked.length === 0) {
+      lbl.textContent = textoVacio;
+    } else if (checked.length === 1) {
+      lbl.textContent = checked[0].parentElement.textContent.trim();
+    } else {
+      lbl.textContent = checked.length + ' seleccionados';
+    }
+  }
+
+  // cerrar al hacer click fuera
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.multisel-wrap')) {
+      document.querySelectorAll('.multisel-drop.open').forEach(d => d.classList.remove('open'));
+    }
+  });
+
+  // Inicializar labels al cargar (en caso de que haya filtros preseleccionados)
+  document.addEventListener('DOMContentLoaded', function() {
+    actualizarLabel('drop-prov',  'lbl-prov',  'Todas');
+    actualizarLabel('drop-loc',   'lbl-loc',   'Todas');
+    actualizarLabel('drop-vend',  'lbl-vend',  'Todos');
+    actualizarLabel('drop-zona',  'lbl-zona',  'Todas');
+  });
+</script>
+}

@@ -1,994 +1,469 @@
-﻿@page
+@page
 @model Comercial_Web.Pages.Proveedores.OrdenesCompra.IndexModel
 @{
     ViewData["Title"] = "Orden de Compra";
 }
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
+<style>
+    /* ===== PAGE HEADER ===== */
+    .page-header {
+        background: linear-gradient(135deg,#1a2a4a 0%,#2d4a7a 100%);
+        border-radius:12px; padding:1.25rem 1.5rem; margin-bottom:1.5rem; color:#fff;
+    }
+    .page-header h4 { margin:0; font-weight:700; letter-spacing:.3px; }
 
-<div class="card mb-4 p-4 rounded shadow-sm">
-    <div class="card-header fw-semibold bg-light border-bottom mb-3">
-        Orden de Compra
+    /* ===== SECTION CARDS ===== */
+    .section-card {
+        background:#fff; border:1px solid #e3e6f0; border-radius:12px;
+        box-shadow:0 2px 8px rgba(0,0,0,.06); overflow:visible; margin-bottom:1.25rem;
+    }
+    .section-card-header {
+        background:linear-gradient(90deg,#f0f4ff 0%,#f8f9fc 100%);
+        border-bottom:1px solid #e3e6f0; padding:.65rem 1.1rem;
+        display:flex; align-items:center; justify-content:space-between;
+        flex-wrap:wrap; gap:.5rem; border-radius:11px 11px 0 0;
+    }
+    .section-card-header-left { display:flex; align-items:center; gap:.5rem; }
+    .section-card-header span { font-weight:700; font-size:.75rem; text-transform:uppercase; letter-spacing:.5px; color:#4e73df; }
+    .section-card-body { padding:1rem 1.1rem; }
+    .form-label { font-size:.82rem; font-weight:600; color:#4a5568; margin-bottom:3px; }
+
+    /* ===== BUTTONS ===== */
+    .btn-oc {
+        border:none; border-radius:8px; padding:.42rem 1rem; font-size:.83rem; font-weight:600;
+        display:inline-flex; align-items:center; gap:.4rem;
+        cursor:pointer; transition:all .18s; white-space:nowrap;
+    }
+    .btn-oc svg { width:15px; height:15px; flex-shrink:0; }
+    .btn-oc-primary   { background:#4e73df; color:#fff; } .btn-oc-primary:hover   { background:#3a5bc7; }
+    .btn-oc-success   { background:#1cc88a; color:#fff; } .btn-oc-success:hover   { background:#17a673; }
+    .btn-oc-danger    { background:#e74a3b; color:#fff; } .btn-oc-danger:hover    { background:#c93627; }
+    .btn-oc-secondary { background:#858796; color:#fff; } .btn-oc-secondary:hover { background:#6a6b7a; }
+    .btn-oc-warning   { background:#f6c23e; color:#222; } .btn-oc-warning:hover   { background:#e0a800; }
+    .btn-oc-outline   { background:#fff; color:#4e73df; border:1px solid #4e73df; }
+    .btn-oc-outline:hover { background:#eef2ff; }
+    .btn-oc:disabled  { opacity:.55; cursor:not-allowed; }
+
+    /* ===== GRILLA ===== */
+    .oc-table { width:100%; border-collapse:collapse; font-size:.81rem; }
+    .oc-table thead tr { background:linear-gradient(90deg,#1a2a4a 0%,#2d4a7a 100%); }
+    .oc-table th { padding:.5rem .65rem; color:#fff; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.4px; white-space:nowrap; }
+    .oc-table td { padding:.38rem .65rem; color:#2d3748; border-bottom:1px solid #f0f0f0; vertical-align:middle; }
+    .oc-table tbody tr:hover { background:#f8f9ff; }
+    .oc-pedido-input {
+        width:80px; border:1px solid #ced4da; border-radius:6px;
+        padding:.22rem .45rem; font-size:.82rem; text-align:right;
+    }
+    .oc-pedido-input:focus { border-color:#4e73df; box-shadow:0 0 0 2px rgba(78,115,223,.15); outline:none; }
+    .oc-btn-del { background:none; border:none; padding:.2rem .35rem; border-radius:5px; cursor:pointer; color:#e74a3b; transition:all .15s; }
+    .oc-btn-del:hover { background:#fdecea; }
+    .oc-code { font-size:.75rem; background:#f0f4ff; color:#2d4a7a; border-radius:4px; padding:.1rem .35rem; }
+
+    /* ===== MESSAGES ===== */
+    .oc-msg { font-size:.82rem; padding:.28rem .6rem; border-radius:6px; }
+    .oc-msg-ok  { background:#d1f5e8; color:#0d6e4e; }
+    .oc-msg-err { background:#fdecea; color:#c0392b; }
+
+    /* ===== AUTOCOMPLETE ===== */
+    #lbDesc {
+        position:absolute; top:100%; left:0; right:0; z-index:1200;
+        background:#fff; border:1px solid #d0d7e8; border-radius:8px;
+        box-shadow:0 4px 16px rgba(0,0,0,.12); max-height:200px; overflow-y:auto;
+    }
+    .oc-autocomplete-item {
+        padding:.35rem .75rem; font-size:.82rem; cursor:pointer; transition:background .12s;
+    }
+    .oc-autocomplete-item:hover,.oc-autocomplete-item:focus { background:#f0f4ff; outline:none; }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state { text-align:center; padding:2rem 1rem; color:#bbb; }
+
+    /* ===== CNT BADGE ===== */
+    .cnt-badge { background:#eef2ff; color:#4e73df; border-radius:12px; padding:.15rem .55rem; font-size:.72rem; font-weight:700; }
+
+    /* ===== PROGRESS ===== */
+    .progress-wrap { height:18px; border-radius:9px; background:#e9ecef; overflow:hidden; }
+    .progress-bar-oc {
+        height:100%; border-radius:9px;
+        background:linear-gradient(90deg,#4e73df 0%,#1cc88a 100%);
+        transition:width .3s ease; display:flex; align-items:center; justify-content:center;
+        font-size:.68rem; font-weight:700; color:#fff; min-width:2rem;
+    }
+
+    /* ===== PANEL ÉXITO ===== */
+    .exito-panel {
+        border:1.5px solid #1cc88a; border-radius:12px;
+        background:linear-gradient(90deg,#f0fdf4 0%,#f8fff8 100%);
+        padding:1.1rem 1.25rem; display:flex; align-items:center;
+        justify-content:space-between; flex-wrap:wrap; gap:.75rem;
+    }
+    .exito-badge { background:#1cc88a; color:#fff; border-radius:8px; padding:.35rem .85rem; font-size:.83rem; font-weight:700; }
+
+    /* ===== MODAL ===== */
+    .modal-header-oc {
+        background:linear-gradient(135deg,#1a2a4a 0%,#2d4a7a 100%);
+        padding:.85rem 1.1rem; display:flex; align-items:center; gap:.65rem;
+    }
+    .modal-header-oc h5 { margin:0; color:#fff; font-weight:700; font-size:.9rem; }
+    .modal-header-oc .btn-close { filter:invert(1); opacity:.8; margin-left:auto; }
+    .modal-content { border:none; border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,.18); }
+
+    /* Spinner */
+    .spinner-sm {
+        display:inline-block; width:14px; height:14px;
+        border:2px solid rgba(255,255,255,.35); border-top-color:#fff;
+        border-radius:50%; animation:spin .7s linear infinite; flex-shrink:0;
+    }
+    @@keyframes spin { to { transform:rotate(360deg); } }
+</style>
+
+@* ===== PAGE HEADER ===== *@
+<div class="page-header d-flex align-items-center gap-3">
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+    </svg>
+    <div>
+        <h4>Orden de Compra</h4>
+        <small class="opacity-75">Cargá productos y generá notas de pedido a proveedores</small>
     </div>
+</div>
 
-    <form method="post">
-        <div class="row mb-3 px-2">
-            <div class="col-md-3">
-                <label class="form-label fw-bold">Proveedor</label>
-                <select asp-for="ProveedorId" asp-items="Model.Proveedores" class="form-select form-select-sm" id="ProveedorId">
+@* ===== PROVEEDOR + OPCIONES ===== *@
+<div class="section-card">
+    <div class="section-card-header">
+        <div class="section-card-header-left">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#4e73df" viewBox="0 0 16 16"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4z"/></svg>
+            <span>Proveedor</span>
+        </div>
+    </div>
+    <div class="section-card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label">Proveedor</label>
+                <select asp-for="ProveedorId" asp-items="Model.Proveedores"
+                        class="form-select form-select-sm" id="ProveedorId"
+                        style="border-radius:8px;">
                     <option value="">-- Seleccione --</option>
                 </select>
             </div>
-            <div class="col-md-1 d-flex align-items-end">
-                <button type="button" class="btn btn-success" onclick="confirmarProveedor()" title="Confirmar proveedor">
-                    <i class="fas fa-play"></i>
+            <div class="col-md-2">
+                <label class="form-label">IVA (%)</label>
+                <select asp-for="IvaId" asp-items="Model.Ivas"
+                        class="form-select form-select-sm" id="IvaId"
+                        style="border-radius:8px;" onchange="recalcularTotales()"></select>
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn-oc btn-oc-primary" onclick="confirmarProveedor()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg>
+                    Confirmar proveedor
+                </button>
+            </div>
+            <div class="col-auto ms-auto d-flex gap-2 flex-wrap">
+                <button type="button" class="btn-oc btn-oc-outline" id="btnCantMinima">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M2 1a1 1 0 0 0-1 1v4.586a1 1 0 0 0 .293.707l7 7a1 1 0 0 0 1.414 0l4.586-4.586a1 1 0 0 0 0-1.414l-7-7A1 1 0 0 0 6.586 1H2zm4 3.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
+                    Cant. Mínima
+                </button>
+                <button type="button" class="btn-oc btn-oc-outline" data-bs-toggle="modal" data-bs-target="#modalStockProductos" id="btnStockProductos">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5z"/></svg>
+                    Stock / A Pedir
                 </button>
             </div>
         </div>
+    </div>
+</div>
 
-        <div id="panelProductos" class="px-2">
-            <p class="text-muted">Seleccione un proveedor para ver sus productos.</p>
+@* ===== BÚSQUEDA DE PRODUCTOS ===== *@
+<fieldset id="fieldsetPrincipal" disabled>
+<div class="section-card">
+    <div class="section-card-header">
+        <div class="section-card-header-left">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#4e73df" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
+            <span>Búsqueda de Productos</span>
+        </div>
+    </div>
+    <div class="section-card-body">
+        <div class="row g-3 align-items-end">
+            @* Tipo de búsqueda *@
+            <div class="col-md-2">
+                <label class="form-label">Tipo filtro</label>
+                <select asp-for="TipoBusqueda" id="TipoBusqueda" class="form-select form-select-sm" style="border-radius:8px;">
+                    <option value="1">Cód. Proveedor</option>
+                    <option value="2">Cód. de Barras</option>
+                    <option value="3">Cód. Interno</option>
+                </select>
+            </div>
+            @* Filtro código *@
+            <div class="col-md-2">
+                <label class="form-label">Código</label>
+                <input type="text" id="txtFiltro" class="form-control form-control-sm"
+                       style="border-radius:8px;"
+                       onkeydown="buscarProductoEnter(event)"
+                       placeholder="Ingresá y Enter…" />
+            </div>
+            @* Cantidad *@
+            <div class="col-md-1">
+                <label class="form-label">Cantidad</label>
+                <input type="number" id="txtCantidad" class="form-control form-control-sm text-end"
+                       style="border-radius:8px;" step="@Model.CantidadStep" min="0" />
+            </div>
+            @* Resultado búsqueda *@
+            <div class="col-md-4 d-flex align-items-end">
+                <span id="lblresultadobusqueda" class="oc-msg"></span>
+            </div>
+            @* Descuento / Recargo *@
+            <div class="col-md-2">
+                <label class="form-label">Descuento (%)</label>
+                <input type="number" asp-for="Descuento" id="txtDescuento" class="form-control form-control-sm text-end"
+                       style="border-radius:8px;" min="0" max="100" step="0.01" />
+            </div>
+            <div class="col-md-1">
+                <label class="form-label">Recargo (%)</label>
+                <input type="number" asp-for="Recargo" id="txtRecargo" class="form-control form-control-sm text-end"
+                       style="border-radius:8px;" min="0" max="999" step="0.01" />
+            </div>
         </div>
 
-        <fieldset id="fieldsetPrincipal" disabled>
-            <div class="row mb-3 px-2 align-items-end">
-                <div class="col-md-2">
-                    <label class="form-label fw-bold">IVA</label>
-                    <select asp-for="IvaId" asp-items="Model.Ivas" class="form-select form-select-sm" disabled="@(!Model.Cargado)" onchange="recalcularTotales()"></select>
-                </div>
-                <div class="col-md-4 ms-auto d-flex justify-content-end gap-2">
-                    <button id="btnStockProductos" type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalStockProductos">
-                        Stock Productos
-                    </button>
-                    <button id="btnCantMinima" type="button" class="btn btn-outline-primary btn-sm">
-                        Debajo Cant. Mínima
-                    </button>
+        @* Búsqueda por descripción (autocomplete) *@
+        <div class="row g-3 mt-1">
+            <div class="col-md-5" style="position:relative;">
+                <label class="form-label">Búsqueda por descripción</label>
+                <input type="text" id="txtDesc" class="form-control form-control-sm"
+                       style="border-radius:8px;"
+                       placeholder="Escribí para filtrar descripciones…"
+                       oninput="filtrarDescripcion(this.value)"
+                       autocomplete="off" />
+                <div id="lbDesc" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ===== GRILLA DE PRODUCTOS ===== *@
+<div class="section-card">
+    <div class="section-card-header">
+        <div class="section-card-header-left">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#4e73df" viewBox="0 0 16 16"><path d="M3 2a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v13H3V2zm3 1v2h4V3H6zM5 3H4v1h1V3zm6 0h-1v1h1V3zM4 6v1h1V6H4zm2 0v1h4V6H6zm5 0h-1v1h1V6zM4 9v1h1V9H4zm2 0v1h4V9H6zm5 0h-1v1h1V9z"/></svg>
+            <span>Detalle del Pedido</span>
+            <span class="cnt-badge" id="cntFilas">0 producto(s)</span>
+        </div>
+    </div>
+    <div style="max-height:380px; overflow-y:auto;">
+        <table class="oc-table" id="tablaDetalles">
+            <thead>
+                <tr>
+                    <th>Cód. Barras</th>
+                    <th>Cód. Prov.</th>
+                    <th>Descripción</th>
+                    <th class="text-end">Stock</th>
+                    <th class="text-end">C. Mín.</th>
+                    <th class="text-end">P. s/IVA</th>
+                    <th class="text-end">P. c/IVA</th>
+                    <th class="text-end">Pedido</th>
+                    <th class="text-end">Subtotal</th>
+                    <th style="width:38px;"></th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <div id="emptyGrilla" class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="#ddd" viewBox="0 0 16 16" class="mb-2"><path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5z"/></svg>
+        <div style="font-size:.84rem;">Buscá productos para agregarlos al pedido</div>
+    </div>
+
+    @* TOTAL + GRABAR *@
+    <div style="padding:.85rem 1.1rem; border-top:1px solid #e3e6f0; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem; background:#f8f9fc; border-radius:0 0 11px 11px;">
+        <div style="display:flex; align-items:center; gap:.5rem;">
+            <span style="font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:#4a5568;">Total</span>
+            <input type="text" id="txtTotal" value="0,00" readonly
+                   style="width:160px; border:1px solid #ced4da; border-radius:8px; padding:.3rem .65rem; font-size:.95rem; font-weight:700; text-align:right; background:#fff; color:#1a2a4a;" />
+        </div>
+        <button type="button" class="btn-oc btn-oc-success" id="btnGrabar" disabled onclick="grabarOrden()">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4.5a.5.5 0 0 0-.146-.354l-3-3A.5.5 0 0 0 11.5 1H2zm0 1h9.293L14 4.707V14H2V2zM5 12a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H5zm1-1h4V9H6v2zM5 5a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1H5z"/></svg>
+            Grabar Orden
+        </button>
+    </div>
+</div>
+</fieldset>
+
+@* ===== PANEL DE PROGRESO ===== *@
+<div class="section-card" id="panelProgreso" style="display:none;">
+    <div class="section-card-header">
+        <div class="section-card-header-left">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#4e73df" viewBox="0 0 16 16"><path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/><path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.47l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/></svg>
+            <span>Proceso de Guardado</span>
+        </div>
+        <span id="lblEstadoGuardar" style="font-size:.78rem; font-weight:700;"></span>
+    </div>
+    <div class="section-card-body">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <span id="lblProgresoGuardar" style="font-size:.78rem; font-weight:600; color:#6c757d;">Preparando…</span>
+            <span id="lblPctGuardar" style="font-size:.78rem; font-weight:700; color:#4e73df;">0%</span>
+        </div>
+        <div class="progress-wrap mb-2">
+            <div class="progress-bar-oc" id="progressBarGuardar" style="width:0%">0%</div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:.5rem; margin-top:.75rem;">
+            <div class="oc-step" id="step1">
+                <div class="oc-step-dot"></div>
+                <span>Validando datos</span>
+            </div>
+            <div class="oc-step" id="step2">
+                <div class="oc-step-dot"></div>
+                <span>Enviando al servidor</span>
+            </div>
+            <div class="oc-step" id="step3">
+                <div class="oc-step-dot"></div>
+                <span>Procesando líneas</span>
+            </div>
+            <div class="oc-step" id="step4">
+                <div class="oc-step-dot"></div>
+                <span>Guardando</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ===== PANEL ÉXITO POST-GUARDADO ===== *@
+<div id="panelExito" style="display:none; margin-bottom:1.25rem;">
+    <div class="exito-panel">
+        <div style="display:flex; align-items:center; gap:.85rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="#1cc88a" viewBox="0 0 16 16">
+                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+            </svg>
+            <div>
+                <div style="font-weight:700; font-size:.9rem; color:#0d6e4e;">Orden de Compra grabada correctamente</div>
+                <div style="font-size:.8rem; color:#555; margin-top:2px;">
+                    N° <strong id="lblOrdenId">00000000</strong>
                 </div>
             </div>
+        </div>
+        <div style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center;">
+            <span style="font-size:.78rem; color:#555; font-weight:600;">Obtener reporte:</span>
+            <button class="btn-oc btn-oc-danger" onclick="imprimirOrden('pdf')">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/></svg>
+                PDF
+            </button>
+            <button class="btn-oc btn-oc-success" onclick="imprimirOrden('excel')">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/><path d="M7.194 7.766a1.657 1.657 0 0 0-.227-.27 1.02 1.02 0 0 1 .909.538l.854 1.646.854-1.646a1.02 1.02 0 0 1 .909-.538 1.659 1.659 0 0 0-.228.27l-.914 1.76.914 1.76a1.659 1.659 0 0 0 .228.27 1.02 1.02 0 0 1-.909-.538L8.531 9.602l-.854 1.646a1.02 1.02 0 0 1-.909.538c.08-.086.16-.175.228-.27l.914-1.76-.914-1.76z"/></svg>
+                Excel
+            </button>
+            <button class="btn-oc btn-oc-secondary" onclick="nuevaOrden()">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>
+                Nueva Orden
+            </button>
+        </div>
+    </div>
+</div>
 
-            <div class="row mb-3 px-2 align-items-end">
-                <div class="col-md-2">
-                    <label class="form-label fw-bold">Filtro</label>
-                    <select asp-for="TipoBusqueda" id="TipoBusqueda" class="form-select form-select-sm">
-                        <option value="1">Cod. Proveedor</option>
-                        <option value="2">Descripción</option>
-                        <option value="3">Cod. Interno</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label fw-bold">Valor Filtro</label>
-                    <input type="text" id="txtFiltro" class="form-control form-control-sm" onkeydown="buscarProductoEnter(event)" />
-                </div>
-                <div class="col-md-5 d-flex align-items-center">
-                    <label id="lblresultadobusqueda" class="ms-2 small text-muted"></label>
-                </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <div class="w-100">
-                        <label class="form-label fw-bold">Cantidad</label>
-                        <input type="number" id="txtCantidad" class="form-control form-control-sm text-end" step="@Model.CantidadStep" />
+@* ===== MODAL STOCK PRODUCTOS ===== *@
+<div class="modal fade" id="modalStockProductos" tabindex="-1" aria-labelledby="modalStockLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <div class="modal-header-oc">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#fff" viewBox="0 0 16 16"><path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5z"/></svg>
+                <h5>Productos a Pedir — Stock y Movimientos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body p-0">
+                @* Filtros *@
+                <div style="padding:1rem 1.25rem; background:#f8f9fc; border-bottom:1px solid #e3e6f0;">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label">Desde</label>
+                            <input type="date" id="dtpDesde" class="form-control form-control-sm" style="border-radius:8px;" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Hasta</label>
+                            <input type="date" id="dtpHasta" class="form-control form-control-sm" style="border-radius:8px;" />
+                        </div>
+                        <div class="col-auto">
+                            <button id="btnBuscarStock" type="button" class="btn-oc btn-oc-primary">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
+                                Buscar
+                            </button>
+                        </div>
+                        <div class="col-auto ms-auto d-flex gap-2">
+                            <button type="button" class="btn-oc btn-oc-danger" id="btnImprimirStockPdf">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M5 4v-2a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h3zm5-2H6v2h4V2zm1 10v-1H5v1a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1zM2 7a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/></svg>
+                                PDF
+                            </button>
+                            <button type="button" class="btn-oc btn-oc-success" id="btnImprimirStockExcel">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/></svg>
+                                Excel
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="row mb-3 px-2 g-3 align-items-end">
-                <div class="col-md-5">
-                    <label class="form-label fw-bold">Búsqueda descripción</label>
-                    <input type="text" id="txtDesc" class="form-control form-control-sm" oninput="filtrarDescripcion(this.value)" autocomplete="off" />
-                    <div id="lbDesc" class="list-group position-absolute w-100" style="z-index: 1000; display: none;"></div>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label fw-bold">Descuento</label>
-                    <input type="number" asp-for="Descuento" id="txtDescuento" class="form-control form-control-sm text-end" maxlength="3" min="0" max="999" pattern="[0-9]{1,3}" disabled />
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label fw-bold">Recargo</label>
-                    <input type="number" asp-for="Recargo" id="txtRecargo" class="form-control form-control-sm text-end" maxlength="3" min="0" max="999" pattern="[0-9]{1,3}" disabled />
-                </div>
-            </div>
-
-            <div class="bg-light border rounded p-3 mb-3">
-                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                    <table id="tablaDetalles" class="table table-bordered table-striped table-sm mb-0">
-                        <thead class="table-secondary">
-                            <tr>
-                                <th>Cód. Barras</th>
-                                <th>Cód. Proveedor</th>
-                                <th>Descripción</th>
-                                <th>Stock</th>
-                                <th>Cant. Mínima</th>
-                                <th class="text-end">Precio Sin IVA</th>
-                                <th class="text-end">Precio Con IVA</th>
-                                <th>Pedido</th>
-                                <th>Subtotal</th>
-                                <th>Acciones</th>
+                @* Grilla stock *@
+                <div style="padding:0; overflow-y:auto; max-height:380px;">
+                    <table style="width:100%;border-collapse:collapse;font-size:.81rem;" id="tablaStockProductos">
+                        <thead>
+                            <tr style="background:linear-gradient(90deg,#1a2a4a 0%,#2d4a7a 100%);">
+                                <th style="padding:.5rem .65rem;color:#fff;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">Cód. Prov.</th>
+                                <th style="padding:.5rem .65rem;color:#fff;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">Descripción</th>
+                                <th style="padding:.5rem .65rem;color:#fff;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;text-align:right;">Stock</th>
+                                <th style="padding:.5rem .65rem;color:#fff;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;text-align:right;">C. Mín.</th>
+                                <th style="padding:.5rem .65rem;color:#fff;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;text-align:right;">Ingresos</th>
+                                <th style="padding:.5rem .65rem;color:#fff;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;text-align:right;">Ventas</th>
+                                <th style="padding:.5rem .65rem;color:#fff;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;text-align:right;">A Pedir</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
                     </table>
                 </div>
-            </div>
-        </fieldset>
 
-        <div class="row mb-3 align-items-center">
-            <!-- Progreso (invisible, alineado a la izquierda) -->
-            <div class="col-md-6 d-none">
-                <label class="form-label fw-bold">Progreso</label>
-                <div class="progress">
-                    <div class="progress-bar" style="width: 0%;" role="progressbar"></div>
-                </div>
-            </div>
-
-            <!-- Total (alineado a la derecha) -->
-            <div class="row mb-3">
-                <div class="col-12 d-flex justify-content-end">
-                    <div style="width: 200px;">
-                        <label class="form-label fw-bold">Total</label>
-                        <input type="text" class="form-control form-control-sm text-end" id="txtTotal" value="0" readonly />
+                @* Totales *@
+                <div style="padding:.85rem 1.25rem; background:#f8f9fc; border-top:1px solid #e3e6f0;">
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <label class="form-label">Cant. productos</label>
+                            <input type="text" id="txtCantProd" class="form-control form-control-sm text-end" readonly style="border-radius:8px;" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Total P. Proveedor</label>
+                            <input type="text" id="txtTotProv" class="form-control form-control-sm text-end" readonly style="border-radius:8px;" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Total P. Lista</label>
+                            <input type="text" id="txtTotLista" class="form-control form-control-sm text-end" readonly style="border-radius:8px;" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Total P. Costo</label>
+                            <input type="text" id="txtTotCosto" class="form-control form-control-sm text-end fw-bold" readonly style="border-radius:8px;" />
+                        </div>
                     </div>
                 </div>
             </div>
 
-        </div>
-
-
-        <div class="text-end px-2">
-            <button type="submit" onclick="grabarOrden()" class="btn btn-success" id="btnGrabar" disabled>Grabar</button>
-        </div>
-    </form>
-</div>
-
-<div class="modal fade" id="modalStockProductos" tabindex="-1" aria-labelledby="modalStockProductosLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content rounded shadow-sm">
-
-            <!-- Header -->
-            <div class="modal-header bg-secondary text-white">
-                <h5 class="modal-title fw-bold" id="modalStockProductosLabel">Productos a Pedir</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-            </div>
-
-            <!-- Body -->
-            <div class="modal-body p-0">
-
-                <!-- Filtros -->
-                <div class="bg-light border-bottom p-4">
-                    <div class="row g-3">
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">Desde</label>
-                            <input type="date" id="dtpDesde" class="form-control form-control-sm" />
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">Hasta</label>
-                            <input type="date" id="dtpHasta" class="form-control form-control-sm" />
-                        </div>
-                        <div class="col-md-2 d-flex align-items-end">
-                            <button id="btnBuscarStock" type="button" class="btn btn-outline-secondary w-100">
-                                <i class="bi bi-search"></i> Buscar
-                            </button>
-                        </div>
-                        <div class="col-md-4 d-flex justify-content-end align-items-end">
-                            <div class="dropdown ms-auto">
-                                <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdownImprimirStock" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="bi bi-printer"></i>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownImprimirStock">
-                                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="imprimirProductos('PDF')">PDF</a></li>
-                                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="imprimirProductos('EXCEL')">Excel</a></li>
-                                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="imprimirProductos('WORDOPENXML')">Word</a></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Grilla -->
-                <div class="bg-white border-bottom p-4">
-                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                        <table id="tablaStockProductos" class="table table-bordered table-sm mb-0">
-                            <thead class="table-secondary">
-                                <tr>
-                                    <th>Cód. Prov</th>
-                                    <th>Descripción</th>
-                                    <th class="text-end">Stock</th>
-                                    <th class="text-end">C_Min</th>
-                                    <th class="text-end">Ingreso</th>
-                                    <th class="text-end">Ventas</th>
-                                    <th class="text-end">Cantidad</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- filas dinámicas -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Totales -->
-                <div class="bg-light border-bottom p-4">
-                    <div class="row g-3">
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">Cant. Prod</label>
-                            <input type="text" id="txtCantProd" class="form-control form-control-sm text-end" readonly />
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">Tot. Precio Prov.</label>
-                            <input type="text" id="txtTotProv" class="form-control form-control-sm text-end" readonly />
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">Tot. Precio Lista</label>
-                            <input type="text" id="txtTotLista" class="form-control form-control-sm text-end" readonly />
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">Tot. Precio Costo</label>
-                            <input type="text" id="txtTotCosto" class="form-control form-control-sm text-end fw-bold" readonly />
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- Footer -->
-            <div class="modal-footer bg-light px-4">
-                <button type="button" class="btn btn-success" id="btnAceptarStock">Aceptar</button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            </div>
-
-        </div>
-    </div>
-</div>
-<!-- Modal Pop UP Guardar Bootstrap -->
-<div class="modal fade" id="resultadoModal" tabindex="-1" aria-labelledby="resultadoModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="resultadoModalLabel">Orden de compra</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-            </div>
-            <div class="modal-body">
-                <p>La orden de compra se grabó correctamente.</p>
-            </div>
-            <div class="modal-footer">
-                <button id="btnAceptar" type="button" class="btn btn-primary">Aceptar</button>
-
-                <!-- Dropdown de impresión -->
-                <div class="dropdown">
-                    <button class="btn btn-success dropdown-toggle" type="button" id="dropdownImprimir" data-bs-toggle="dropdown" aria-expanded="false">
-                        Imprimir
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownImprimir">
-                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="imprimirOrden('pdf')">PDF</a></li>
-                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="imprimirOrden('excel')">Excel</a></li>
-                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="imprimirOrden('wordopenxml')">Word</a></li>
-                    </ul>
-
-                </div>
+            <div style="background:#f8f9fc; border-top:1px solid #e3e6f0; padding:.85rem 1.1rem; display:flex; gap:.5rem; justify-content:flex-end; border-radius:0 0 12px 12px;">
+                <button type="button" class="btn-oc btn-oc-success" id="btnAceptarStock">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg>
+                    Agregar al pedido
+                </button>
+                <button type="button" class="btn-oc btn-oc-secondary" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
             </div>
         </div>
     </div>
 </div>
 
-
+@* ===== SCRIPT BOOTSTRAP ===== *@
 <script>
-
-    let productoActual = null;
-    let productosProveedor = []; // se carga desde el servidor
-    let proveedorConfirmado = false;
-
-            document.getElementById("btnCantMinima").addEventListener("click", function () {
-                 const proveedorId = document.getElementById("ProveedorId").value;
-
-                    fetch(`?handler=CantMinima&proveedorId=${proveedorId}`)
-                        .then(r => r.json())
-                        .then(productos => {
-                            const tbody = document.querySelector("#tablaDetalles tbody");
-                            tbody.innerHTML = "";
-
-                            productos.forEach(p => {
-                                    const valorIVA = parseFloat(document.getElementById("IvaId").value) || 0;
-                                    const precioSinIva = parseFloat(p.precio);
-                                    const precioConIvaRaw = precioSinIva * (1 + valorIVA / 100);
-                                    const precioConIva = precioConIvaRaw.toFixed(2);
-                                    const subtotal = (p.pedido * precioConIvaRaw).toFixed(2);
-                               const fila = `
-                                <tr>
-                                     <td>${p.codBarras}</td>
-                                    <td>${p.codProveedor}</td>
-                                    <td>${p.descripcion}</td>
-                                    <td class="text-end">${p.cantidad}</td>
-                                    <td class="text-end">${p.cantidadMinima}</td>
-                                    <td class="text-end precio-siniva-cell">${precioSinIva}</td>
-                                    <td class="text-end precio-coniva-cell">${precioConIva}</td>
-                                    <td class="text-end">
-                                        <input type="number"
-                                               value="${p.pedido}"
-                                               class="form-control form-control-sm text-end pedido-input"
-                                               style="width:80px;" />
-                                    </td>
-                                    <td class="text-end subtotal-cell">${subtotal}</td>
-                                    <td>
-                                       <a href="javascript:void(0)" class="eliminar-link">Eliminar</a>
-                                    </td>
-                                    <td style="display:none;" class="producto-id-cell">${p.id}</td>
-                                    <td style="display:none;" class="precio-original-cell">${p.precio}</td>
-
-                                </tr>`;
-
-                                tbody.insertAdjacentHTML("beforeend", fila);
-                            });
-
-                            recalcularTotales();
-                        });
-             });
-
-        document.addEventListener("input", function(e) {
-            if (e.target.classList.contains("pedido-input")) {
-                const fila = e.target.closest("tr");
-                const precioConIva  = parseFloat(fila.querySelector(".precio-coniva-cell").textContent);
-                const pedido = parseFloat(e.target.value) || 0;
-                const subtotalCell = fila.querySelector(".subtotal-cell");
-                subtotalCell.textContent = (pedido * precioConIva ).toFixed(2);
-                recalcularTotales();
-            }
-        });
-
-           function recalcularTotales() {
-        const ivaSelect = document.getElementById("IvaId");
-        const valorIVA = parseFloat(ivaSelect.value) || 0;
-        const descuento = parseFloat(document.getElementById("txtDescuento").value) || 0;
-        const recargo = parseFloat(document.getElementById("txtRecargo").value) || 0;
-
-        const tbody = document.querySelector("#tablaDetalles tbody");
-        let total = 0;
-
-        tbody.querySelectorAll("tr").forEach(tr => {
-            const precioSinIvaBase = parseFloat(tr.querySelector(".precio-original-cell").textContent) || 0;
-            const pedido = parseFloat(tr.querySelector(".pedido-input").value) || 0;
-
-            let precioSinIvaAjustado = precioSinIvaBase;
-            if (descuento > 0) {
-                precioSinIvaAjustado = Number((precioSinIvaBase * (1 - descuento / 100)).toFixed(2));
-            } else if (recargo > 0) {
-                precioSinIvaAjustado = Number((precioSinIvaBase * (1 + recargo / 100)).toFixed(2));
-            }
-
-            //const precioConIvaRaw = precioSinIvaAjustado * (1 + valorIVA / 100);
-            //const subtotalRaw = pedido * precioConIvaRaw;
-
-            const precioConIvaRaw = Number((precioSinIvaAjustado * (1 + valorIVA / 100)).toFixed(2));
-            const subtotalRaw = Number((pedido * precioConIvaRaw).toFixed(2));
-
-            // actualizar celdas (formateo solo para mostrar)
-            tr.querySelector(".precio-siniva-cell").textContent = precioSinIvaAjustado.toFixed(2);
-            tr.querySelector(".precio-coniva-cell").textContent = precioConIvaRaw.toFixed(2);
-            tr.querySelector(".subtotal-cell").textContent = subtotalRaw.toFixed(2);
-
-            // acumular como número
-            total += subtotalRaw;
-        });
-
-        // ✅ aplicar formato local: miles con punto y decimales con coma
-        const totalFormateado = total.toLocaleString("es-AR", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
-
-        const totalInput = document.getElementById("txtTotal");
-        if (totalInput) {
-            totalInput.value = totalFormateado;
-        }
-    }
-
-
-
-    function seleccionarProveedor(id) {
-
-        if (id) {
-            fetch(`/OrdenesCompra/CrearOrden?handler=Productos&proveedorId=${id}`)
-                .then(r => r.text())
-                .then(html => {
-                    document.getElementById('panelProductos').innerHTML = html;
-                });
-                const tbody = document.querySelector("#tablaDetalles tbody");
-                            tbody.innerHTML = ""
-
-
-        }
-    }
-
-        function reemplazarPuntoPorComa(e) {
-        if (e.key === ".") {
-            e.preventDefault();
-            const input = e.target;
-            const start = input.selectionStart;
-            const end = input.selectionEnd;
-            input.value = input.value.substring(0, start) + "," + input.value.substring(end);
-            input.setSelectionRange(start + 1, start + 1);
-        }
-    }
-
-        function buscarProductoEnter(e) {
-        if (e.key === "Enter" && e.target.value.trim() !== "") {
-            e.preventDefault();
-
-            const filtro = e.target.value.trim();
-            const tipoBusqueda = document.querySelector("select[name='TipoBusqueda']").value;
-            const proveedorId = document.getElementById("ProveedorId").value;
-
-            fetch(`?handler=BuscarProducto&filtro=${encodeURIComponent(filtro)}&tipoBusqueda=${tipoBusqueda}&proveedorId=${proveedorId}`)
-                .then(r => r.json())
-                .then(data => {
-                    const filtroInput = document.getElementById("txtFiltro");
-                    const cantidadInput = document.getElementById("txtCantidad");
-                    const descripcionInput = document.getElementById("lblresultadobusqueda");
-
-                    if (!data.encontrado) {
-                        descripcionInput.textContent = data.mensaje;
-                        descripcionInput.classList.remove("text-success");
-                        descripcionInput.classList.add("text-danger");
-                        filtroInput.focus();
-                        productoActual = null;
-
-                    } else {
-                        descripcionInput.textContent = data.descripcion;
-                        descripcionInput.classList.remove("text-danger");
-                        descripcionInput.classList.add("text-success");
-                        cantidadInput.focus();
-                        cantidadInput.select();
-                        productoActual = data;
-
-                    }
-                });
-
-            e.target.value = "";
-        }
-    }
-
-    document.getElementById("txtCantidad").addEventListener("keydown", function (e) {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            console.log("Enter detectado en Cantidad");
-
-            const cantidad = parseFloat(e.target.value);
-            console.log("Producto actual:", productoActual, "Cantidad:", cantidad);
-
-            if (!productoActual || isNaN(cantidad) || cantidad <= 0) {
-                console.warn("No hay producto válido o cantidad incorrecta");
-                return;
-            }
-
-            const tbody = document.querySelector("#tablaDetalles tbody");
-            const filtroInput = document.getElementById("txtFiltro");
-
-            // 🔎 Buscar si ya existe el producto en la grilla
-            let filaExistente = null;
-            tbody.querySelectorAll("tr").forEach(tr => {
-                const codProveedorCell = tr.children[1]?.textContent;
-                const codBarrasCell = tr.children[0]?.textContent;
-
-                if (codProveedorCell === productoActual.codProveedor || codBarrasCell === productoActual.codBarras) {
-                    filaExistente = tr;
-                }
-            });
-
-
-
-            if (filaExistente) {
-                // ✅ Si existe, sumar cantidad y recalcular subtotal
-                const pedidoInput = filaExistente.querySelector(".pedido-input");
-                const pedidoActual = parseFloat(pedidoInput.value) || 0;
-                const nuevoPedido = pedidoActual + cantidad;
-                pedidoInput.value = nuevoPedido;
-
-                const precioConIVA = parseFloat(filaExistente.querySelector(".precio-coniva-cell").textContent) || 0;
-                filaExistente.querySelector(".subtotal-cell").textContent = (nuevoPedido * precioConIVA).toFixed(2);
-                recalcularTotales();
-            } else {
-                // ➕ Si no existe, insertar nueva fila
-                const valorIVA = parseFloat(document.getElementById("IvaId").value) || 0;
-                const precioSinIva = parseFloat(productoActual.precio);
-                const precioConIvaRaw = precioSinIva * (1 + valorIVA / 100);
-                const precioConIva = precioConIvaRaw.toFixed(2);
-                const subtotal = (cantidad * precioConIvaRaw).toFixed(2);
-
-                const fila = `
-                    <tr>
-                        <td>${productoActual.codBarras}</td>
-                        <td>${productoActual.codProveedor}</td>
-                        <td>${productoActual.descripcion}</td>
-                        <td class="text-end">${productoActual.cantidad}</td>
-                        <td class="text-end">${productoActual.cantidadMinima}</td>
-                        <td class="text-end precio-siniva-cell">${precioSinIva}</td>
-                        <td class="text-end precio-coniva-cell">${precioConIva}</td>
-                        <td class="text-end">
-                            <input type="number"
-                                   value="${cantidad}"
-                                   class="form-control form-control-sm text-end pedido-input"
-                                   style="width:80px;" />
-                        </td>
-                        <td class="text-end subtotal-cell">${subtotal}</td>
-                        <td>
-                            <a href="javascript:void(0)" class="eliminar-link">Eliminar</a>
-                        </td>
-                        <td style="display:none;" class="producto-id-cell">${productoActual.id}</td>
-                        <td style="display:none;" class="precio-original-cell">${productoActual.precio}</td>
-
-                    </tr>`;
-                tbody.insertAdjacentHTML("beforeend", fila);
-                recalcularTotales();
-            }
-
-            // limpiar campos
-            document.getElementById("txtFiltro").value = "";
-            document.getElementById("lblresultadobusqueda").textContent = "";
-            document.getElementById("txtCantidad").value = "";
-            productoActual = null;
-            filtroInput.focus();
-        }
-    });
-        function filtrarDescripcion(texto) {
-                const lb = document.getElementById("lbDesc");
-                lb.innerHTML = "";
-
-                if (texto.trim().length === 0) {
-                    lb.style.display = "none";
-                    return;
-                }
-
-                const result = productosProveedor.filter(desc =>
-                    desc.toUpperCase().includes(texto.trim().toUpperCase())
-                );
-
-                if (result.length > 0) {
-                           result.forEach(desc => {
-                                const item = document.createElement("a");
-                                item.className = "list-group-item list-group-item-action";
-                                item.textContent = desc;
-                                item.tabIndex = 0; // 🔑 permite recibir foco con teclado
-                                item.onclick = () => prepararProducto(null, desc);
-                                item.ondblclick = () => buscarPorDescripcion(desc);
-
-
-                                // manejar flechas dentro de cada item
-                                item.addEventListener("keydown", function(e) {
-                                        if (e.key === "Enter") {
-                                            e.preventDefault();
-                                            buscarPorDescripcion(desc);
-                                        }
-                                        if (e.key === "ArrowDown") {
-                                            e.preventDefault();
-                                            if (this.nextElementSibling) {
-                                                this.nextElementSibling.focus();
-                                            }
-                                        }
-                                        if (e.key === "ArrowUp") {
-                                            e.preventDefault();
-                                            if (this.previousElementSibling) {
-                                                this.previousElementSibling.focus();
-                                            } else {
-                                                // si no hay anterior, volver al input txtDesc
-                                                document.getElementById("txtDesc").focus();
-                                            }
-                                        }
-                                        if (e.key === "Enter") {
-                                            this.click(); // seleccionar con Enter
-                                        }
-                                });
-
-                                lb.appendChild(item);
-                            });
-
-
-                            lb.style.display = "block";
-                } else {
-                    lb.style.display = "none";
-                }
-        }
-
-           document.getElementById("txtDesc").addEventListener("keydown", function(e) {
-                if (e.key === "ArrowDown") {
-                    const lb = document.getElementById("lbDesc");
-                    if (lb.children.length > 0) {
-                        e.preventDefault(); // evita que el cursor se mueva dentro del input
-                        lb.children[0].focus(); // pone el foco en el primer elemento de la lista
-                    }
-                }
-            });
-
-
-    document.getElementById("lbDesc").addEventListener("keydown", function(e) {
-        if (e.key === "Backspace") {
-            document.getElementById("txtDesc").focus();
-        }
-        if (e.key === "Enter" && e.target) {
-            prepararProducto(e.target.dataset.id, e.target.textContent);
-        }
-    });
-
-        function prepararProducto(id, descripcion) {
-        fetch(`/OrdenesCompra/CrearOrden?handler=PrepararProducto&descripcion=${encodeURIComponent(descripcion)}&proveedorId=${proveedorSeleccionado}`)
-            .then(r => r.text())
-            .then(html => {
-                document.getElementById("panelProductoSeleccionado").innerHTML = html;
-                document.getElementById("txtDesc").value = "";
-                document.getElementById("lbDesc").style.display = "none";
-            });
-    }
-
-
-    function confirmarProveedor() {
-        const proveedorId = document.getElementById("ProveedorId").value;
-
-        if (!proveedorId) {
-            alert("Seleccione un proveedor primero.");
-            return;
-        }
-
-        // habilitar controles la primera vez
-        if (!window.proveedorConfirmado) {
-            document.querySelectorAll("fieldset, input, select, button").forEach(el => {
-                el.disabled = false;
-            });
-            window.proveedorConfirmado = true;
-        }
-
-        // limpiar campos
-        document.getElementById("txtFiltro").value = "";
-        document.getElementById("txtDesc").value = "";
-        document.getElementById("lbDesc").innerHTML = "";
-        document.getElementById("lbDesc").style.display = "none";
-        document.querySelector("input[name='Descuento']").value = 0;
-        document.querySelector("input[name='Recargo']").value = 0;
-        const tbody = document.querySelector("table tbody");
-        if (tbody) tbody.innerHTML = "";
-
-        // cargar solo descripciones
-        fetch(`?handler=Productos&proveedorId=${proveedorId}`)
-            .then(r => r.json())
-            .then(data => {
-                productosProveedor = data;
-
-                // ✅ al terminar, poner el foco en txtFiltro
-                const filtroInput = document.getElementById("txtFiltro");
-                if (filtroInput) {
-                    filtroInput.focus();
-                    filtroInput.select(); // opcional: selecciona el contenido
-                }
-            });
-    }
-
-    function buscarPorDescripcion(descripcion) {
-        const proveedorId = document.getElementById("ProveedorId").value;
-
-        fetch(`?handler=BuscarPorDescripcion&descripcion=${encodeURIComponent(descripcion)}&proveedorId=${proveedorId}`)
-            .then(r => r.json())
-            .then(data => {
-                const cantidadInput = document.getElementById("txtCantidad");
-                const descripcionInput = document.getElementById("lblresultadobusqueda");
-
-                if (!data.encontrado) {
-                    descripcionInput.textContent = data.mensaje;
-                    descripcionInput.classList.remove("text-success");
-                    descripcionInput.classList.add("text-danger");
-                    productoActual = null;
-                } else {
-                    descripcionInput.textContent = data.descripcion;
-                    descripcionInput.classList.remove("text-danger");
-                    descripcionInput.classList.add("text-success");
-                    productoActual = data; // 🔑 guardar producto
-                    cantidadInput.focus();
-                    cantidadInput.select();
-                }
-            });
-
-        // limpiar sugerencias
-        document.getElementById("lbDesc").style.display = "none";
-        document.getElementById("txtDesc").value = "";
-    }
-
-
-    document.addEventListener("DOMContentLoaded", function () {
-        const dtpDesde = document.getElementById("dtpDesde");
-        const dtpHasta = document.getElementById("dtpHasta");
-        const tablaBody = document.querySelector("#tablaStockProductos tbody");
-
-        // Inicializar fechas al abrir modal
-        document.getElementById("modalStockProductos").addEventListener("show.bs.modal", function () {
-            const hoy = new Date();
-            const desde = new Date();
-            desde.setDate(hoy.getDate() - 90);
-
-            dtpHasta.value = hoy.toISOString().split("T")[0];
-            dtpDesde.value = desde.toISOString().split("T")[0];
-
-            cargarProductos();
-        });
-
-        // Botón Buscar
-        document.getElementById("btnBuscarStock").addEventListener("click", function () {
-            cargarProductos();
-        });
-
-        // Función para cargar productos desde backend
-        async function cargarProductos() {
-            const proveedorId = document.getElementById("ProveedorId").value; // lee el combo
-            const desde = dtpDesde.value;
-            const hasta = dtpHasta.value;
-
-            tablaBody.innerHTML = "<tr><td colspan='7' class='text-center text-muted'>Cargando...</td></tr>";
-
-            try {
-
-                    const response = await fetch(`?handler=ProductosAPedir&proveedorId=${proveedorId}&desde=${desde}&hasta=${hasta}`);
-                    const productos = await response.json();
-
-
-                if (!productos || productos.length === 0) {
-                    tablaBody.innerHTML = "<tr><td colspan='7' class='text-center text-danger'>No se encontraron productos.</td></tr>";
-                    return;
-                }
-
-                tablaBody.innerHTML = "";
-                productos.forEach(p => {
-                    const tr = document.createElement("tr");
-                    tr.innerHTML = `
-                        <td>${p.codProveedor}</td>
-                        <td>${p.descripcion}</td>
-                        <td class="text-end">${p.stock}</td>
-                        <td class="text-end">${p.cantidadMinima}</td>
-                        <td class="text-end">${p.ingreso}</td>
-                        <td class="text-end">${p.ventas}</td>
-                        <td>
-                                 <input type="number"
-                                 class="form-control form-control-sm text-end cantidad-input"
-                                 value="${p.cantidad}"
-                                 data-id="${p.productoId}"
-                                 data-prov="${p.precioProveedor}"
-                                 data-lista="${p.precioLista}"
-                                 data-costo="${p.costo}"
-                                 data-barras="${p.codBarras}" />
-                        </td>
-
-                    `;
-                    tablaBody.appendChild(tr);
-                });
-
-                recalcularTotalesModal();
-                // Escuchar cambios en cantidad
-                document.querySelectorAll(".cantidad-input").forEach(input => {
-                    input.addEventListener("input", recalcularTotalesModal);
-                });
-
-            } catch (error) {
-                tablaBody.innerHTML = "<tr><td colspan='7' class='text-center text-danger'>Error al cargar productos.</td></tr>";
-                console.error("Error:", error);
-            }
-        }
-
-        // Función para recalcular totales
-        function recalcularTotalesModal() {
-            let cantProd = 0, totProv = 0, totLista = 0, totCosto = 0;
-
-            document.querySelectorAll(".cantidad-input").forEach(input => {
-                const cantidad = parseFloat(input.value) || 0;
-                const precioProv = parseFloat(input.dataset.prov) || 0;
-                const precioLista = parseFloat(input.dataset.lista) || 0;
-                const costo = parseFloat(input.dataset.costo) || 0;
-
-                if (cantidad > 0) cantProd++;
-                totProv += precioProv * cantidad;
-                totLista += precioLista * cantidad;
-                totCosto += costo * cantidad;
-            });
-
-            document.getElementById("txtCantProd").value = cantProd;
-            document.getElementById("txtTotProv").value = totProv.toFixed(2);
-            document.getElementById("txtTotLista").value = totLista.toFixed(2);
-            document.getElementById("txtTotCosto").value = totCosto.toFixed(2);
-        }
-
-        // Botón Aceptar
-        document.getElementById("btnAceptarStock").addEventListener("click", function () {
-            // Aquí podés tomar las cantidades y pasarlas a tu grilla principal
-            const modal = bootstrap.Modal.getInstance(document.getElementById("modalStockProductos"));
-            modal.hide();
-        });
-    });
-
-        function imprimirProductos(formato) {
-        const desde = document.getElementById("dtpDesde").value;
-        const hasta = document.getElementById("dtpHasta").value;
-        const proveedorId = document.getElementById("ProveedorId").value;
-
-        const url = `?handler=ImprimirStockProductos`
-            + `&formato=${formato}`
-            + `&desde=${encodeURIComponent(desde)}`
-            + `&hasta=${encodeURIComponent(hasta)}`
-            + `&proveedorId=${encodeURIComponent(proveedorId)}`;
-
-        window.open(url, '_blank');
-    }
-
-
-    document.addEventListener("DOMContentLoaded", function () {
-            const tablaDetallesBody = document.querySelector("#tablaDetalles tbody");
-            const tablaStockBody = document.querySelector("#tablaStockProductos tbody");
-
-
-            document.getElementById("btnAceptarStock").addEventListener("click", function () {
-                // 1. Limpiar tablaDetalles
-                tablaDetallesBody.innerHTML = "";
-
-                // 2. Recorrer filas del modal
-                tablaStockBody.querySelectorAll("tr").forEach(tr => {
-                    const cantidadInput = tr.querySelector(".cantidad-input");
-                    if (!cantidadInput) return;
-
-                    const cantidad = parseFloat(cantidadInput.value) || 0;
-                    if (cantidad <= 0) return; // solo productos con cantidad > 0
-
-                    // Obtener valores visibles
-                    const codProv = tr.children[0].textContent.trim();
-                    const descripcion = tr.children[1].textContent.trim();
-                    const stock = tr.children[2].textContent.trim();
-                    const cmin = tr.children[3].textContent.trim();
-
-                    // Obtener valores ocultos desde data-* en el input
-                    const codBarras = cantidadInput.dataset.barras || "";
-                    const precioSinIVA = parseFloat(cantidadInput.dataset.prov) || 0;
-                    const valorIVA = parseFloat(document.getElementById("IvaId").value) || 0;
-
-                    const precioConIvaRaw = precioSinIVA * (1 + valorIVA / 100);
-                    const subtotalRaw = cantidad * precioConIvaRaw;
-                    const id = parseInt(cantidadInput.dataset.id) || 0;
-
-                    // 3. Crear nueva fila en tablaDetalles
-                    const nuevaFila = document.createElement("tr");
-                    nuevaFila.innerHTML = `
-                        <td>${codBarras}</td>
-                        <td>${codProv}</td>
-                        <td>${descripcion}</td>
-                        <td class="text-end">${stock}</td>
-                        <td class="text-end">${cmin}</td>
-                        <td class="text-end precio-siniva-cell">${precioSinIVA.toFixed(2)}</td>
-                        <td class="text-end precio-coniva-cell">${precioConIvaRaw.toFixed(2)}</td>
-                        <td class="text-end">
-                            <input type="number"
-                                   value="${cantidad}"
-                                   class="form-control form-control-sm text-end pedido-input"
-                                   style="width:80px;" />
-                        </td>
-                        <td class="text-end subtotal-cell">${subtotalRaw.toFixed(2)}</td>
-                        <td>
-                            <a href="javascript:void(0)" class="eliminar-link">Eliminar</a>
-                        </td>
-                        <td style="display:none;" class="producto-id-cell">${id}</td>
-                        <td style="display:none;" class="precio-original-cell">${precioSinIVA}</td>
-                    `;
-                    tablaDetallesBody.appendChild(nuevaFila);
-                });
-                recalcularTotales();
-                // 4. Cerrar modal
-                const modal = bootstrap.Modal.getInstance(document.getElementById("modalStockProductos"));
-                modal.hide();
-            });
-        });
-
-        document.addEventListener("DOMContentLoaded", function () {
-        const descuentoInput = document.getElementById("txtDescuento");
-        const recargoInput = document.getElementById("txtRecargo");
-
-        // Evento para descuento
-        descuentoInput.addEventListener("input", function () {
-            const descuento = parseInt(descuentoInput.value) || 0;
-            if (descuento > 0) {
-                recargoInput.value = 0;
-            }
-             recalcularTotales();
-        });
-
-        // Evento para recargo
-        recargoInput.addEventListener("input", function () {
-            const recargo = parseInt(recargoInput.value) || 0;
-            if (recargo > 0) {
-                descuentoInput.value = 0;
-            }
-            recalcularTotales();
-        });
-    });
-
-        function obtenerDetalles() {
-            const detalles = [];
-            document.querySelectorAll("#tablaDetalles tbody tr").forEach(tr => {
-                const pedido = parseFloat(tr.querySelector(".pedido-input").value) || 0;
-                if (pedido > 0) {
-                    detalles.push({
-                        FkProducto: parseInt(tr.querySelector(".producto-id-cell").textContent),
-                        CodBarras: tr.cells[0].textContent,
-                        CodProveedor: tr.cells[1].textContent,
-                        Descripcion: tr.cells[2].textContent,
-                        PrecioProveedor: parseFloat(tr.querySelector(".precio-siniva-cell").textContent),
-                        Cantidad: pedido,                       
-                        Subtotal: parseFloat(tr.querySelector(".subtotal-cell").textContent),
-                        FkColor: 0 // si aplica
-                    });
-                }
-            });
-            return detalles;
-        }
-
-        async function grabarOrden() {
-              const detalles = obtenerDetalles();
-                if (detalles.length === 0) {
-                    alert("Debe ingresar al menos un pedido válido.");
-                    return;
-                }
-
-                    const btnGrabar = document.getElementById("btnGrabar");
-                    btnGrabar.disabled = true;
-
-                    document.querySelector(".progress-bar").style.width = "0%";
-
-            const response = await fetch("/Proveedores/OrdenesCompra?handler=Grabar", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    proveedorId: parseInt(document.getElementById("ProveedorId").value),
-                    total: parseFloat(document.getElementById("txtTotal").value.replace(".", "").replace(",", ".")),
-                    iva: parseFloat(document.getElementById("IvaId").value),
-                    recargo: parseFloat(document.getElementById("txtRecargo").value),
-                    descuento: parseFloat(document.getElementById("txtDescuento").value),
-                    detalles: obtenerDetalles()
-                })
-            });
-
-            console.log("Status:", response.status);
-
-
-                const data = await response.json();
-                console.log("Respuesta:", data);
-
-
-               if (response.ok && data.success) {
-        window.ultimaOrdenId = data.id; // guardar id globalmente
-
-        const modal = new bootstrap.Modal(document.getElementById('resultadoModal'));
-        modal.show();
-
-        document.getElementById("btnAceptar").onclick = function () {
-            window.location.reload();
-        };
-    }
-     else {
-                alert("Error al grabar la orden de compra.");
-            }
-
-            btnGrabar.disabled = false;
-        }
-            function imprimirOrden(formato) {
-        const id = window.ultimaOrdenId; // guardamos el id al grabar
-        if (!id) {
-            alert("No se encontró el ID de la orden.");
-            return;
-        }
-        const url = `/Proveedores/OrdenesCompra?handler=ImprimirOrdenCompra&id=${id}&formato=${formato}`;
-        window.open(url, "_blank");
-
-        // refrescar después de abrir el reporte
-        window.location.reload();
-    }
-
-        document.querySelector("#tablaDetalles").addEventListener("click", function (e) {
-        if (e.target && e.target.classList.contains("eliminar-link")) {
-            // eliminar la fila
-            const fila = e.target.closest("tr");
-            fila.remove();
-
-            // invocar recalcularTotales
-            recalcularTotales();
-        }
-    });
-
-
-
+    window.OC_CANT_STEP = @Model.CantidadStep;
+    window.OC_TIPO_BUSQ = @Model.TipoBusqueda;
 </script>
+<script src="~/js/ordenes-compra.js" asp-append-version="true"></script>
+
+<style>
+    /* Steps de progreso */
+    .oc-step { display:flex; flex-direction:column; align-items:center; gap:4px; font-size:.72rem; color:#adb5bd; text-align:center; }
+    .oc-step-dot { width:10px; height:10px; border-radius:50%; background:#dee2e6; transition:background .3s; }
+    .oc-step.active .oc-step-dot { background:#4e73df; box-shadow:0 0 0 3px rgba(78,115,223,.2); }
+    .oc-step.done .oc-step-dot { background:#1cc88a; }
+    .oc-step.active span, .oc-step.done span { color:#2d3748; font-weight:600; }
+</style>

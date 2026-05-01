@@ -150,11 +150,16 @@ namespace Infrastructure.Services
         {
             var query = await (
             from c in _context.Clientes
-            join l in _context.Localidades on c.FkLocalidad equals l.Id
-            join p in _context.Provincias on l.FkProvincia equals p.Id
-            join z in _context.ClientesZonas on c.FkZona equals z.Id
-            join i in _context.CondIvas  on c.FkCondIva equals i.Id
-            join u in _context.Usuarios on c.FkVendedor equals u.Id
+            join l in _context.Localidades on c.FkLocalidad equals l.Id into lg
+            from l in lg.DefaultIfEmpty()
+            join p in _context.Provincias on (int?)l.FkProvincia equals (int?)p.Id into pg
+            from p in pg.DefaultIfEmpty()
+            join z in _context.ClientesZonas on c.FkZona equals z.Id into zg
+            from z in zg.DefaultIfEmpty()
+            join i in _context.CondIvas on c.FkCondIva equals i.Id into ig
+            from i in ig.DefaultIfEmpty()
+            join u in _context.Usuarios on c.FkVendedor equals u.Id into ug
+            from u in ug.DefaultIfEmpty()
             where c.Id == id
             select new ClienteDetalleDTO
             {
@@ -163,15 +168,15 @@ namespace Infrastructure.Services
                 RazonSocial = c.RazonSocial,
                 Cuil = c.Cuil,
                 Direccion = c.Direccion,
-                LocalidadDescripcion = l.Nombre,
-                ProvinciaDescripcion = p.Nombre,
-                ZonaDescripcion = z.Nombre,
+                LocalidadDescripcion = l != null ? l.Nombre : null,
+                ProvinciaDescripcion = p != null ? p.Nombre : null,
+                ZonaDescripcion = z != null ? z.Nombre : null,
                 Email = c.Email,
                 Telefono = c.Telefono,
                 Celular = c.Celular,
                 Contacto = c.Contacto,
-                CondicionIva = i.Descripcion,
-                Vendedor = u.Nombre,
+                CondicionIva = i != null ? i.Descripcion : null,
+                Vendedor = u != null ? u.Nombre : null,
                 FkCondIva = c.FkCondIva,
                 FkLocalidad = c.FkLocalidad,
                 FkVendedor = c.FkVendedor,
@@ -179,6 +184,46 @@ namespace Infrastructure.Services
             }).FirstOrDefaultAsync();
 
             return query;
+        }
+
+        public async Task<List<ClienteDetalleDTO>> GetAllConDetalleAsync()
+        {
+            return await (
+                from c in _context.Clientes
+                join l in _context.Localidades on c.FkLocalidad equals l.Id into lg
+                from l in lg.DefaultIfEmpty()
+                join p in _context.Provincias on (int?)l.FkProvincia equals (int?)p.Id into pg
+                from p in pg.DefaultIfEmpty()
+                join z in _context.ClientesZonas on c.FkZona equals z.Id into zg
+                from z in zg.DefaultIfEmpty()
+                join i in _context.CondIvas on c.FkCondIva equals i.Id into ig
+                from i in ig.DefaultIfEmpty()
+                join u in _context.Usuarios on c.FkVendedor equals u.Id into ug
+                from u in ug.DefaultIfEmpty()
+                where c.Baja != true
+                orderby c.NombreComercial
+                select new ClienteDetalleDTO
+                {
+                    Id = c.Id,
+                    NombreComercial = c.NombreComercial,
+                    RazonSocial = c.RazonSocial,
+                    Cuil = c.Cuil,
+                    Direccion = c.Direccion,
+                    LocalidadDescripcion = l != null ? l.Nombre : null,
+                    ProvinciaDescripcion  = p != null ? p.Nombre : null,
+                    ZonaDescripcion      = z != null ? z.Nombre : null,
+                    Email = c.Email,
+                    Telefono = c.Telefono,
+                    Celular = c.Celular,
+                    Contacto = c.Contacto,
+                    CondicionIva = i != null ? i.Descripcion : null,
+                    Vendedor     = u != null ? u.Nombre : null,
+                    FkCondIva    = c.FkCondIva,
+                    FkLocalidad  = c.FkLocalidad,
+                    FkVendedor   = c.FkVendedor,
+                    FkZona       = c.FkZona
+                }
+            ).ToListAsync();
         }
 
     }

@@ -1,0 +1,763 @@
+@page
+@model Comercial_Web.Pages.Facturacion.FacturacionLotes.IndexModel
+@{
+    ViewData["Title"] = "Facturación por Lotes";
+}
+
+<style>
+/* ── Layout general ──────────────────────────────────────────────────────── */
+.fl-header {
+  background: linear-gradient(135deg, #1a3a5c 0%, #2e6da4 100%);
+  border-radius: 12px; padding: 1.1rem 1.5rem; margin-bottom: 1.2rem;
+  color: #fff; display: flex; align-items: center; gap: .8rem;
+}
+.fl-header h4 { margin: 0; font-weight: 700; font-size: 1.1rem; }
+.fl-header small { opacity: .75; font-size: .78rem; }
+.fl-card {
+  background: #fff; border: 1px solid #e3e6f0;
+  border-radius: 10px; padding: 1rem 1.2rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05); margin-bottom: 1rem;
+}
+.fl-label { font-size: .78rem; font-weight: 600; color: #5a5c69; margin-bottom: .2rem; display: block; }
+
+/* ── Tabla resultados ────────────────────────────────────────────────────── */
+#tblVentas { font-size: .80rem; width: 100%; }
+#tblVentas thead tr { background: #1a3a5c; color: #fff; }
+#tblVentas thead th { padding: .45rem .55rem; white-space: nowrap; font-weight: 600; }
+#tblVentas tbody tr:nth-child(even) td { background: #f8f9fc; }
+#tblVentas tbody td { padding: .35rem .5rem; vertical-align: middle; }
+#tblVentas tbody tr:hover td { background: #eef3ff !important; }
+#tblVentas tfoot tr { background: #1a3a5c; color: #fff; font-weight: 700; font-size: .82rem; }
+#tblVentas tfoot td { padding: .45rem .55rem; }
+.chk-venta { width: 16px; height: 16px; cursor: pointer; accent-color: #1a3a5c; }
+#chkTodos  { width: 16px; height: 16px; cursor: pointer; accent-color: #fff; }
+
+/* ── Barra de acción (selección + facturar) ──────────────────────────────── */
+.fl-action-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: .75rem;
+  background: #f0f4ff; border: 1px solid #c5d5e8; border-radius: 8px;
+  padding: .65rem 1rem; margin-top: .75rem;
+}
+.fl-sel-info { font-size: .82rem; color: #1a3a5c; font-weight: 600; }
+.fl-sel-info span { font-size: .88rem; }
+
+/* ── Panel de progreso ───────────────────────────────────────────────────── */
+#panelProgreso {
+  display: none; margin-top: .75rem;
+  border: 1px solid #c5d5e8; border-radius: 8px; padding: .85rem 1rem;
+  background: #f8fbff;
+}
+#panelProgreso .fl-prog-title {
+  font-size: .78rem; font-weight: 700; color: #1a3a5c;
+  text-transform: uppercase; letter-spacing: .04em; margin-bottom: .5rem;
+  display: flex; align-items: center; gap: .4rem;
+}
+#barraProgreso { height: 18px; border-radius: 6px; transition: width .3s ease; }
+#logFacturacion {
+  height: 200px; overflow-y: auto; font-size: .78rem; font-family: monospace;
+  background: #1a1f2b; color: #c9d1d9; border-radius: 6px;
+  padding: .6rem .8rem; margin-top: .6rem; line-height: 1.55;
+  border: none; resize: vertical;
+}
+.log-ok  { color: #56d364; }
+.log-err { color: #f85149; }
+.log-inf { color: #79c0ff; }
+
+/* ── Totalizadores ───────────────────────────────────────────────────────── */
+.fl-tot-item label { font-size: .72rem; font-weight: 700; color: #5a5c69; text-transform: uppercase; letter-spacing: .04em; margin-bottom: .15rem; display: block; }
+.fl-tot-item input { font-size: .82rem; font-weight: 700; }
+
+/* ── Modal (igual que ReportesVentas) ────────────────────────────────────── */
+.rv-modal-header {
+  background: linear-gradient(135deg, #1a3a5c, #2e6da4);
+  padding: .75rem 1rem; display: flex; align-items: center; gap: .6rem; color: #fff;
+}
+.rv-modal-header h5 { margin: 0; font-size: .92rem; font-weight: 700; }
+#tblDetModal { font-size: .78rem; width: 100%; }
+#tblDetModal thead tr { background: #1a3a5c; color: #fff; }
+#tblDetModal thead th { padding: .4rem .5rem; white-space: nowrap; font-weight: 600; }
+#tblDetModal tbody tr:nth-child(even) { background: #f8f9fc; }
+#tblDetModal tbody td { padding: .3rem .45rem; vertical-align: middle; }
+.rv-totales-box {
+  background: #f8f9fc; border: 1px solid #e3e6f0; border-radius: 8px;
+  padding: .75rem 1rem; font-size: .82rem; margin-top: .75rem;
+}
+.rv-tot-row { display: flex; justify-content: space-between; padding: .14rem 0; }
+.rv-tot-row.total {
+  font-weight: 700; font-size: .95rem; color: #1a3a5c;
+  border-top: 1px solid #dee2e6; margin-top: .3rem; padding-top: .4rem;
+}
+.rv-fp-card {
+  background: #fff8e8; border: 1px solid #f0d080; border-radius: 8px;
+  padding: .65rem .9rem; margin-top: .75rem; font-size: .82rem;
+}
+.rv-fp-card .rv-fp-title {
+  font-size: .73rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: #856404; margin-bottom: .4rem;
+  display: flex; align-items: center; gap: .3rem;
+}
+.rv-fp-row { padding: .12rem 0; color: #5a4200; }
+</style>
+
+@* ══════════════════════════════════════════════════════════ HEADER ══ *@
+<div class="fl-header">
+  <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="28" height="28">
+    <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
+    <path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.55-.57.816-.756l.35-.22c.196-.124.375-.242.54-.363.234-.173.432-.37.548-.62.09-.19.098-.395.06-.59a.81.81 0 0 0-.245-.432.83.83 0 0 0-.63-.243c-.227 0-.408.072-.538.208-.131.136-.195.33-.195.573v.082H4c0-.437.09-.82.27-1.147a1.9 1.9 0 0 1 .762-.766c.34-.193.74-.29 1.188-.29.44 0 .83.094 1.168.28a1.9 1.9 0 0 1 .782.8c.18.35.265.776.265 1.272v.153c0 .447-.057.855-.17 1.22s-.28.69-.5.972a5.5 5.5 0 0 1-.76.856l-.36.32-.061.05H8.5V15h-4v-.913z"/>
+  </svg>
+  <div>
+    <h4>Facturación por Lotes</h4>
+    <small>Emisión masiva de facturas electrónicas</small>
+  </div>
+</div>
+
+@* ══════════════════════════════════════════════════════════ FILTROS ══ *@
+<div class="fl-card">
+  <form method="post" asp-page-handler="Buscar" id="formFiltros">
+    <div class="row g-2 align-items-end">
+
+      <div class="col-md-2 col-sm-6">
+        <label class="fl-label">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="11" style="vertical-align:-.1em;margin-right:.2rem;">
+            <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+          </svg>Fecha desde
+        </label>
+        <input type="date" asp-for="Desde" class="form-control form-control-sm" />
+      </div>
+
+      <div class="col-md-2 col-sm-6">
+        <label class="fl-label">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="11" style="vertical-align:-.1em;margin-right:.2rem;">
+            <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+          </svg>Fecha hasta
+        </label>
+        <input type="date" asp-for="Hasta" class="form-control form-control-sm" />
+      </div>
+
+      <div class="col-md-2 col-sm-4">
+        <button type="submit" class="btn btn-primary btn-sm w-100" style="font-size:.82rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" style="margin-right:.25rem;vertical-align:-.1em;">
+            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85-.017.016zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+          </svg>Buscar
+        </button>
+      </div>
+
+    </div>
+  </form>
+</div>
+
+@* ══════════════════════════════════════════════════════════ SIN RESULTADOS ══ *@
+@if (Model.Buscado && !Model.Ventas.Any())
+{
+  <div class="alert alert-info d-flex align-items-center shadow-sm" role="alert">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="me-2 flex-shrink-0" viewBox="0 0 16 16">
+      <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2"/>
+    </svg>
+    No se encontraron ventas sin facturar en el período seleccionado.
+  </div>
+}
+
+@* ══════════════════════════════════════════════════════════ GRILLA ══ *@
+@if (Model.Ventas.Any())
+{
+  <div class="fl-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
+      <span style="font-size:.75rem;font-weight:700;color:#6c757d;text-transform:uppercase;letter-spacing:.06em;">
+        Ventas sin Facturar
+      </span>
+      <span style="font-size:.75rem;color:#6c757d;">
+        @Model.TotalCantidad resultado@(Model.TotalCantidad != 1 ? "s" : "") &nbsp;·&nbsp;
+        Período: @Model.Desde.ToString("dd/MM/yyyy") — @Model.Hasta.ToString("dd/MM/yyyy")
+      </span>
+    </div>
+
+    <div class="table-responsive" style="max-height:52vh;overflow-y:auto;">
+      <table id="tblVentas" class="table table-bordered mb-0">
+        <thead>
+          <tr>
+            <th style="text-align:center;width:42px;">
+              <input type="checkbox" id="chkTodos" title="Seleccionar / Deseleccionar todos" />
+            </th>
+            <th style="width:70px;text-align:center;">#Venta</th>
+            <th style="width:95px;">Fecha</th>
+            <th>Cliente</th>
+            <th style="width:120px;">Cajero</th>
+            <th style="text-align:right;width:85px;">IVA</th>
+            <th style="text-align:right;width:85px;">Descuento</th>
+            <th style="text-align:right;width:85px;">Recargo</th>
+            <th style="text-align:right;width:85px;">Impuesto</th>
+            <th style="text-align:right;width:110px;">Total Venta</th>
+            <th style="text-align:center;width:80px;">Detalle</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyVentas">
+          @foreach (var v in Model.Ventas)
+          {
+            <tr data-id="@v.Nro" data-importe="@v.TotalVenta.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)">
+              <td style="text-align:center;">
+                <input type="checkbox" class="chk-venta" value="@v.Nro" />
+              </td>
+              <td style="text-align:center;font-weight:600;color:#1a3a5c;">#@v.Nro</td>
+              <td>@v.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+              <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                  title="@v.NombreComercial">@v.NombreComercial</td>
+              <td>@v.Cajero</td>
+              <td style="text-align:right;">@v.Iva.ToString("N2")</td>
+              <td style="text-align:right;">@v.Descuento.ToString("N2")</td>
+              <td style="text-align:right;">@v.Recargo.ToString("N2")</td>
+              <td style="text-align:right;">@v.Impuesto.ToString("N2")</td>
+              <td style="text-align:right;font-weight:700;color:#1a3a5c;" class="td-importe">@v.TotalVenta.ToString("N2")</td>
+              <td style="text-align:center;">
+                <button type="button"
+                        class="btn btn-outline-primary btn-sm"
+                        style="font-size:.71rem;padding:.2rem .5rem;"
+                        onclick="verDetalle(@v.Nro,'@v.Fecha.ToString("dd/MM/yyyy")','@v.NombreComercial.Replace("'","\\'")')">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="11" height="11" style="vertical-align:-.1em;">
+                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
+                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                  </svg> Ver
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+        <tfoot>
+          <tr>
+            <td></td>
+            <td colspan="4">TOTALES (@Model.TotalCantidad)</td>
+            <td style="text-align:right;">@Model.TotalIva.ToString("N2")</td>
+            <td style="text-align:right;">@Model.TotalDescuento.ToString("N2")</td>
+            <td style="text-align:right;">@Model.TotalRecargo.ToString("N2")</td>
+            <td style="text-align:right;">@Model.TotalImpuesto.ToString("N2")</td>
+            <td style="text-align:right;">@Model.TotalImporte.ToString("N2")</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    @* ── Barra de acción ──────────────────────────────────────────────────── *@
+    <div class="fl-action-bar">
+      <div class="fl-sel-info">
+        Seleccionadas: <span id="lblSelCount">0</span> &nbsp;|&nbsp;
+        Total a facturar:
+        <span id="lblSelTotal" style="font-size:.95rem;color:#1a3a5c;">$0,00</span>
+      </div>
+      <div class="d-flex gap-2 align-items-center flex-wrap">
+        <button type="button" class="btn btn-outline-secondary btn-sm"
+                onclick="selAll(true)" style="font-size:.78rem;">
+          ✔ Seleccionar todos
+        </button>
+        <button type="button" class="btn btn-outline-secondary btn-sm"
+                onclick="selAll(false)" style="font-size:.78rem;">
+          ✘ Deseleccionar
+        </button>
+        <button type="button" id="btnFacturar"
+                class="btn btn-success btn-sm fw-semibold"
+                style="font-size:.82rem;min-width:160px;" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="14" height="14" style="margin-right:.3rem;vertical-align:-.1em;">
+            <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
+            <path d="M4.5 12.5A.5.5 0 0 1 5 12h3a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5m0-2A.5.5 0 0 1 5 10h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5m1.639-3.708 1.33.886 1.854-1.855a.25.25 0 0 1 .289-.047l1.888.974V7.5a.5.5 0 0 1-.5.5H5a.5.5 0 0 1-.5-.5V7s1.54-1.274 1.639-1.208M5 4a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1z"/>
+          </svg>
+          Facturar seleccionadas
+        </button>
+      </div>
+    </div>
+
+    @* ── Panel de progreso ────────────────────────────────────────────────── *@
+    <div id="panelProgreso">
+      <div class="fl-prog-title">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" height="13">
+          <path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2z"/>
+          <path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5M3 8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8m0 2.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5"/>
+        </svg>
+        Progreso de Facturación
+        <span id="lblProgTxt" style="font-weight:400;color:#555;margin-left:.4rem;font-size:.72rem;text-transform:none;letter-spacing:0;"></span>
+      </div>
+
+      <div class="progress mb-2" style="height:22px;border-radius:6px;background:#d0daea;">
+        <div id="barraProgreso"
+             class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+             role="progressbar" style="width:0%;">0%</div>
+      </div>
+
+      <div id="logFacturacion"></div>
+
+      <div class="d-flex justify-content-end mt-2" id="wrapBtnCerrarProg" style="display:none;">
+        <button type="button" class="btn btn-sm btn-outline-secondary"
+                onclick="cerrarProgreso()">Cerrar panel</button>
+      </div>
+    </div>
+
+  </div>
+
+  @* ══════════════════════════════════════════════════════ TOTALIZADORES ══ *@
+  <div class="fl-card">
+    <div style="font-size:.73rem;font-weight:700;color:#6c757d;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.7rem;">Totales</div>
+    <div class="row g-2">
+      <div class="col-6 col-md-2 fl-tot-item">
+        <label>Cantidad</label>
+        <input type="text" class="form-control form-control-sm text-end bg-light"
+               value="@Model.TotalCantidad" readonly />
+      </div>
+      <div class="col-6 col-md-2 fl-tot-item">
+        <label>Total IVA</label>
+        <input type="text" class="form-control form-control-sm text-end bg-light"
+               value="@Model.TotalIva.ToString("N2")" readonly />
+      </div>
+      <div class="col-6 col-md-2 fl-tot-item">
+        <label>Total Descuento</label>
+        <input type="text" class="form-control form-control-sm text-end bg-light"
+               value="@Model.TotalDescuento.ToString("N2")" readonly />
+      </div>
+      <div class="col-6 col-md-2 fl-tot-item">
+        <label>Total Recargo</label>
+        <input type="text" class="form-control form-control-sm text-end bg-light"
+               value="@Model.TotalRecargo.ToString("N2")" readonly />
+      </div>
+      <div class="col-6 col-md-2 fl-tot-item">
+        <label>Total Impuesto</label>
+        <input type="text" class="form-control form-control-sm text-end bg-light"
+               value="@Model.TotalImpuesto.ToString("N2")" readonly />
+      </div>
+      <div class="col-6 col-md-2 fl-tot-item">
+        <label style="color:#1a3a5c;">Total Venta</label>
+        <input type="text" class="form-control form-control-sm text-end fw-bold"
+               style="background:#1a3a5c;color:#fff;"
+               value="@Model.TotalImporte.ToString("N2")" readonly />
+      </div>
+    </div>
+  </div>
+}
+
+@* ══════════════════════════════════════════════════════════ MODAL DETALLE ══ *@
+<div class="modal fade" id="modalDetalle" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content" style="border-radius:12px;overflow:hidden;">
+
+      <div class="rv-modal-header">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="18" height="18">
+          <path d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/>
+          <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3z"/>
+        </svg>
+        <h5 id="modalTitulo">Detalle de Venta</h5>
+        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body" style="padding:1rem 1.25rem;">
+        <div class="row g-2 mb-3" style="font-size:.82rem;">
+          <div class="col-sm-5 col-md-4">
+            <span style="color:#6c757d;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Cliente</span>
+            <div id="det-cliente" style="font-weight:700;color:#2c3e50;font-size:.9rem;"></div>
+          </div>
+          <div class="col-sm-3 col-md-2">
+            <span style="color:#6c757d;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Fecha</span>
+            <div id="det-fecha"></div>
+          </div>
+          <div class="col-sm-4 col-md-3">
+            <span style="color:#6c757d;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Factura</span>
+            <div id="det-factura" style="font-family:monospace;"></div>
+          </div>
+          <div class="col-sm-4 col-md-3">
+            <span style="color:#6c757d;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Condición IVA</span>
+            <div id="det-condiva"></div>
+          </div>
+        </div>
+        <div id="detLoadingRow" style="text-align:center;padding:1.5rem;color:#6c757d;display:none;">
+          <div class="spinner-border spinner-border-sm me-2"></div>Cargando detalle...
+        </div>
+        <div id="detContenido" style="display:none;">
+          <div class="table-responsive">
+            <table id="tblDetModal" class="table table-bordered mb-0">
+              <thead>
+                <tr>
+                  <th>Descripción</th>
+                  <th style="text-align:right;width:85px;">P.S/IVA</th>
+                  <th style="text-align:right;width:75px;">Desc/Rec%</th>
+                  <th style="text-align:right;width:90px;">SubT.S/IVA</th>
+                  <th style="text-align:right;width:85px;">P.C/IVA</th>
+                  <th style="text-align:right;width:65px;">Cant.</th>
+                  <th style="text-align:right;width:95px;">Total</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyDetModal"></tbody>
+            </table>
+          </div>
+          <div class="row g-2 mt-1">
+            <div class="col-md-6 offset-md-6">
+              <div class="rv-totales-box">
+                <div class="rv-tot-row"><span>Subtotal Bruto</span><span id="det-subtBruto"></span></div>
+                <div class="rv-tot-row" id="rowDescRec" style="display:none;">
+                  <span id="det-lbl-descRec">Desc/Rec</span><span id="det-descRecAmt"></span>
+                </div>
+                <div class="rv-tot-row"><span>Subtotal s/IVA</span><span id="det-subtSIva"></span></div>
+                <div class="rv-tot-row"><span id="det-lbl-iva">IVA %</span><span id="det-ivaAmt"></span></div>
+                <div class="rv-tot-row"><span id="det-lbl-iibb">IIBB %</span><span id="det-iibbAmt"></span></div>
+                <div class="rv-tot-row total"><span>TOTAL GENERAL</span><span id="det-total"></span></div>
+              </div>
+            </div>
+          </div>
+          <div id="seccionFormasPago" style="display:none;">
+            <div class="rv-fp-card">
+              <div class="rv-fp-title">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="12" height="12">
+                  <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v1h14V4a1 1 0 0 0-1-1H2zm13 4H1v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7z"/>
+                  <path d="M2 10a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-1z"/>
+                </svg>
+                Formas de Pago
+              </div>
+              <div id="listaFormasPago"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="background:#f8f9fc;border-top:1px solid #e3e6f0;gap:.5rem;">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-sm btn-success" id="btnImprimirComp" onclick="imprimirComprobante()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" height="13" style="margin-right:.3rem;vertical-align:-.1em;">
+            <path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/>
+            <path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7zm2.5 1a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+          </svg>Imprimir Comprobante
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+  'use strict';
+
+  // ── Parámetros del sistema ─────────────────────────────────────────────────
+  const HACE_TK  = @Model.HaceNotaVentaTK;
+  const ANCHO_TK = @Model.AnchoTk;
+
+  // ── Helpers de formato ─────────────────────────────────────────────────────
+  const fmtARS = n => new Intl.NumberFormat('es-AR', {
+    style: 'currency', currency: 'ARS', minimumFractionDigits: 2
+  }).format(n ?? 0);
+
+  function fmt(n) {
+    return new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 2, maximumFractionDigits: 2
+    }).format(n ?? 0);
+  }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  SELECCIÓN DE FILAS
+  // ══════════════════════════════════════════════════════════════════════════
+
+  function actualizarResumenSel() {
+    const checks = document.querySelectorAll('.chk-venta:checked');
+    let total = 0;
+    checks.forEach(function (c) {
+      const tr = c.closest('tr');
+      if (tr) total += parseFloat(tr.dataset.importe || '0');
+    });
+    document.getElementById('lblSelCount').textContent = checks.length;
+    document.getElementById('lblSelTotal').textContent = fmtARS(total);
+    const btn = document.getElementById('btnFacturar');
+    if (btn) btn.disabled = checks.length === 0;
+  }
+
+  // Checkbox "Todos"
+  const chkTodos = document.getElementById('chkTodos');
+  if (chkTodos) {
+    chkTodos.addEventListener('change', function () {
+      document.querySelectorAll('.chk-venta').forEach(function (c) {
+        c.checked = chkTodos.checked;
+      });
+      actualizarResumenSel();
+    });
+  }
+
+  // Checkboxes individuales
+  document.querySelectorAll('.chk-venta').forEach(function (c) {
+    c.addEventListener('change', function () {
+      const todos = document.querySelectorAll('.chk-venta');
+      const todos_checked = document.querySelectorAll('.chk-venta:checked');
+      if (chkTodos) chkTodos.indeterminate = todos_checked.length > 0 && todos_checked.length < todos.length;
+      if (chkTodos) chkTodos.checked = todos_checked.length === todos.length;
+      actualizarResumenSel();
+    });
+  });
+
+  // Clic en la fila también alterna el checkbox
+  document.querySelectorAll('#tbodyVentas tr').forEach(function (tr) {
+    tr.addEventListener('click', function (e) {
+      // No disparar si el clic fue en el checkbox mismo o en el botón Ver
+      if (e.target.type === 'checkbox' || e.target.closest('button')) return;
+      const chk = tr.querySelector('.chk-venta');
+      if (chk) { chk.checked = !chk.checked; chk.dispatchEvent(new Event('change')); }
+    });
+    tr.style.cursor = 'pointer';
+  });
+
+  // Botón Facturar — bindeado por addEventListener (más robusto que onclick inline)
+  const btnFacturarEl = document.getElementById('btnFacturar');
+  if (btnFacturarEl) {
+    btnFacturarEl.addEventListener('click', function () {
+      console.log('[FacturacionLotes] Click en Facturar Seleccionadas');
+      facturarSeleccionadasImpl();
+    });
+  } else {
+    console.warn('[FacturacionLotes] No se encontró #btnFacturar');
+  }
+
+  // Botones de selección desde la barra de acción
+  window.selAll = function (checked) {
+    document.querySelectorAll('.chk-venta').forEach(function (c) { c.checked = checked; });
+    if (chkTodos) { chkTodos.checked = checked; chkTodos.indeterminate = false; }
+    actualizarResumenSel();
+  };
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  FACTURAR LOTE (procesamiento secuencial con progreso en tiempo real)
+  // ══════════════════════════════════════════════════════════════════════════
+
+  async function facturarSeleccionadasImpl() {
+    const seleccionadas = Array.from(
+      document.querySelectorAll('.chk-venta:checked')
+    ).map(function (c) { return parseInt(c.value); });
+
+    if (seleccionadas.length === 0) { alert('No hay ventas seleccionadas.'); return; }
+
+    if (!confirm('¿Confirma la emisión de ' + seleccionadas.length + ' factura(s) electrónica(s)?')) return;
+
+    // ── Bloquear UI ──────────────────────────────────────────────────────────
+    const btnFact = document.getElementById('btnFacturar');
+    btnFact.disabled = true;
+    document.querySelectorAll('.chk-venta, #chkTodos').forEach(function (c) { c.disabled = true; });
+    document.querySelectorAll('button[onclick^="selAll"]').forEach(function (b) { b.disabled = true; });
+
+    // ── Mostrar panel de progreso ────────────────────────────────────────────
+    const panelProg = document.getElementById('panelProgreso');
+    const barra     = document.getElementById('barraProgreso');
+    const logEl     = document.getElementById('logFacturacion');
+    const lblTxt    = document.getElementById('lblProgTxt');
+    panelProg.style.display = '';
+    logEl.innerHTML = '';
+    barra.style.width = '0%';
+    barra.textContent = '0%';
+    panelProg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    // ── Proceso secuencial ───────────────────────────────────────────────────
+    let ok = 0, err = 0;
+    const total = seleccionadas.length;
+
+    for (let i = 0; i < total; i++) {
+      const ventaId = seleccionadas[i];
+      const pct = Math.round((i / total) * 100);
+      barra.style.width = pct + '%';
+      barra.textContent = pct + '%';
+      lblTxt.textContent = '(' + (i + 1) + ' / ' + total + ')';
+
+      logAddLine(logEl, 'inf', '⏳ Procesando venta #' + ventaId + '...');
+
+      try {
+        const res = await fetch('?handler=FacturarVenta&id=' + ventaId);
+        const data = await res.json();
+
+        if (data.ok) {
+          ok++;
+          let msg = '✅ Venta #' + ventaId + ' facturada correctamente';
+          if (data.cae)    msg += ' — CAE: ' + data.cae;
+          if (data.numero) msg += ' — N°: ' + data.numero;
+          logAddLine(logEl, 'ok', msg);
+
+          // Tachar fila en la tabla
+          const fila = document.querySelector('#tbodyVentas tr[data-id="' + ventaId + '"]');
+          if (fila) {
+            fila.style.opacity = '.45';
+            fila.style.textDecoration = 'line-through';
+          }
+        } else {
+          err++;
+          const errMsg = data.errores && data.errores.length > 0
+            ? data.errores.join('; ')
+            : 'Error desconocido';
+          logAddLine(logEl, 'err', '❌ Error venta #' + ventaId + ': ' + errMsg);
+        }
+      } catch (ex) {
+        err++;
+        logAddLine(logEl, 'err', '❌ Error de red en venta #' + ventaId + ': ' + ex.message);
+      }
+    }
+
+    // ── Finalizado ───────────────────────────────────────────────────────────
+    barra.style.width   = '100%';
+    barra.textContent   = '100%';
+    barra.classList.remove('progress-bar-animated');
+    lblTxt.textContent  = '';
+
+    const msgFinal = '🏁 Proceso terminado — ' + ok + ' facturada(s) correctamente' +
+      (err > 0 ? ', ' + err + ' con error(es).' : '.');
+    logAddLine(logEl, err > 0 ? 'err' : 'ok', msgFinal);
+
+    // Mostrar botón cerrar panel
+    document.getElementById('wrapBtnCerrarProg').style.display = '';
+
+    // Desbloquear checkboxes y botón
+    document.querySelectorAll('.chk-venta, #chkTodos').forEach(function (c) { c.disabled = false; });
+    document.querySelectorAll('button[onclick^="selAll"]').forEach(function (b) { b.disabled = false; });
+    actualizarResumenSel();
+
+    // Reactivar sólo si quedan seleccionados
+    btnFact.disabled = document.querySelectorAll('.chk-venta:checked').length === 0;
+  }
+  // Mantener compatibilidad por si se llama desde fuera
+  window.facturarSeleccionadas = facturarSeleccionadasImpl;
+
+  function logAddLine(el, tipo, texto) {
+    const span = document.createElement('span');
+    span.className = tipo === 'ok' ? 'log-ok' : tipo === 'err' ? 'log-err' : 'log-inf';
+    span.textContent = texto;
+    el.appendChild(span);
+    el.appendChild(document.createElement('br'));
+    el.scrollTop = el.scrollHeight;
+  }
+
+  window.cerrarProgreso = function () {
+    document.getElementById('panelProgreso').style.display = 'none';
+  };
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  VER DETALLE DE VENTA
+  // ══════════════════════════════════════════════════════════════════════════
+  let _ventaIdActual = 0;
+  let _fpActual      = [];
+
+  window.verDetalle = function (ventaId, fecha, cliente) {
+    _ventaIdActual = ventaId;
+    _fpActual      = [];
+
+    document.getElementById('modalTitulo').textContent = 'Venta #' + ventaId;
+    document.getElementById('det-cliente').textContent = cliente || '';
+    document.getElementById('det-fecha').textContent   = fecha   || '';
+    document.getElementById('det-factura').textContent = '—';
+    document.getElementById('det-condiva').textContent = '';
+
+    document.getElementById('detLoadingRow').style.display = '';
+    document.getElementById('detContenido').style.display  = 'none';
+
+    new bootstrap.Modal(document.getElementById('modalDetalle')).show();
+
+    fetch('?handler=VentaDetalle&id=' + ventaId)
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        document.getElementById('detLoadingRow').style.display = 'none';
+        if (!res.ok) { alert('No se pudo cargar el detalle de la venta.'); return; }
+
+        const v   = res.venta;
+        const iva = v.iva      ?? 0;
+        const imp = v.impuesto ?? 0;
+
+        document.getElementById('det-cliente').textContent = v.nombreCliente      || '—';
+        document.getElementById('det-factura').textContent = v.factura            || '—';
+        document.getElementById('det-condiva').textContent = v.condIvaDescripcion || '—';
+
+        const descGlobal = (v.descuento != null)
+          ? (v.descuento * -1 + (v.recargo ?? 0)) : null;
+
+        const tbody = document.getElementById('tbodyDetModal');
+        tbody.innerHTML = '';
+        let subtBruto = 0, subtSIvaT = 0;
+
+        (v.detalle || []).forEach(function (d) {
+          const dr      = descGlobal !== null
+            ? descGlobal : ((d.descuento ?? 0) * -1 + (d.recargo ?? 0));
+          const pSIva   = d.precioSinIva ?? 0;
+          const subSIva = pSIva * (1 + dr / 100);
+          const pConIva = subSIva * (1 + iva / 100);
+          const cant    = d.cantidad ?? 0;
+          const totLin  = pConIva * cant;
+          subtBruto += pSIva   * cant;
+          subtSIvaT += subSIva * cant;
+          const drColor = dr < 0 ? 'color:#e74a3b;' : dr > 0 ? 'color:#1cc88a;' : '';
+          const tr = document.createElement('tr');
+          tr.innerHTML =
+            '<td>' + esc(d.descripcion || '') + '</td>' +
+            '<td style="text-align:right;">$' + fmt(pSIva)   + '</td>' +
+            '<td style="text-align:right;' + drColor + '">'  + fmt(dr) + '%</td>' +
+            '<td style="text-align:right;">$' + fmt(subSIva) + '</td>' +
+            '<td style="text-align:right;">$' + fmt(pConIva) + '</td>' +
+            '<td style="text-align:right;">'  + fmt(cant)    + '</td>' +
+            '<td style="text-align:right;font-weight:600;">$' + fmt(totLin) + '</td>';
+          tbody.appendChild(tr);
+        });
+
+        const descRecNom = subtSIvaT - subtBruto;
+        const ivaAmt     = subtSIvaT * iva / 100;
+        const iibbAmt    = subtSIvaT * imp / 100;
+
+        document.getElementById('det-subtBruto').textContent = '$' + fmt(subtBruto);
+        const rowDR = document.getElementById('rowDescRec');
+        if (Math.abs(descRecNom) > 0.001) {
+          document.getElementById('det-lbl-descRec').textContent =
+            descRecNom < 0 ? 'Descuento' : 'Recargo';
+          document.getElementById('det-descRecAmt').textContent =
+            (descRecNom < 0 ? '–$' : '+$') + fmt(Math.abs(descRecNom));
+          document.getElementById('det-descRecAmt').style.color =
+            descRecNom < 0 ? '#e74a3b' : '#1cc88a';
+          rowDR.style.display = '';
+        } else {
+          rowDR.style.display = 'none';
+        }
+        document.getElementById('det-subtSIva').textContent  = '$' + fmt(subtSIvaT);
+        document.getElementById('det-lbl-iva').textContent   = 'IVA ' + fmt(iva) + '%';
+        document.getElementById('det-ivaAmt').textContent    = '$' + fmt(ivaAmt);
+        document.getElementById('det-lbl-iibb').textContent  = 'IIBB ' + fmt(imp) + '%';
+        document.getElementById('det-iibbAmt').textContent   = iibbAmt > 0 ? '$' + fmt(iibbAmt) : '—';
+        document.getElementById('det-total').textContent     = '$' + fmt(subtSIvaT + ivaAmt + iibbAmt);
+
+        _fpActual = v.formasPago || [];
+        const secFP  = document.getElementById('seccionFormasPago');
+        const listaFP = document.getElementById('listaFormasPago');
+        listaFP.innerHTML = '';
+        if (_fpActual.length > 0) {
+          _fpActual.forEach(function (fp) {
+            const row = document.createElement('div');
+            row.className = 'rv-fp-row';
+            row.textContent = fp.medioPago || 'Efectivo';
+            listaFP.appendChild(row);
+          });
+          secFP.style.display = '';
+        } else {
+          secFP.style.display = 'none';
+        }
+        document.getElementById('detContenido').style.display = '';
+      })
+      .catch(function () {
+        document.getElementById('detLoadingRow').style.display = 'none';
+        alert('Error al cargar el detalle.');
+      });
+  };
+
+  // ── Imprimir comprobante ───────────────────────────────────────────────────
+  window.imprimirComprobante = function () {
+    if (!_ventaIdActual) return;
+    const url = HACE_TK === 1
+      ? '/Ventas/Ventas/TicketX/'      + _ventaIdActual
+      : '/Ventas/Ventas/ComprobanteX/' + _ventaIdActual;
+    window.open(url, '_blank');
+  };
+
+  // ── Ocultar ítem del menú al cargar esta página ────────────────────────────
+  (function () {
+    document.querySelectorAll('a[href="/Facturacion/FacturacionLotes"]').forEach(function (a) {
+      var li = a.closest('li');
+      if (li) li.style.display = 'none';
+    });
+  })();
+
+})();
+</script>
+}

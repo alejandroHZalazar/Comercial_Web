@@ -1,0 +1,1954 @@
+@page
+@model Comercial_Web.Pages.Ventas.Ventas.IndexModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewData["Title"] = "Ventas";
+    var p       = Model.Params;
+    var clientes = await Model.GetClientesListAsync();
+}
+
+<style>
+/* ── Layout general ───────────────────────────────────────────────── */
+.vt-header{background:linear-gradient(135deg,#1a3a5c 0%,#2e6da4 100%);border-radius:12px;padding:1rem 1.5rem;margin-bottom:1.1rem;color:#fff;display:flex;align-items:center;gap:.8rem;}
+.vt-header h4{margin:0;font-weight:700;font-size:1.05rem;}
+.vt-card{background:#fff;border:1px solid #e3e6f0;border-radius:10px;padding:.85rem 1.1rem;box-shadow:0 2px 8px rgba(0,0,0,.05);margin-bottom:.85rem;}
+.vt-label{font-size:.76rem;font-weight:600;color:#5a5c69;margin-bottom:.18rem;display:block;}
+.vt-input{font-size:.82rem;}
+/* ── Sección cliente ──────────────────────────────────────────────── */
+.cli-section{display:flex;align-items:flex-end;gap:.5rem;flex-wrap:wrap;}
+.cli-info{background:#f0f4ff;border:1px solid #b8caff;border-radius:6px;padding:.3rem .7rem;font-size:.78rem;color:#1a3a5c;font-weight:600;min-width:120px;}
+/* ── Toolbar desc/rec ─────────────────────────────────────────────── */
+#descRecBar{background:#fff7e6;border:1px solid #ffc107;border-radius:8px;padding:.45rem .8rem;margin-bottom:.7rem;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;}
+.dr-radio-group{display:flex;gap:.3rem;}
+.dr-radio-btn{padding:.2rem .7rem;font-size:.76rem;border-radius:20px;border:1px solid #dee2e6;background:#f8f9fa;cursor:pointer;font-weight:600;transition:all .15s;}
+.dr-radio-btn.desc.active{background:#e74a3b;color:#fff;border-color:#e74a3b;}
+.dr-radio-btn.rec.active{background:#1cc88a;color:#fff;border-color:#1cc88a;}
+.dr-pct{width:70px;font-size:.82rem;}
+/* ── Multi-select ────────────────────────────────────────────────── */
+.bp-multisel-wrap{position:relative;}
+.bp-multisel-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:.4rem;background:#fff;border:1px solid #d1d3e2;border-radius:6px;padding:.28rem .55rem;font-size:.78rem;color:#5a5c69;cursor:pointer;text-align:left;}
+.bp-multisel-btn:hover{border-color:#4e73df;}
+.bp-multisel-drop{display:none;position:absolute;top:100%;left:0;right:0;z-index:2100;background:#fff;border:1px solid #d1d3e2;border-radius:0 0 8px 8px;box-shadow:0 6px 18px rgba(0,0,0,.12);max-height:210px;overflow-y:auto;}
+.bp-multisel-drop.open{display:block;}
+.bp-multisel-item{display:flex;align-items:center;gap:.4rem;padding:.28rem .55rem;font-size:.76rem;cursor:pointer;margin:0;}
+.bp-multisel-item:hover{background:#f0f4ff;}
+.bp-multisel-item input[type=checkbox]{margin:0;cursor:pointer;}
+/* ── Grilla detalle ──────────────────────────────────────────────── */
+#tblDetalle{font-size:.78rem;width:100%;}
+#tblDetalle thead tr{background:#1a3a5c;color:#fff;}
+#tblDetalle thead th{padding:.38rem .45rem;white-space:nowrap;font-weight:600;}
+#tblDetalle tbody tr td{padding:.25rem .4rem;vertical-align:middle;}
+#tblDetalle tbody tr:nth-child(even){background:#f8f9fc;}
+#tblDetalle tbody tr:hover{background:#eef3ff;}
+#tblDetalle input[type=number]{width:75px;font-size:.78rem;padding:.15rem .3rem;border:1px solid #d1d3e2;border-radius:4px;text-align:right;}
+/* ── Totales ─────────────────────────────────────────────────────── */
+.totales-panel{background:#f8f9fc;border:1px solid #e3e6f0;border-radius:8px;padding:.6rem .9rem;font-size:.83rem;}
+.tot-row{display:flex;justify-content:space-between;padding:.13rem 0;}
+.tot-row.total-gen{font-weight:800;font-size:1rem;color:#1a3a5c;border-top:2px solid #1a3a5c;margin-top:.35rem;padding-top:.35rem;}
+/* ── Formas de pago ──────────────────────────────────────────────── */
+.fp-row{display:flex;gap:.4rem;align-items:flex-end;background:#f8f9fc;border:1px solid #e3e6f0;border-radius:6px;padding:.35rem .6rem;margin-bottom:.3rem;font-size:.78rem;}
+.fp-row select,.fp-row input{font-size:.78rem;}
+/* ── Autocomplete ────────────────────────────────────────────────── */
+.ac-wrap{position:relative;}
+.ac-list{position:absolute;top:100%;left:0;right:0;z-index:1200;background:#fff;border:1px solid #d1d3e2;border-radius:0 0 8px 8px;box-shadow:0 4px 12px rgba(0,0,0,.1);max-height:180px;overflow-y:auto;display:none;}
+.ac-drop{display:none;position:absolute;top:100%;left:0;right:0;z-index:2000;background:#fff;border:1px solid #d1d3e2;border-radius:0 0 8px 8px;max-height:220px;overflow-y:auto;box-shadow:0 6px 18px rgba(0,0,0,.12);}
+.ac-drop.open{display:block;}
+.ac-item{padding:.3rem .6rem;font-size:.78rem;cursor:pointer;border-bottom:1px solid #f5f5f5;}
+.ac-item:hover,.ac-item.active{background:#f0f4ff;}
+.ac-item small{display:block;color:#888;font-size:.72rem;}
+/* ── Info cliente seleccionado ───────────────────────────────────── */
+.cliente-info-vt{background:#f8f9fc;border:1px solid #e3e6f0;border-radius:8px;padding:.55rem .8rem;font-size:.8rem;margin-top:.4rem;}
+.ci-row{display:flex;gap:.5rem;margin-bottom:.18rem;align-items:flex-start;}
+.ci-lbl{color:#6c757d;min-width:70px;font-size:.74rem;font-weight:600;}
+/* ── Acciones ────────────────────────────────────────────────────── */
+.btn-vender{background:linear-gradient(135deg,#1cc88a,#13855c);color:#fff;border:none;border-radius:8px;padding:.5rem 1.4rem;font-size:.85rem;font-weight:700;cursor:pointer;transition:opacity .15s;}
+.btn-vender:hover{opacity:.88;}
+/* ── Modales ─────────────────────────────────────────────────────── */
+.modal-header-cli{background:linear-gradient(135deg,#1a3a5c,#2e6da4);padding:.65rem 1rem;}
+.modal-section-title{font-size:.72rem;font-weight:700;text-transform:uppercase;color:#6c757d;letter-spacing:.06em;border-bottom:1px solid #e3e6f0;padding-bottom:.2rem;margin-bottom:.5rem;}
+.rp-modal-header{background:linear-gradient(135deg,#1a3a5c,#2e6da4);padding:.65rem 1rem;display:flex;align-items:center;gap:.5rem;color:#fff;}
+.rp-modal-header h5{margin:0;font-size:.9rem;font-weight:700;}
+/* ── Estado alerta ───────────────────────────────────────────────── */
+#alertDiv{display:none;font-size:.8rem;}
+/* ── Tabla resultados pedidos ────────────────────────────────────── */
+#tblPedidos thead tr{background:#1a3a5c;color:#fff;}
+#tblPedidos tbody tr:hover{background:#eef3ff;cursor:pointer;}
+/* ── Modal detalle pedido ────────────────────────────────────────── */
+#tblDetallePed{font-size:.78rem;width:100%;}
+#tblDetallePed thead tr{background:#1a3a5c;color:#fff;}
+#tblDetallePed thead th{padding:.4rem .5rem;white-space:nowrap;font-weight:600;}
+#tblDetallePed tbody tr:nth-child(even){background:#f8f9fc;}
+#tblDetallePed tbody td{padding:.3rem .45rem;vertical-align:middle;}
+.pd-totales-det{background:#f8f9fc;border:1px solid #e3e6f0;border-radius:8px;padding:.75rem 1rem;font-size:.82rem;margin-top:.75rem;}
+.pd-tot-row{display:flex;justify-content:space-between;padding:.15rem 0;}
+.pd-tot-row.pd-tot-total{font-weight:700;font-size:.95rem;color:#1a3a5c;border-top:1px solid #dee2e6;margin-top:.3rem;padding-top:.4rem;}
+</style>
+
+@* ══ HEADER ══════════════════════════════════════════════════════════════ *@
+<div class="vt-header">
+  <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="26" height="26">
+    <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+  </svg>
+  <h4>Nueva Venta</h4>
+</div>
+
+@* ══ ALERTA ════════════════════════════════════════════════════════════════ *@
+<div id="alertDiv" class="alert alert-danger alert-dismissible" role="alert">
+  <span id="alertMsg"></span>
+  <button type="button" class="btn-close" onclick="document.getElementById('alertDiv').style.display='none'"></button>
+</div>
+
+@* ══ CLIENTE ═══════════════════════════════════════════════════════════════ *@
+<div class="vt-card">
+  <div class="row g-2">
+    <div class="col-12">
+      <label class="vt-label">Buscar Cliente</label>
+      <div class="ac-wrap mb-2">
+        <input type="text" id="txtBuscarCliente" class="form-control form-control-sm vt-input"
+               placeholder="Buscar cliente por nombre..." autocomplete="off"
+               oninput="onClienteInput(this.value)" onkeydown="onClienteKeydown(event)" />
+        <div id="dropClientes" class="ac-drop"></div>
+      </div>
+      <div style="display:flex;gap:.4rem;margin-bottom:.5rem;flex-wrap:wrap;">
+        <button type="button" class="btn btn-sm btn-outline-success" style="font-size:.78rem;" onclick="abrirModalCli()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="12" height="12" style="vertical-align:-.1em;margin-right:.25rem;"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.029 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664h10z"/></svg>
+          Nuevo Cliente
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-primary" style="font-size:.78rem;" onclick="abrirBuscarPedido()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="12" height="12" style="vertical-align:-.1em;margin-right:.25rem;"><path d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/><path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3z"/></svg>
+          Cargar Pedido
+        </button>
+      </div>
+      <div id="clienteInfo" style="display:none;">
+        <div class="cliente-info-vt">
+          <div class="ci-row"><span class="ci-lbl">Nombre</span><strong id="ci-nombre"></strong></div>
+          <div class="ci-row"><span class="ci-lbl">Teléfono</span><span id="ci-telefono"></span></div>
+          <div class="ci-row"><span class="ci-lbl">Dirección</span><span id="ci-direccion"></span></div>
+          <div class="ci-row"><span class="ci-lbl">Cond. IVA</span><span id="ci-condiva"></span></div>
+        </div>
+      </div>
+      <div id="clienteVacio" style="@(p.TieneConsumidorFinal == 1 ? "display:none;" : "")color:#aaa;font-size:.78rem;padding:.4rem 0;">
+        Busque o cree un cliente para comenzar.
+      </div>
+    </div>
+  </div>
+</div>
+<input type="hidden" id="hClienteId" value="@(p.TieneConsumidorFinal == 1 ? p.ClienteConsumidorFinal.ToString() : "0")" />
+<input type="hidden" id="hPedidoCargado" value="0" />
+
+@* ══ PARÁMETROS / CONTROLES ════════════════════════════════════════════════ *@
+<div class="vt-card">
+  <div class="row g-2 align-items-end">
+
+    @* IVA % *@
+    <div class="col-6 col-md-2">
+      <label class="vt-label">IVA %</label>
+      <select id="txtIva" class="form-select form-select-sm vt-input" onchange="recalcularTodo()">
+        @foreach (var iva in Model.ListaIvas)
+        {
+          var isDefault = decimal.TryParse(iva.Value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var _ivaVal) && _ivaVal == 0m;
+          <option value="@iva.Value" selected="@isDefault">@iva.Text</option>
+        }
+      </select>
+    </div>
+
+    @* Ing. Brutos *@
+    <div class="col-6 col-md-2">
+      <label class="vt-label">Ing. Brutos</label>
+      <select id="cboIngBrutos" class="form-select form-select-sm vt-input" onchange="recalcularTodo()">
+        <option value="0">0%</option>
+        @foreach (var imp in Model.ListaImpuestos)
+        {
+          <option value="@imp.Value">@imp.Text</option>
+        }
+      </select>
+    </div>
+
+    @* Vendedor (si comisiona) *@
+    @if (p.Comisiona == 1)
+    {
+      <div class="col-md-2" id="colVendedor">
+        <label class="vt-label">Vendedor</label>
+        <select id="cboVendedor" class="form-select form-select-sm vt-input">
+          <option value="0">— Seleccione —</option>
+          @foreach (var v2 in Model.ListaVendedores)
+          {
+            <option value="@v2.Value">@v2.Text</option>
+          }
+        </select>
+      </div>
+      <div class="col-md-2" id="colComision">
+        <label class="vt-label">Comisión %</label>
+        <input type="number" id="txtComision" class="form-control form-control-sm vt-input" value="0" min="0" max="100" step="0.01" />
+      </div>
+    }
+
+    @* Proveedor filter *@
+    @if (p.FiltraPorProveedor == 1)
+    {
+      <div class="col-md-3" id="colProveedor">
+        <label class="vt-label">Filtrar por Proveedor</label>
+        <div class="bp-multisel-wrap" id="wrapProv">
+          <button type="button" class="bp-multisel-btn" onclick="bpToggle('dropProv')">
+            <span id="lblProv">Todos</span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="9"><path d="M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/></svg>
+          </button>
+          <div class="bp-multisel-drop" id="dropProv">
+            <div style="padding:.25rem .5rem;border-bottom:1px solid #e3e6f0;display:flex;gap:.3rem;">
+              <button type="button" onclick="bpSelAll('chk-prov','lblProv','proveedores')" style="font-size:.68rem;padding:.1rem .3rem;background:#e9ecef;border:none;border-radius:3px;cursor:pointer;">Todos</button>
+              <button type="button" onclick="bpSelNone('chk-prov','lblProv')"             style="font-size:.68rem;padding:.1rem .3rem;background:#e9ecef;border:none;border-radius:3px;cursor:pointer;">Ninguno</button>
+            </div>
+            @foreach (var prov in Model.ListaProveedores)
+            {
+              <label class="bp-multisel-item">
+                <input type="checkbox" class="chk-prov" value="@prov.Value" onchange="bpUpdateLabel('chk-prov','lblProv','proveedores')" /> @prov.Text
+              </label>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+  </div>
+</div>
+
+@* ══ TOOLBAR DESC/REC ══════════════════════════════════════════════════════ *@
+<div id="descRecBar">
+  <span style="font-size:.75rem;font-weight:700;color:#856404;">Desc/Rec:</span>
+  <div class="dr-radio-group">
+    <button type="button" class="dr-radio-btn desc" id="btnDesc" onclick="setDrMode('desc')">▼ Desc</button>
+    <button type="button" class="dr-radio-btn rec"  id="btnRec"  onclick="setDrMode('rec')">▲ Rec</button>
+  </div>
+  <input type="number" id="txtDrPct" class="form-control form-control-sm dr-pct" value="0" min="0" max="100" step="0.01" />
+  <button type="button" class="btn btn-sm btn-warning" style="font-size:.75rem;" onclick="aplicarDescRec()">Aplicar</button>
+  <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:.75rem;" onclick="limpiarDescRec()">Limpiar</button>
+  <span id="drInfoMsg" style="font-size:.73rem;color:#856404;"></span>
+</div>
+
+@* ══ BÚSQUEDA DE PRODUCTOS ════════════════════════════════════════════════ *@
+<div class="vt-card">
+  <div class="row g-2 align-items-end">
+    <div class="col-md-2">
+      <label class="vt-label">Cód. Barras</label>
+      <input type="text" id="txtBusqCB" class="form-control form-control-sm vt-input"
+             placeholder="@(p.TieneLectoraCB == 1 ? "Lector de cód. barras…" : "Código de barras…")" autocomplete="off"
+             onkeydown="onBusqCBKeydown(event)" />
+    </div>
+    <div class="col-md-2">
+      <label class="vt-label">Cód. Proveedor</label>
+      <input type="text" id="txtBusqCP" class="form-control form-control-sm vt-input"
+             placeholder="Cód. proveedor…" autocomplete="off"
+             onkeydown="onBusqCPKeydown(event)" />
+    </div>
+    <div class="col-md-4">
+      <label class="vt-label">Descripción</label>
+      <div class="ac-wrap">
+        <input type="text" id="txtBusqDesc" class="form-control form-control-sm vt-input"
+               placeholder="Buscar por descripción…" autocomplete="off"
+               oninput="buscarProductoDesc()"
+               onkeydown="onBusqDescKeydown(event)" />
+        <div class="ac-list" id="acDesc"></div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <label class="vt-label">Cantidad</label>
+      <input type="number" id="txtBusqCant" class="form-control form-control-sm vt-input"
+             value="1" step="any" min="0" placeholder="Cant."
+             onkeydown="onBusqCantKeydown(event)" />
+      <div id="lblProdPend" style="font-size:.7rem;color:#1a7a45;margin-top:.15rem;display:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+    </div>
+    <div class="col-md-auto">
+      <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:.75rem;" onclick="actualizarPrecios()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="12" height="12" style="vertical-align:-.1em;margin-right:.2rem;"><path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+        Actualizar Precios
+      </button>
+    </div>
+  </div>
+</div>
+
+@* ══ GRILLA DETALLE ════════════════════════════════════════════════════════ *@
+<div class="vt-card" style="padding:.6rem .8rem;">
+  <div class="table-responsive">
+    <table id="tblDetalle" class="table table-bordered table-sm mb-0">
+      <thead>
+        <tr>
+          <th id="thSel" style="width:32px;text-align:center;@(p.BonificacionPorLinea == 0 ? "display:none;" : "")">
+            <input type="checkbox" id="chkSelAll" title="Sel. todos" onchange="seleccionarTodas(this.checked)" />
+          </th>
+          <th style="width:110px;">Cód. Barras</th>
+          <th style="width:100px;">Cód. Prov.</th>
+          <th>Descripción</th>
+          <th style="text-align:right;width:70px;">Stock</th>
+          <th style="text-align:right;width:80px;">P.S/IVA</th>
+          <th style="text-align:right;width:75px;">Desc/Rec%</th>
+          <th style="text-align:right;width:85px;">SubT.S/IVA</th>
+          <th style="text-align:right;width:80px;">P.C/IVA</th>
+          <th style="text-align:right;width:90px;">Cant.</th>
+          <th style="text-align:right;width:90px;">Subtotal</th>
+          <th style="text-align:center;width:36px;"></th>
+        </tr>
+      </thead>
+      <tbody id="tbodyDetalle">
+        <tr id="rowVacio">
+          <td colspan="12" style="text-align:center;padding:1.2rem;color:#aaa;font-size:.8rem;">
+            Agregue productos buscando arriba.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@* ══ TOTALES ════════════════════════════════════════════════════════════════ *@
+<div class="row g-2 mb-2">
+  <div class="col-md-6"></div>
+  <div class="col-md-6">
+    <div class="totales-panel">
+      <div class="tot-row"><span>Subtotal Bruto</span><span id="tot-subtBruto">$0,00</span></div>
+      <div class="tot-row" id="rowTotDescRec" style="display:none;"><span id="lbl-descRec">Descuentos / Recargos</span><span id="tot-descRec">$0,00</span></div>
+      <div class="tot-row"><span>Subtotal s/IVA</span><span id="tot-subtSIva">$0,00</span></div>
+      <div class="tot-row"><span id="lbl-iva">IVA 21%</span><span id="tot-iva">$0,00</span></div>
+      <div class="tot-row" id="rowTotImpuesto" style="display:none;"><span id="lbl-impuesto">Ing. Brutos 0%</span><span id="tot-impuesto">$0,00</span></div>
+      <div class="tot-row total-gen"><span>TOTAL</span><span id="tot-total">$0,00</span></div>
+    </div>
+  </div>
+</div>
+
+@* ══ FORMAS DE PAGO (si tieneMediosPagos) ════════════════════════════════ *@
+@if (p.TieneMediosPagos == 1)
+{
+  <div class="vt-card" id="secFormasPago">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
+      <span style="font-size:.78rem;font-weight:700;color:#5a5c69;text-transform:uppercase;letter-spacing:.05em;">Formas de Pago</span>
+      <button type="button" class="btn btn-sm btn-outline-primary" style="font-size:.74rem;" onclick="addFormaPago()">+ Agregar</button>
+    </div>
+    <div id="containerFormasPago"></div>
+    <div id="fpResumen" style="font-size:.78rem;color:#5a5c69;margin-top:.3rem;display:none;">
+      Pagado: <strong id="fpPagado">$0,00</strong> &nbsp;|&nbsp; Saldo: <strong id="fpSaldo" style="color:#e74a3b;">$0,00</strong>
+    </div>
+  </div>
+
+  @* Datos de medios/planes en JSON para JS (camelCase para que coincidan con las claves esperadas en JS) *@
+  <script id="jsPlanesPago" type="application/json">
+    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PlanesPago, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }))
+  </script>
+}
+
+@* ══ BOTONES DE ACCIÓN ════════════════════════════════════════════════════ *@
+<div style="display:flex;gap:.6rem;justify-content:flex-end;margin-bottom:1.5rem;">
+  <button type="button" onclick="vender(false)" class="btn-vender">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="14" height="14" style="margin-right:.35rem;vertical-align:-.1em;"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg>
+    Vender (F5)
+  </button>
+  <button type="button" onclick="limpiarFormulario()" class="btn btn-sm" style="font-size:.82rem;background:#6c757d;color:#fff;border:none;">
+    Limpiar
+  </button>
+</div>
+
+@* ══ MODAL: BUSCAR PEDIDO ══════════════════════════════════════════════════ *@
+<div class="modal fade" id="modalBuscarPedido" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content" style="border-radius:12px;overflow:hidden;">
+      <div class="rp-modal-header">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="17" height="17"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85-.017.016zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/></svg>
+        <h5>Buscar Pedido</h5>
+        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="padding:.9rem 1.1rem;">
+        <div class="row g-2 align-items-end mb-3">
+          <div class="col-md-2">
+            <label class="vt-label">Desde</label>
+            <input type="date" id="bpDesde" class="form-control form-control-sm" />
+          </div>
+          <div class="col-md-2">
+            <label class="vt-label">Hasta</label>
+            <input type="date" id="bpHasta" class="form-control form-control-sm" />
+          </div>
+          <div class="col-md-3">
+            <label class="vt-label">Vendedores</label>
+            <div class="bp-multisel-wrap">
+              <button type="button" class="bp-multisel-btn" onclick="bpToggle('bpDropVend')">
+                <span id="bpLblVend">Todos</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="9"><path d="M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/></svg>
+              </button>
+              <div class="bp-multisel-drop" id="bpDropVend">
+                <div style="padding:.25rem .5rem;border-bottom:1px solid #e3e6f0;display:flex;gap:.3rem;">
+                  <button type="button" onclick="bpSelAll('bpChkVend','bpLblVend','vendedores')" style="font-size:.68rem;padding:.1rem .3rem;background:#e9ecef;border:none;border-radius:3px;cursor:pointer;">Todos</button>
+                  <button type="button" onclick="bpSelNone('bpChkVend','bpLblVend')"             style="font-size:.68rem;padding:.1rem .3rem;background:#e9ecef;border:none;border-radius:3px;cursor:pointer;">Ninguno</button>
+                </div>
+                @foreach (var vend in Model.ListaVendedores)
+                {
+                  <label class="bp-multisel-item">
+                    <input type="checkbox" class="bpChkVend" value="@vend.Value" onchange="bpUpdateLabel('bpChkVend','bpLblVend','vendedores')" /> @vend.Text
+                  </label>
+                }
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <label class="vt-label">Clientes</label>
+            <div class="bp-multisel-wrap">
+              <button type="button" class="bp-multisel-btn" onclick="bpToggle('bpDropCli')">
+                <span id="bpLblCli">Todos</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="9"><path d="M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/></svg>
+              </button>
+              <div class="bp-multisel-drop" id="bpDropCli" style="max-height:180px;">
+                <div style="padding:.25rem .5rem;border-bottom:1px solid #e3e6f0;display:flex;gap:.3rem;flex-direction:column;">
+                  <input type="text" placeholder="Buscar…" class="form-control form-control-sm" oninput="bpFilterItems(this,'bpChkCli')" style="font-size:.73rem;" />
+                  <div style="display:flex;gap:.3rem;">
+                    <button type="button" onclick="bpSelAll('bpChkCli','bpLblCli','clientes')" style="font-size:.68rem;padding:.1rem .3rem;background:#e9ecef;border:none;border-radius:3px;cursor:pointer;">Todos</button>
+                    <button type="button" onclick="bpSelNone('bpChkCli','bpLblCli')"           style="font-size:.68rem;padding:.1rem .3rem;background:#e9ecef;border:none;border-radius:3px;cursor:pointer;">Ninguno</button>
+                  </div>
+                </div>
+                @foreach (var c in clientes)
+                {
+                  <label class="bp-multisel-item">
+                    <input type="checkbox" class="bpChkCli" value="@c.Value" onchange="bpUpdateLabel('bpChkCli','bpLblCli','clientes')" /> @c.Text
+                  </label>
+                }
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <button class="btn btn-primary btn-sm w-100" style="font-size:.8rem;" onclick="buscarPedidos()">Buscar</button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table id="tblPedidos" class="table table-bordered table-sm" style="font-size:.78rem;">
+            <thead><tr>
+              <th>#</th><th>Fecha</th><th>Cliente</th><th>Vendedor</th>
+              <th style="text-align:right;">Total</th>
+              <th style="text-align:center;">Impreso</th>
+              <th style="text-align:center;">Vendido</th>
+              <th style="text-align:center;">Ver</th>
+              <th style="text-align:center;">Cargar</th>
+            </tr></thead>
+            <tbody id="tbodyPedidos">
+              <tr><td colspan="9" style="text-align:center;color:#aaa;padding:1.2rem;">Use los filtros para buscar pedidos.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+@* ══ MODAL: DETALLE PEDIDO ═══════════════════════════════════════════════ *@
+<div class="modal fade" id="modalDetallePed" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content" style="border-radius:12px;overflow:hidden;">
+      <div class="rp-modal-header">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="17" height="17">
+          <path d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/>
+          <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3z"/>
+        </svg>
+        <h5 id="detPedTitulo">Detalle del Pedido</h5>
+        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="padding:1rem 1.25rem;">
+        <div class="row g-2 mb-3" style="font-size:.82rem;">
+          <div class="col-sm-6 col-md-4">
+            <span style="color:#6c757d;font-size:.75rem;font-weight:600;">CLIENTE</span>
+            <div id="detPed-cliente" style="font-weight:700;color:#2c3e50;"></div>
+          </div>
+          <div class="col-sm-3 col-md-2">
+            <span style="color:#6c757d;font-size:.75rem;font-weight:600;">FECHA</span>
+            <div id="detPed-fecha"></div>
+          </div>
+          <div class="col-sm-3 col-md-2">
+            <span style="color:#6c757d;font-size:.75rem;font-weight:600;">IVA</span>
+            <div id="detPed-iva"></div>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table id="tblDetallePed" class="table table-bordered mb-0">
+            <thead>
+              <tr>
+                <th>Descripción</th>
+                <th style="text-align:right;">Cant.</th>
+                <th style="text-align:right;">Precio s/IVA</th>
+                <th style="text-align:right;">Desc/Rec %</th>
+                <th style="text-align:right;">Subt. s/IVA</th>
+                <th style="text-align:right;">IVA</th>
+                <th style="text-align:right;">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyDetallePed"></tbody>
+          </table>
+        </div>
+        <div class="pd-totales-det" id="pdTotales" style="display:none;">
+          <div class="pd-tot-row"><span>Precio s/IVA</span><span id="pd-tot-precioSIva"></span></div>
+          <div class="pd-tot-row"><span>Desc / Rec</span><span id="pd-tot-descRec"></span></div>
+          <div class="pd-tot-row"><span>Subtotal s/IVA</span><span id="pd-tot-subtSIva"></span></div>
+          <div class="pd-tot-row"><span id="pd-lbl-iva-pct">IVA</span><span id="pd-tot-iva"></span></div>
+          <div class="pd-tot-row pd-tot-total"><span>TOTAL</span><span id="pd-tot-total"></span></div>
+        </div>
+      </div>
+      <div class="modal-footer" style="background:#f8f9fc;border-top:1px solid #e3e6f0;gap:.5rem;">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-sm btn-success" id="btnCargarDesdeDetalle" onclick="cargarDesdeDetalle()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" height="13" style="margin-right:.3rem;vertical-align:-.1em;">
+            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+            <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
+          </svg>
+          Cargar Pedido
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@* ══ MODAL: NUEVO CLIENTE ════════════════════════════════════════════════ *@
+<div class="modal fade" id="modalNuevoCli" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" style="border-radius:12px;overflow:hidden;">
+      <div class="modal-header modal-header-cli">
+        <span style="color:#fff;font-weight:700;font-size:.95rem;">Agregar Nuevo Cliente</span>
+        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="padding:1rem 1.25rem;">
+        <div id="cliAlertDiv" class="alert alert-danger" style="display:none;font-size:.8rem;"></div>
+        <p class="modal-section-title">Datos Generales</p>
+        <div class="row g-2">
+          <div class="col-md-6"><label class="vt-label">Nombre Comercial *</label><input type="text" id="cliNombreComercial" class="form-control form-control-sm" /></div>
+          <div class="col-md-6"><label class="vt-label">Razón Social</label><input type="text" id="cliRazonSocial" class="form-control form-control-sm" /></div>
+          <div class="col-md-4"><label class="vt-label">CUIL</label><input type="text" id="cliCuil" class="form-control form-control-sm" /></div>
+          <div class="col-md-8"><label class="vt-label">Dirección</label><input type="text" id="cliDireccion" class="form-control form-control-sm" /></div>
+        </div>
+        <p class="modal-section-title mt-3">Contacto</p>
+        <div class="row g-2">
+          <div class="col-md-4"><label class="vt-label">Email</label><input type="email" id="cliEmail" class="form-control form-control-sm" /></div>
+          <div class="col-md-4"><label class="vt-label">Teléfono</label><input type="text" id="cliTelefono" class="form-control form-control-sm" /></div>
+          <div class="col-md-4"><label class="vt-label">Celular</label><input type="text" id="cliCelular" class="form-control form-control-sm" /></div>
+        </div>
+        <p class="modal-section-title mt-3">Clasificación</p>
+        <div class="row g-2">
+          <div class="col-md-4">
+            <label class="vt-label">Condición IVA</label>
+            <select id="cliCondIva" class="form-select form-select-sm">
+              @foreach (var ci in Model.ListaCondIvas) { <option value="@ci.Value">@ci.Text</option> }
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="vt-label">Vendedor</label>
+            <select id="cliVendedor" class="form-select form-select-sm">
+              @foreach (var v3 in Model.ListaVendedores) { <option value="@v3.Value">@v3.Text</option> }
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="vt-label">Localidad</label>
+            <select id="cliLocalidad" class="form-select form-select-sm">
+              @foreach (var loc in Model.ListaLocalidades) { <option value="@loc.Value">@loc.Text</option> }
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="vt-label">Zona</label>
+            <select id="cliZona" class="form-select form-select-sm">
+              @foreach (var z in Model.ListaZonas) { <option value="@z.Value">@z.Text</option> }
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="background:#f8f9fc;border-top:1px solid #e3e6f0;">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-sm btn-success" onclick="guardarNuevoCliente()">Guardar Cliente</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@* ══ MODAL: PROGRESO VENTA ════════════════════════════════════════════════ *@
+<div class="modal fade" id="modalProgresoVenta" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content" style="border-radius:12px;overflow:hidden;">
+      <div style="background:linear-gradient(135deg,#1a3a5c,#2e6da4);padding:.7rem 1rem;display:flex;align-items:center;gap:.6rem;color:#fff;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="18" height="18"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/></svg>
+        <span style="font-weight:700;font-size:.9rem;">Registrando Venta</span>
+      </div>
+      <div class="modal-body" style="padding:1.2rem 1.3rem;">
+        <div id="progVentaMsg" style="font-size:.82rem;font-weight:600;color:#1a3a5c;margin-bottom:.7rem;min-height:1.2em;">Iniciando...</div>
+        <div class="progress" style="height:10px;border-radius:6px;">
+          <div id="progVentaBar" class="progress-bar progress-bar-striped progress-bar-animated"
+               role="progressbar" style="width:0%;background:linear-gradient(90deg,#1cc88a,#2e6da4);border-radius:6px;"
+               aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+        <div id="progVentaDetalle" style="font-size:.74rem;color:#6c757d;margin-top:.5rem;min-height:1em;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+@* ══ MODAL: CONFIRMAR PROMOCIONES DETECTADAS ════════════════════════════════ *@
+<div class="modal fade" id="modalConfirmarPromo" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 shadow" style="border-radius:.65rem;overflow:hidden;">
+      <div class="modal-header py-2" style="background:linear-gradient(135deg,#1a3a5c,#2e6da4);color:#fff;">
+        <h6 class="modal-title mb-0" style="font-weight:700;font-size:.9rem;">
+          🏷️ Promociones detectadas
+        </h6>
+        <button type="button" class="btn-close btn-close-white btn-sm ms-auto" onclick="volverAgregarPromo()" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body p-3" id="cuerpoModalPromo" style="font-size:.84rem;"></div>
+      <div class="modal-footer py-2" style="background:#f8fbff;border-top:1px solid #d5dce6;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="volverAgregarPromo()">← Volver a agregar producto</button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="confirmarYVender()">✔ Confirmar y vender</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+(function(){
+'use strict';
+
+// ── Estado global ──────────────────────────────────────────────────────────
+var _rows          = [];          // datos de la grilla
+var _clienteId     = @(p.TieneConsumidorFinal == 1 ? p.ClienteConsumidorFinal : 0);
+var _pedidoCargado = 0;
+var _drMode        = 'desc';      // 'desc' | 'rec'
+var _lastProdInput = 'txtBusqDesc';      // última caja de búsqueda usada
+var _prodPending   = null;               // producto pendiente de ingresar cantidad
+var _ordenFacturar = false;
+var BONIF          = @p.BonificacionPorLinea;
+var TIENE_CB       = @p.TieneLectoraCB;
+var FILTRA_PROV    = @p.FiltraPorProveedor;
+var TIENE_MEDPAG   = @p.TieneMediosPagos;
+var IMPUTA_VENTA   = @p.ImputaEnVenta;
+var TIENE_CAJA     = @p.TieneCaja;
+var HACE_COMPROBANTE_X = @p.HaceNotaVentaTK == 0 ? 1 : 0;
+var HACE_NOTA_VENTA_TK = @p.HaceNotaVentaTK;
+var FACTURA_EN_VENTA   = @p.FacturaEnVenta;
+var FACTURA_ELEC       = @p.FacturaElectronica;
+var FACTURA_FISCAL     = @p.FacturaFiscal;
+var COMISIONA          = @p.Comisiona;
+var DEC                = @p.Decimales;
+var DEC_CANT           = @p.DecimalesCant;
+
+// ── Formateadores ──────────────────────────────────────────────────────────
+function fmt(n){ return new Intl.NumberFormat('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n??0); }
+function fmtN(n,d){ return new Intl.NumberFormat('es-AR',{minimumFractionDigits:d,maximumFractionDigits:d}).format(n??0); }
+// Para valores de <input type="number"> (usa punto como separador decimal, no coma)
+function fmtInp(n,d){ return (+(n||0)).toFixed(d); }
+
+// ── Inicialización (se ejecuta al final del script) ──────────────────────
+
+// ── Cliente ────────────────────────────────────────────────────────────────
+var _cliTimer = null;
+var _cliSelIdx = -1;
+var _cliResults = [];
+
+window.onClienteInput = function(val){
+  clearTimeout(_cliTimer);
+  _cliSelIdx = -1;
+  if (val.length < 2){ cerrarDropCli(); return; }
+  _cliTimer = setTimeout(function(){ fetchClientes(val); }, 300);
+};
+
+window.onClienteKeydown = function(e){
+  var drop  = document.getElementById('dropClientes');
+  var items = drop.querySelectorAll('.ac-item');
+  if (e.key === 'ArrowDown'){ e.preventDefault(); _cliSelIdx = Math.min(_cliSelIdx+1, items.length-1); highlightCli(items); }
+  else if (e.key === 'ArrowUp'){ e.preventDefault(); _cliSelIdx = Math.max(_cliSelIdx-1, 0); highlightCli(items); }
+  else if (e.key === 'Enter'){ e.preventDefault(); if (_cliSelIdx >= 0 && _cliResults[_cliSelIdx]) seleccionarCliente(_cliResults[_cliSelIdx]); }
+  else if (e.key === 'Escape') cerrarDropCli();
+};
+
+function highlightCli(items){
+  items.forEach(function(it,i){ it.classList.toggle('active', i === _cliSelIdx); });
+  if (items[_cliSelIdx]) items[_cliSelIdx].scrollIntoView({block:'nearest'});
+}
+
+async function fetchClientes(q){
+  var resp = await fetch('?handler=BuscarClientes&q=' + encodeURIComponent(q));
+  _cliResults = await resp.json();
+  var drop = document.getElementById('dropClientes');
+  if (!_cliResults.length){ cerrarDropCli(); return; }
+  drop.innerHTML = _cliResults.map(function(c,i){
+    return '<div class="ac-item" data-idx="' + i + '">'
+      + '<strong>' + escHtml(c.nombreComercial||'') + '</strong>'
+      + '<small>' + escHtml(c.direccionFull||'') + '</small>'
+      + '</div>';
+  }).join('');
+  drop.querySelectorAll('.ac-item').forEach(function(el){
+    el.addEventListener('click', function(){ seleccionarCliente(_cliResults[parseInt(el.dataset.idx)]); });
+  });
+  drop.classList.add('open');
+}
+
+window.seleccionarCliente = function(c){
+  if (typeof c === 'string') c = JSON.parse(c);
+  _clienteId = c.clienteId;
+  document.getElementById('hClienteId').value = c.clienteId;
+  document.getElementById('txtBuscarCliente').value = '';
+  cerrarDropCli();
+  document.getElementById('ci-nombre').textContent    = c.nombreComercial || '';
+  document.getElementById('ci-telefono').textContent  = c.telefono        || '--';
+  document.getElementById('ci-direccion').textContent = c.direccionFull   || '--';
+  document.getElementById('ci-condiva').textContent   = c.condIvaDescripcion || c.condIvaAbrev || '';
+  document.getElementById('clienteInfo').style.display  = 'block';
+  document.getElementById('clienteVacio').style.display = 'none';
+};
+
+function cerrarDropCli(){
+  var drop = document.getElementById('dropClientes');
+  drop.classList.remove('open');
+  drop.innerHTML = '';
+}
+
+function cerrarAc(id){ var el=document.getElementById(id); if(el) el.style.display='none'; }
+
+async function cargarClientePorId(id){
+  var resp = await fetch('?handler=ClienteData&id=' + id);
+  var r    = await resp.json();
+  if (!r.ok) return;
+  var d = r.data;
+  _clienteId = d.id;
+  document.getElementById('hClienteId').value = d.id;
+  document.getElementById('ci-nombre').textContent    = d.nombreComercial || '';
+  document.getElementById('ci-telefono').textContent  = d.telefono        || '--';
+  document.getElementById('ci-direccion').textContent = d.direccionFull   || '--';
+  document.getElementById('ci-condiva').textContent   = d.condIvaDescripcion || d.condIvaAbrev || '';
+  document.getElementById('clienteInfo').style.display  = 'block';
+  document.getElementById('clienteVacio').style.display = 'none';
+}
+
+// ── Nuevo Cliente ──────────────────────────────────────────────────────────
+window.abrirModalCli = function(){
+  document.querySelectorAll('#modalNuevoCli input, #modalNuevoCli select').forEach(el=>{
+    if(el.tagName==='INPUT') el.value='';
+  });
+  document.getElementById('cliAlertDiv').style.display='none';
+  new bootstrap.Modal(document.getElementById('modalNuevoCli')).show();
+};
+
+window.guardarNuevoCliente = async function(){
+  var nom = document.getElementById('cliNombreComercial').value.trim();
+  if (!nom){ showCliError('El nombre comercial es obligatorio.'); return; }
+  var dto = {
+    nombreComercial: nom,
+    razonSocial: document.getElementById('cliRazonSocial').value.trim(),
+    cuil: document.getElementById('cliCuil').value.trim(),
+    direccion: document.getElementById('cliDireccion').value.trim(),
+    email: document.getElementById('cliEmail').value.trim(),
+    telefono: document.getElementById('cliTelefono').value.trim(),
+    celular: document.getElementById('cliCelular').value.trim(),
+    fkCondIva: parseInt(document.getElementById('cliCondIva').value)||0,
+    fkVendedor: parseInt(document.getElementById('cliVendedor').value)||0,
+    fkLocalidad: parseInt(document.getElementById('cliLocalidad').value)||0,
+    fkZona: parseInt(document.getElementById('cliZona').value)||0
+  };
+  try{
+    var resp = await fetch('?handler=CrearClienteRapido', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(dto) });
+    var ct = resp.headers.get('Content-Type')||'';
+    if (!ct.includes('json')){ showCliError('Error del servidor: '+(await resp.text()).substring(0,300)); return; }
+    var r = await resp.json();
+    if (!r.ok){ showCliError(r.msg||'Error al guardar.'); return; }
+    bootstrap.Modal.getInstance(document.getElementById('modalNuevoCli'))?.hide();
+    seleccionarCliente({ clienteId: r.clienteId, nombreComercial: r.nombreComercial, telefono: r.telefono||'', direccionFull: '', condIvaAbrev: '' });
+  } catch(ex){ showCliError('Error: '+ex.message); }
+};
+function showCliError(msg){ var el=document.getElementById('cliAlertDiv'); el.textContent=msg; el.style.display=''; }
+
+// ── Búsqueda de productos ──────────────────────────────────────────────────
+// Tres cajas de búsqueda: Cód. Barras, Cód. Proveedor, Descripción.
+// Flujo:
+//   • Cód. Barras (Enter):
+//       - si TIENE_CB=1  → agrega 1 unidad (o suma 1 si ya existe) y vuelve al input CB
+//       - si TIENE_CB=0  → pone producto en _prodPending y manda foco a Cantidad
+//   • Cód. Proveedor (Enter) → _prodPending + foco a Cantidad
+//   • Descripción (autocomplete, Enter en match único o doble-click / Enter sobre un ítem) → _prodPending + foco a Cantidad
+//   • Cantidad (Enter) → agrega (o suma) el producto pendiente con esa cantidad y devuelve foco al input de búsqueda que lo originó.
+
+async function _buscarProducto(q, tipo){
+  if (!q) return [];
+  var provs = '';
+  if (FILTRA_PROV === 1){
+    provs = [...document.querySelectorAll('.chk-prov:checked')].map(c=>c.value).join(',');
+  }
+  var url = '?handler=BuscarProductos&q='+encodeURIComponent(q)+'&tipo='+tipo+'&proveedores='+encodeURIComponent(provs);
+  try {
+    return await (await fetch(url)).json();
+  } catch (ex){
+    return [];
+  }
+}
+
+function _agregarOSumar(prod, cantidad){
+  var existente = _rows.find(r=>r.fkProducto===prod.productoId);
+  if (existente){
+    existente.cantidad = (+existente.cantidad||0) + (+cantidad||0);
+    recalcularFila(existente);
+  } else {
+    var row = {
+      fkProducto  : prod.productoId,
+      codBarras   : prod.codBarras   || '',
+      codProveedor: prod.codProveedor|| '',
+      descripcion : prod.descripcion || '',
+      precioSinIva: prod.precioSinIva|| 0,
+      descRec     : 0,
+      cantidad    : +cantidad || 0,
+      stock       : prod.stock       || 0,
+      fraccionado : prod.fraccionado || false,
+      costo       : prod.costo       || 0,
+      dolarizado  : prod.dolarizado  || false,
+      sel         : false
+    };
+    recalcularFila(row);
+    _rows.push(row);
+  }
+  renderGrilla();
+}
+
+// ── Fetch stock para filas cargadas (pedido) ─────────────────────────────
+async function _fetchStockRows(){
+  var ids = _rows.map(r=>r.fkProducto).filter(id=>id>0);
+  if (!ids.length) return;
+  try {
+    var stocks = await (await fetch('?handler=StockProductos&ids='+ids.join(','))).json();
+    _rows.forEach(r=>{ if (stocks[r.fkProducto] !== undefined) r.stock = stocks[r.fkProducto]; });
+    renderGrilla();
+  } catch(e){}
+}
+
+function _enviarACantidad(prod, origenId){
+  _prodPending   = prod;
+  _lastProdInput = origenId;
+  var lbl = document.getElementById('lblProdPend');
+  if (lbl){
+    lbl.textContent = '→ ' + (prod.descripcion || '');
+    lbl.style.display = '';
+  }
+  var c = document.getElementById('txtBusqCant');
+  c.value = '1';
+  setTimeout(()=>{ c.focus(); c.select(); }, 0);
+}
+
+function _limpiarPendiente(){
+  _prodPending = null;
+  var lbl = document.getElementById('lblProdPend');
+  if (lbl){ lbl.textContent=''; lbl.style.display='none'; }
+}
+
+// ── Cód. Barras ────────────────────────────────────────────────────────────
+window.onBusqCBKeydown = async function(e){
+  if (e.key === 'Escape'){ e.target.value=''; return; }
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  var inp = document.getElementById('txtBusqCB');
+  var raw = inp.value.trim();
+  if (!raw) return;
+
+  // ── Soporte "<cantidad>*<codigo>" ────────────────────────────────────────
+  // Si el usuario ingresa algo como "10*7791234567890", la parte previa al
+  // primer '*' se interpreta como cantidad (1 si no es numérica) y la parte
+  // posterior es el código de barras a buscar. Si no hay '*', se mantiene la
+  // lógica original.
+  var q = raw;
+  var cantPrefijo = null;        // null → no se usó prefijo
+  var idxAst = raw.indexOf('*');
+  if (idxAst >= 0){
+    var pref = raw.substring(0, idxAst).trim().replace(',', '.');
+    var resto = raw.substring(idxAst + 1).trim();
+    if (!resto){ showAlert('Ingrese un código de barras después del asterisco.'); inp.select(); return; }
+    var n = parseFloat(pref);
+    cantPrefijo = (isFinite(n) && n > 0) ? n : 1;
+    q = resto;
+  }
+
+  var lista = await _buscarProducto(q, 'codBarras');
+  if (!lista.length){ showAlert('Producto no encontrado por código de barras.'); inp.select(); return; }
+  var prod = lista[0];
+
+  if (cantPrefijo !== null){
+    // Con prefijo cantidad*código: agregar/sumar directamente con esa cantidad,
+    // independientemente de TIENE_CB (el usuario ya indicó la cantidad).
+    _agregarOSumar(prod, cantPrefijo);
+    inp.value = '';
+    inp.focus();
+  } else if (TIENE_CB === 1){
+    _agregarOSumar(prod, 1);
+    inp.value = '';
+    inp.focus();
+  } else {
+    inp.value = '';
+    _enviarACantidad(prod, 'txtBusqCB');
+  }
+};
+
+// ── Cód. Proveedor ─────────────────────────────────────────────────────────
+window.onBusqCPKeydown = async function(e){
+  if (e.key === 'Escape'){ e.target.value=''; return; }
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  var inp = document.getElementById('txtBusqCP');
+  var q = inp.value.trim();
+  if (!q) return;
+  var lista = await _buscarProducto(q, 'codProveedor');
+  if (!lista.length){ showAlert('Producto no encontrado por código de proveedor.'); inp.select(); return; }
+  inp.value = '';
+  _enviarACantidad(lista[0], 'txtBusqCP');
+};
+
+// ── Descripción (autocomplete) ─────────────────────────────────────────────
+var _descTimer   = null;
+var _descResults = [];
+var _descSelIdx  = -1;
+
+window.buscarProductoDesc = function(){
+  clearTimeout(_descTimer);
+  var q = document.getElementById('txtBusqDesc').value.trim();
+  var ac = document.getElementById('acDesc');
+  if (q.length < 2){
+    ac.style.display='none'; ac.innerHTML='';
+    _descResults=[]; _descSelIdx=-1;
+    return;
+  }
+  _descTimer = setTimeout(async()=>{
+    var lista = await _buscarProducto(q, 'descripcion');
+    _descResults = lista;
+    _descSelIdx  = -1;
+    ac.innerHTML = '';
+    if (!lista.length){ ac.style.display='none'; return; }
+    lista.forEach((prod, idx)=>{
+      var d = document.createElement('div');
+      d.className='ac-item';
+      d.innerHTML =
+        '<strong>'+escHtml(prod.descripcion||'')+'</strong>'+
+        '<small>'+
+          'Cód.Prov: '+escHtml(prod.codProveedor||'-')+
+          ' | Cód.Barras: '+escHtml(prod.codBarras||'-')+
+          ' | P.S/IVA: $'+fmt(prod.precioSinIva)+
+        '</small>';
+      d.onclick    = ()=>{ _descSelIdx=idx; _seleccionarProdDesc(); };
+      d.ondblclick = ()=>{ _descSelIdx=idx; _seleccionarProdDesc(); };
+      ac.appendChild(d);
+    });
+    ac.style.display='block';
+  }, 280);
+};
+
+function _seleccionarProdDesc(){
+  if (_descSelIdx < 0 || _descSelIdx >= _descResults.length) return;
+  var prod = _descResults[_descSelIdx];
+  document.getElementById('txtBusqDesc').value = '';
+  var ac = document.getElementById('acDesc');
+  ac.style.display='none'; ac.innerHTML='';
+  _descResults = []; _descSelIdx = -1;
+  _enviarACantidad(prod, 'txtBusqDesc');
+}
+
+window.onBusqDescKeydown = function(e){
+  var ac = document.getElementById('acDesc');
+  var items = ac.querySelectorAll('.ac-item');
+  if (e.key === 'ArrowDown'){
+    if (!items.length) return;
+    e.preventDefault();
+    _descSelIdx = Math.min(_descSelIdx+1, items.length-1);
+    items.forEach(it=>it.classList.remove('active'));
+    items[_descSelIdx].classList.add('active');
+    items[_descSelIdx].scrollIntoView({block:'nearest'});
+  } else if (e.key === 'ArrowUp'){
+    if (!items.length) return;
+    e.preventDefault();
+    _descSelIdx = Math.max(_descSelIdx-1, 0);
+    items.forEach(it=>it.classList.remove('active'));
+    items[_descSelIdx].classList.add('active');
+    items[_descSelIdx].scrollIntoView({block:'nearest'});
+  } else if (e.key === 'Enter'){
+    e.preventDefault();
+    if (_descSelIdx >= 0){ _seleccionarProdDesc(); return; }
+    if (_descResults.length === 1){ _descSelIdx = 0; _seleccionarProdDesc(); return; }
+  } else if (e.key === 'Escape'){
+    ac.style.display='none'; ac.innerHTML='';
+    _descResults=[]; _descSelIdx=-1;
+  }
+};
+
+// ── Cantidad pendiente ─────────────────────────────────────────────────────
+window.onBusqCantKeydown = function(e){
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  if (!_prodPending){
+    var b = document.getElementById(_lastProdInput); if (b) b.focus();
+    return;
+  }
+  var cant = parseFloat(document.getElementById('txtBusqCant').value) || 0;
+  if (cant <= 0){ showAlert('Cantidad inválida.'); return; }
+  _agregarOSumar(_prodPending, cant);
+  _limpiarPendiente();
+  document.getElementById('txtBusqCant').value = '1';
+  var b = document.getElementById(_lastProdInput); if (b) b.focus();
+};
+
+// ── Recalcular fila ────────────────────────────────────────────────────────
+// P.S/IVA      = precio unitario base (row.precioSinIva)
+// Desc/Rec%    = porcentaje (row.descRec, negativo para descuento, positivo para recargo)
+// SubT.S/IVA   = P.S/IVA * (1 + dr/100)   [precio unitario luego de desc/rec, sin IVA]
+// P.C/IVA      = SubT.S/IVA * (1 + iva/100)  [precio unitario con IVA]
+// Subtotal     = P.C/IVA * Cantidad
+function recalcularFila(row){
+  var iva = parseFloat(document.getElementById('txtIva').value)||0;
+  var dr  = row.descRec||0;
+  row.subtotalSIva = row.precioSinIva * (1 + dr/100);
+  row.precioConIva = row.subtotalSIva * (1 + iva/100);
+  row.subtotal     = row.precioConIva * row.cantidad;
+}
+
+// ── Render grilla ─────────────────────────────────────────────────────────
+function renderGrilla(){
+  var tbody = document.getElementById('tbodyDetalle');
+  var vacio = document.getElementById('rowVacio');
+  tbody.querySelectorAll('tr.data-row').forEach(r=>r.remove());
+
+  if (!_rows.length){ vacio.style.display=''; _syncChkAll(); recalcularTotales(); return; }
+  vacio.style.display='none';
+
+  _rows.forEach((row, idx)=>{
+    var tr = document.createElement('tr');
+    tr.className='data-row';
+    var drColor = row.descRec < 0 ? 'color:#c0392b;' : row.descRec > 0 ? 'color:#1a7a45;' : '';
+    tr.innerHTML =
+      '<td style="text-align:center;'+(BONIF===0?'display:none;':'')+'" data-sel-col>'+
+        '<input type="checkbox" class="chk-sel" '+(row.sel?'checked':'')+' onchange="rowSelChange('+idx+',this.checked)" />'+
+      '</td>'+
+      '<td style="font-size:.75rem;">'+escHtml(row.codBarras||'')+'</td>'+
+      '<td style="font-size:.75rem;">'+escHtml(row.codProveedor||'')+'</td>'+
+      '<td>'+escHtml(row.descripcion||'')+'</td>'+
+      '<td style="text-align:right;font-size:.78rem;">'+fmtInp(row.stock,DEC_CANT)+'</td>'+
+      '<td style="text-align:right;">$'+fmt(row.precioSinIva)+'</td>'+
+      '<td style="text-align:right;'+drColor+'">'+
+        '<input type="number" class="inp-dr" style="width:65px;font-size:.76rem;text-align:right;" value="'+fmtInp(row.descRec,2)+'" step="0.01" onchange="onChangeDr('+idx+',this.value)" />'+
+      '</td>'+
+      '<td style="text-align:right;">$'+fmt(row.subtotalSIva)+'</td>'+
+      '<td style="text-align:right;">$'+fmt(row.precioConIva)+'</td>'+
+      '<td style="text-align:right;">'+
+        '<input type="number" class="inp-cant" style="width:80px;font-size:.76rem;text-align:right;" value="'+fmtInp(row.cantidad,DEC_CANT)+'" step="any" onchange="onChangeCant('+idx+',this.value)" onkeydown="onCantKeydown(event,'+idx+')" />'+
+      '</td>'+
+      '<td style="text-align:right;font-weight:600;">$'+fmt(row.subtotal)+'</td>'+
+      '<td style="text-align:center;">'+
+        '<button type="button" onclick="eliminarFila('+idx+')" style="background:none;border:none;color:#e74a3b;font-size:.9rem;cursor:pointer;padding:0 .2rem;" title="Eliminar">✕</button>'+
+      '</td>';
+    tbody.appendChild(tr);
+  });
+  _syncChkAll();
+  recalcularTotales();
+}
+
+function escHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── Eventos de fila ────────────────────────────────────────────────────────
+window.onChangeCant = function(idx,val){
+  _rows[idx].cantidad = parseFloat(val)||0;
+  recalcularFila(_rows[idx]);
+  renderGrilla();
+};
+window.onChangeDr = function(idx,val){
+  var dr = parseFloat(val)||0;
+  _rows[idx].descRec = _drMode==='desc' ? -Math.abs(dr) : Math.abs(dr);
+  if (BONIF===1){ _rows[idx].descRec = _drMode==='desc' ? -Math.abs(dr) : Math.abs(dr); }
+  recalcularFila(_rows[idx]);
+  renderGrilla();
+};
+window.onCantKeydown = function(e, idx){
+  if (e.key!=='Enter') return;
+  e.preventDefault();
+  // Volver al último input de búsqueda
+  var targetId = _lastProdInput;
+  setTimeout(()=>{ var el=document.getElementById(targetId); if(el) el.focus(); }, 30);
+};
+window.rowSelChange = function(idx,checked){ _rows[idx].sel=checked; _syncChkAll(); };
+window.seleccionarTodas = function(checked){ _rows.forEach(r=>r.sel=checked); renderGrilla(); };
+window.eliminarFila = function(idx){ _rows.splice(idx,1); renderGrilla(); };
+
+function _syncChkAll(){
+  var chk = document.getElementById('chkSelAll');
+  if (!chk || !_rows.length){ if(chk) chk.indeterminate=false; return; }
+  var selCount = _rows.filter(r=>r.sel).length;
+  chk.checked      = selCount===_rows.length;
+  chk.indeterminate = selCount>0 && selCount<_rows.length;
+}
+
+// ── Desc/Rec ───────────────────────────────────────────────────────────────
+window.setDrMode = function(mode){
+  _drMode = mode;
+  document.getElementById('btnDesc').classList.toggle('active', mode==='desc');
+  document.getElementById('btnRec').classList.toggle('active', mode==='rec');
+};
+window.aplicarDescRec = function(){
+  var pct = parseFloat(document.getElementById('txtDrPct').value)||0;
+  var dr  = _drMode==='desc' ? -Math.abs(pct) : Math.abs(pct);
+  if (BONIF===1){
+    var sel = _rows.filter(r=>r.sel);
+    if (!sel.length){ showAlert('Seleccione al menos una fila para aplicar desc/rec.'); return; }
+    sel.forEach(r=>{ r.descRec=dr; recalcularFila(r); });
+  } else {
+    _rows.forEach(r=>{ r.descRec=dr; recalcularFila(r); });
+  }
+  renderGrilla();
+};
+window.limpiarDescRec = function(){
+  _rows.forEach(r=>{ r.descRec=0; recalcularFila(r); });
+  document.getElementById('txtDrPct').value='0';
+  renderGrilla();
+};
+
+// ── Totales ────────────────────────────────────────────────────────────────
+function recalcularTotales(){
+  var iva    = parseFloat(document.getElementById('txtIva').value)||0;
+  var impPct = parseFloat(document.getElementById('cboIngBrutos').value)||0;
+
+  // Totales por fila:
+  //   P.S/IVA * Cantidad         → Subtotal Bruto
+  //   (SubT.S/IVA - P.S/IVA) * C → Desc/Rec nominal
+  //   SubT.S/IVA * Cantidad      → Subtotal s/IVA
+  var subtBruto = 0, totDescRec = 0, subtSIva = 0;
+  _rows.forEach(function(r){
+    var c      = +r.cantidad     || 0;
+    var pSIva  = +r.precioSinIva || 0;
+    var sSIva  = +r.subtotalSIva || 0;
+    subtBruto  += pSIva * c;
+    totDescRec += (sSIva - pSIva) * c;
+    subtSIva   += sSIva * c;
+  });
+
+  var totIva = subtSIva * iva / 100;
+  var totImp = subtSIva * impPct / 100;
+  var total  = subtSIva + totIva + totImp;
+
+  // Render
+  document.getElementById('tot-subtBruto').textContent = '$' + fmt(subtBruto);
+  document.getElementById('tot-subtSIva').textContent  = '$' + fmt(subtSIva);
+  document.getElementById('tot-iva').textContent       = '$' + fmt(totIva);
+  document.getElementById('lbl-iva').textContent       = 'IVA ' + fmt(iva) + '%';
+  document.getElementById('tot-total').textContent     = '$' + fmt(total);
+
+  // Desc/Rec: mostrar sólo si hay algo
+  var rowDR = document.getElementById('rowTotDescRec');
+  if (Math.abs(totDescRec) >= 0.005){
+    document.getElementById('lbl-descRec').textContent =
+      (totDescRec < 0 ? 'Descuentos' : 'Recargos');
+    document.getElementById('tot-descRec').textContent = '$' + fmt(totDescRec);
+    rowDR.style.display = '';
+  } else {
+    rowDR.style.display = 'none';
+  }
+
+  // Ing. Brutos: mostrar sólo si hay %
+  var rowImp = document.getElementById('rowTotImpuesto');
+  if (impPct > 0){
+    document.getElementById('lbl-impuesto').textContent = 'Ing. Brutos ' + fmt(impPct) + '%';
+    document.getElementById('tot-impuesto').textContent = '$' + fmt(totImp);
+    rowImp.style.display = '';
+  } else {
+    rowImp.style.display = 'none';
+  }
+
+  actualizarResumenPago(total);
+}
+window.recalcularTodo = function(){ _rows.forEach(r=>recalcularFila(r)); renderGrilla(); };
+
+// ── Actualizar precios ─────────────────────────────────────────────────────
+window.actualizarPrecios = async function(){
+  if (!_rows.length) return;
+  var ids = _rows.map(r=>r.fkProducto).join(',');
+  var resp = await fetch('?handler=PreciosActuales&ids='+ids);
+  var lista= await resp.json();
+  lista.forEach(p2=>{
+    var row = _rows.find(r=>r.fkProducto===p2.productoId);
+    if (row){ row.precioSinIva=p2.precioSinIva; recalcularFila(row); }
+  });
+  renderGrilla();
+  showInfo('Precios actualizados.');
+};
+
+// ── Cargar Pedido ──────────────────────────────────────────────────────────
+window.abrirBuscarPedido = function(){
+  new bootstrap.Modal(document.getElementById('modalBuscarPedido')).show();
+};
+window.buscarPedidos = async function(){
+  var desde = document.getElementById('bpDesde').value;
+  var hasta = document.getElementById('bpHasta').value;
+  var vends = [...document.querySelectorAll('.bpChkVend:checked')].map(c=>c.value).join(',');
+  var clis  = [...document.querySelectorAll('.bpChkCli:checked')].map(c=>c.value).join(',');
+  var url   = '?handler=BuscarPedidos&desde='+desde+'&hasta='+hasta+'&vendedores='+vends+'&clientes='+clis;
+  var lista = await (await fetch(url)).json();
+  var tbody = document.getElementById('tbodyPedidos');
+  tbody.innerHTML='';
+  if (!lista.length){
+    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:#aaa;padding:1rem;">Sin resultados.</td></tr>';
+    return;
+  }
+  lista.forEach(p2=>{
+    var chkImpreso = p2.impreso
+      ? '<span style="color:#1cc88a;font-weight:700;" title="Sí">&#10003;</span>'
+      : '<span style="color:#aaa;" title="No">&#8212;</span>';
+    var chkVendido = p2.vendido
+      ? '<span style="color:#e74a3b;font-weight:700;" title="Sí">&#10003;</span>'
+      : '<span style="color:#aaa;" title="No">&#8212;</span>';
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td style="font-weight:700;color:#1a3a5c;">#'+p2.id+'</td>'+
+      '<td>'+fmtDate(p2.fecha)+'</td>'+
+      '<td>'+escHtml(p2.nombreCliente||'')+'</td>'+
+      '<td>'+escHtml(p2.nombreVendedor||'')+'</td>'+
+      '<td style="text-align:right;font-weight:600;">$'+fmt(p2.total)+'</td>'+
+      '<td style="text-align:center;">'+chkImpreso+'</td>'+
+      '<td style="text-align:center;">'+chkVendido+'</td>'+
+      '<td style="text-align:center;">'+
+        '<button class="btn btn-xs btn-outline-primary" style="font-size:.72rem;padding:.18rem .5rem;" onclick="verDetallePedido('+p2.id+')">'+
+          '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="11" height="11" style="vertical-align:-.1em;"><path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/><path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/></svg>'+
+          ' Ver'+
+        '</button>'+
+      '</td>'+
+      '<td style="text-align:center;">'+
+        '<button class="btn btn-xs btn-success" style="font-size:.72rem;padding:.18rem .5rem;" onclick="cargarPedido('+p2.id+')">Cargar</button>'+
+      '</td>';
+    tbody.appendChild(tr);
+  });
+};
+
+window.cargarPedido = async function(pedidoId){
+  var resp = await fetch('?handler=Pedido&id='+pedidoId);
+  var r    = await resp.json();
+  if (!r.ok){ showAlert('No se pudo cargar el pedido.'); return; }
+  var cab = r.cab;
+  var det = r.detalle;
+
+  // Cerrar modal
+  bootstrap.Modal.getInstance(document.getElementById('modalBuscarPedido'))?.hide();
+
+  // Seteamos cliente
+  await cargarClientePorId(cab.fkCliente||cab.clienteId||0);
+
+  // IVA del pedido
+  if (cab.iva != null) {
+    var selIva = document.getElementById('txtIva');
+    for (var i=0; i<selIva.options.length; i++) {
+      if (parseFloat(selIva.options[i].value) === parseFloat(cab.iva)) {
+        selIva.selectedIndex = i;
+        break;
+      }
+    }
+  }
+
+  // Regla global desc/rec del pedido
+  var descGlobal = null;
+  if (cab.descuento != null) descGlobal = cab.descuento * -1 + (cab.recargo||0);
+
+  // Limpiar grilla
+  _rows = [];
+  _pedidoCargado = pedidoId;
+  document.getElementById('hPedidoCargado').value = pedidoId;
+  var iva = parseFloat(document.getElementById('txtIva').value)||0;
+
+  det.forEach(d=>{
+    var dr = descGlobal !== null ? descGlobal : (d.descuento * -1 + (d.recargo||0));
+    var row={
+      fkProducto  : d.fkProducto,
+      codBarras   : d.codBarras||'',
+      codProveedor: d.codProveedor||'',
+      descripcion : d.descripcion,
+      precioSinIva: d.precioSinIva,
+      descRec     : dr,
+      cantidad    : d.cantidad,
+      stock       : 0,
+      fraccionado : false,
+      costo       : d.costo||0,
+      sel         : false
+    };
+    recalcularFila(row);
+    _rows.push(row);
+  });
+  renderGrilla();
+  _fetchStockRows();
+};
+
+// ── Ver detalle de pedido ──────────────────────────────────────────────────
+var _detPedId = 0;
+window.verDetallePedido = function(id){
+  _detPedId = id;
+  document.getElementById('detPedTitulo').textContent = 'Pedido #' + id;
+  document.getElementById('tbodyDetallePed').innerHTML =
+    '<tr><td colspan="7" style="text-align:center;padding:1rem;"><div class="spinner-border spinner-border-sm"></div></td></tr>';
+  document.getElementById('pdTotales').style.display = 'none';
+
+  fetch('?handler=Pedido&id=' + id)
+    .then(r => r.json())
+    .then(res => {
+      if (!res.ok){ alert('No se pudo cargar el pedido.'); return; }
+      var cab = res.cab;
+      var ivaVal = cab.iva ?? 0;
+      var descGlobalDet = cab.descuento != null ? (cab.descuento * -1 + (cab.recargo ?? 0)) : null;
+
+      document.getElementById('detPed-cliente').textContent = cab.nombreComercial ?? '';
+      document.getElementById('detPed-fecha').textContent   = fmtDate(cab.fecha);
+      document.getElementById('detPed-iva').textContent     = ivaVal + '%';
+      document.getElementById('pd-lbl-iva-pct').textContent = 'IVA ' + ivaVal + '%';
+
+      var tbody = document.getElementById('tbodyDetallePed');
+      tbody.innerHTML = '';
+      var totPrecSIva=0, totDesc=0, totSub=0, totIvaAmt=0, totTotal=0;
+      var ivaRate = ivaVal / 100;
+
+      res.detalle.forEach(function(l){
+        var dr      = descGlobalDet !== null ? descGlobalDet : (l.descuento * -1 + (l.recargo||0));
+        var pSIva   = l.precioSinIva;
+        var sub     = pSIva * (1 + dr / 100);
+        var pConIva = sub * (1 + ivaRate);
+        var cant    = l.cantidad;
+
+        totPrecSIva += pSIva * cant;
+        totDesc     += (sub - pSIva) * cant;
+        totSub      += sub * cant;
+        totIvaAmt   += (pConIva - sub) * cant;
+        totTotal    += pConIva * cant;
+
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td>' + escHtml(l.descripcion||'') + '</td>'+
+          '<td style="text-align:right;">' + fmt(cant) + '</td>'+
+          '<td style="text-align:right;">$' + fmt(pSIva) + '</td>'+
+          '<td style="text-align:right;' + (dr < 0 ? 'color:#e74a3b;' : dr > 0 ? 'color:#1cc88a;' : '') + '">' + fmt(dr) + '%</td>'+
+          '<td style="text-align:right;">$' + fmt(sub * cant) + '</td>'+
+          '<td style="text-align:right;">$' + fmt((pConIva - sub) * cant) + '</td>'+
+          '<td style="text-align:right;font-weight:600;">$' + fmt(pConIva * cant) + '</td>';
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('pd-tot-precioSIva').textContent = '$' + fmt(totPrecSIva);
+      document.getElementById('pd-tot-descRec').textContent    = '$' + fmt(totDesc);
+      document.getElementById('pd-tot-subtSIva').textContent   = '$' + fmt(totSub);
+      document.getElementById('pd-tot-iva').textContent        = '$' + fmt(totIvaAmt);
+      document.getElementById('pd-tot-total').textContent      = '$' + fmt(totTotal);
+      document.getElementById('pdTotales').style.display       = '';
+
+      new bootstrap.Modal(document.getElementById('modalDetallePed')).show();
+    })
+    .catch(function(){ alert('Error al cargar el detalle.'); });
+};
+
+window.cargarDesdeDetalle = function(){
+  bootstrap.Modal.getInstance(document.getElementById('modalDetallePed'))?.hide();
+  cargarPedido(_detPedId);
+};
+
+function fmtDate(iso){ if(!iso)return ''; var d=new Date(iso); return d.toLocaleDateString('es-AR'); }
+
+// ── Multi-select helpers ───────────────────────────────────────────────────
+window.bpToggle = function(dropId){
+  var drop = document.getElementById(dropId);
+  var open = drop.classList.contains('open');
+  document.querySelectorAll('.bp-multisel-drop.open').forEach(el=>el.classList.remove('open'));
+  if (!open) drop.classList.add('open');
+};
+document.addEventListener('click',function(e){
+  if (!e.target.closest('.bp-multisel-wrap'))
+    document.querySelectorAll('.bp-multisel-drop.open').forEach(el=>el.classList.remove('open'));
+});
+window.bpSelAll = function(cls,lblId,plural){
+  document.querySelectorAll('.'+cls).forEach(c=>{
+    if(c.closest('label').style.display!=='none') c.checked=true;
+  });
+  bpUpdateLabel(cls,lblId,plural);
+};
+window.bpSelNone = function(cls,lblId){
+  document.querySelectorAll('.'+cls).forEach(c=>c.checked=false);
+  document.getElementById(lblId).textContent='Todos';
+};
+window.bpUpdateLabel = function(cls,lblId,plural){
+  var checked=document.querySelectorAll('.'+cls+':checked');
+  document.getElementById(lblId).textContent=
+    checked.length===0?'Todos':
+    checked.length===1?checked[0].closest('label').textContent.trim():
+    checked.length+' '+plural;
+};
+window.bpFilterItems = function(input,cls){
+  var q=input.value.trim().toLowerCase();
+  document.querySelectorAll('.'+cls).forEach(c=>{
+    var lbl=c.closest('label');
+    lbl.style.display=(!q||lbl.textContent.toLowerCase().includes(q))?'':'none';
+  });
+};
+
+// ── Formas de pago ─────────────────────────────────────────────────────────
+@if (p.TieneMediosPagos == 1)
+{
+  <text>
+var _planesPago = JSON.parse(document.getElementById('jsPlanesPago').textContent);
+var _formasPago = [];
+
+window.addFormaPago = function(){
+  var medios = [...new Map(_planesPago.map(pl=>[pl.medioId,{id:pl.medioId,nombre:pl.medioNombre}])).values()];
+  var idx = _formasPago.length;
+  _formasPago.push({medioId:0,planId:0,importe:0,ref1:'',ref2:'',ref3:''});
+  renderFormasPago();
+};
+
+function renderFormasPago(){
+  var container = document.getElementById('containerFormasPago');
+  container.innerHTML='';
+  var mediosMap = new Map();
+  _planesPago.forEach(pl=>{ if(!mediosMap.has(pl.medioId)) mediosMap.set(pl.medioId,pl.medioNombre); });
+
+  _formasPago.forEach((fp,idx)=>{
+    var planes = _planesPago.filter(pl=>fp.medioId===0||pl.medioId===fp.medioId);
+    var conDatos = _planesPago.find(pl=>pl.medioId===fp.medioId)?.conDatos||false;
+    var div=document.createElement('div');
+    div.className='fp-row';
+    div.innerHTML=
+      '<div style="flex:1;min-width:130px;"><label class="vt-label">Medio de Pago</label>'+
+        '<select class="form-select form-select-sm" onchange="fpChangeMedio('+idx+',this.value)">'+
+          '<opt'+'ion value="0">\u2014 Seleccione \u2014</opt'+'ion>'+
+          [...mediosMap.entries()].map(([id,nom])=>'<opt'+'ion value="'+id+'"'+(fp.medioId===id?' selected':'')+'>'+escHtml(nom)+'</opt'+'ion>').join('')+
+        '</select></div>'+
+      '<div style="flex:1;min-width:130px;"><label class="vt-label">Plan de Pago</label>'+
+        '<select class="form-select form-select-sm" onchange="fpChangePlan('+idx+',this.value)">'+
+          '<opt'+'ion value="0">\u2014 Seleccione \u2014</opt'+'ion>'+
+          _planesPago.filter(pl=>fp.medioId===0||pl.medioId===fp.medioId).map(pl=>'<opt'+'ion value="'+pl.planId+'"'+(fp.planId===pl.planId?' selected':'')+'>'+escHtml(pl.planNombre)+'</opt'+'ion>').join('')+
+        '</select></div>'+
+      (IMPUTA_VENTA===1?
+        '<div style="width:100px;"><label class="vt-label">Importe</label>'+
+          '<input type="number" class="form-control form-control-sm" value="'+fp.importe+'" min="0" step="0.01" onchange="fpChangeImporte('+idx+',this.value)" /></div>'
+        :'')+
+      (conDatos?
+        '<div style="flex:1;min-width:80px;"><label class="vt-label">Ref. 1</label><input type="text" class="form-control form-control-sm" value="'+escHtml(fp.ref1)+'" onchange="fpChangeRef('+idx+',1,this.value)" /></div>'+
+        '<div style="flex:1;min-width:80px;"><label class="vt-label">Ref. 2</label><input type="text" class="form-control form-control-sm" value="'+escHtml(fp.ref2)+'" onchange="fpChangeRef('+idx+',2,this.value)" /></div>'+
+        '<div style="flex:1;min-width:80px;"><label class="vt-label">Ref. 3</label><input type="text" class="form-control form-control-sm" value="'+escHtml(fp.ref3)+'" onchange="fpChangeRef('+idx+',3,this.value)" /></div>'
+        :'')+
+      '<div style="align-self:flex-end;"><button type="button" onclick="fpEliminar('+idx+')" style="background:none;border:none;color:#e74a3b;cursor:pointer;font-size:1rem;padding:0 .3rem;" title="Quitar">✕</button></div>';
+    container.appendChild(div);
+  });
+  actualizarResumenPago();
+}
+
+window.fpChangeMedio = function(idx,val){
+  _formasPago[idx].medioId=parseInt(val)||0;
+  _formasPago[idx].planId=0;
+  renderFormasPago();
+};
+window.fpChangePlan  = function(idx,val){ _formasPago[idx].planId=parseInt(val)||0; };
+window.fpChangeImporte=function(idx,val){ _formasPago[idx].importe=parseFloat(val)||0; actualizarResumenPago(); };
+window.fpChangeRef   = function(idx,n,val){ _formasPago[idx]['ref'+n]=val; };
+window.fpEliminar    = function(idx){ _formasPago.splice(idx,1); renderFormasPago(); };
+  </text>
+}
+
+function actualizarResumenPago(total){
+  @if (p.TieneMediosPagos == 1 && p.ImputaEnVenta == 1)
+  {
+    <text>
+  if (total===undefined){
+    var iva=parseFloat(document.getElementById('txtIva').value)||0;
+    var imp=parseFloat(document.getElementById('cboIngBrutos').value)||0;
+    // Mismo cálculo que recalcularFila/Totales: subtotal s/IVA por CANTIDAD, luego IVA e Ing.Brutos ADITIVOS.
+    var sub=_rows.reduce((a,r)=>a+(r.subtotalSIva||0)*(r.cantidad||0),0);
+    total=sub + sub*iva/100 + sub*imp/100;
+  }
+  var pagado=(_formasPago||[]).reduce((a,fp)=>a+fp.importe,0);
+  var saldo=total-pagado;
+  var res=document.getElementById('fpResumen');
+  if (res && (_formasPago||[]).length>0){
+    res.style.display='';
+    document.getElementById('fpPagado').textContent='$'+fmt(pagado);
+    var saldoEl=document.getElementById('fpSaldo');
+    saldoEl.textContent='$'+fmt(Math.abs(saldo));
+    saldoEl.style.color=(saldo>0)?'#e74a3b':'#1cc88a';
+  }
+    </text>
+  }
+}
+
+// ── F5 / F6 ────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', function(e){
+  if (e.key==='F5'){ e.preventDefault(); _ordenFacturar=false; vender(false); }
+  if (e.key==='F6'){ e.preventDefault(); vender(true); }
+});
+
+// ── Validar y vender ───────────────────────────────────────────────────────
+window.vender = async function(ordenFacturar){
+  _ordenFacturar = ordenFacturar;
+  if (!formularioValido()) return;
+
+  // ── Verificar promociones antes de grabar ────────────────────────────────
+  var promoIntercept = await _verificarPromociones();
+  if (promoIntercept) return;   // modal abierto, esperar confirmación del usuario
+  // ─────────────────────────────────────────────────────────────────────────
+
+  await grabarVenta();
+};
+
+function formularioValido(){
+  if (_clienteId <= 0){ showAlert('Seleccione un cliente.'); return false; }
+  if (!_rows.length)  { showAlert('Agregue al menos un producto.'); return false; }
+  if (COMISIONA===1){
+    var vend=parseInt(document.getElementById('cboVendedor')?.value)||0;
+    if (vend<=0){ showAlert('Seleccione un vendedor.'); return false; }
+  }
+  if (@(p.TieneMediosPagos == 1 ? "true" : "false")){
+    var fps = (_formasPago||[]);
+    if (fps.some(fp=>fp.medioId<=0||fp.planId<=0)){ showAlert('Complete todas las formas de pago.'); return false; }
+  }
+  return true;
+}
+
+async function grabarVenta(){
+  var iva     = parseFloat(document.getElementById('txtIva').value)||0;
+  var impPct  = parseFloat(document.getElementById('cboIngBrutos').value)||0;
+  var sub     = _rows.reduce((a,r)=>a+(r.subtotalSIva||0)*r.cantidad,0);
+  var totIva  = sub*iva/100;
+  var totImp  = sub*impPct/100;
+  var total   = sub+totIva+totImp;
+  var costo   = _rows.reduce((a,r)=>a+(r.costo*r.cantidad),0);
+
+  var detalle = _rows.map(r=>({
+    fkProducto    : r.fkProducto,
+    precioSinIva  : r.precioSinIva,
+    precioConIva  : r.precioConIva,
+    cantidad      : r.cantidad,
+    costo         : r.costo,
+    subtotal      : r.subtotal,
+    fraccionado   : r.fraccionado||false,
+    descRec       : r.descRec||0,
+    subtotalSinIva: r.subtotalSIva||0,
+    fkPedido      : _pedidoCargado||0
+  }));
+
+  var fps = @(p.TieneMediosPagos == 1 ? "(_formasPago||[])" : "[]");
+  var importeCobro = fps.reduce ? fps.reduce((a,fp)=>a+fp.importe,0) : 0;
+  // Si no se imputa, distribuir total entre formas de pago
+  @if (p.TieneMediosPagos == 1 && p.ImputaEnVenta == 0)
+  {
+    <text>
+  if (fps.length>0 && importeCobro===0){
+    var share=total/fps.length;
+    fps.forEach(fp=>fp.importe=share);
+    importeCobro=total;
+  }
+    </text>
+  }
+
+  var formasPago = fps.map ? fps.map(fp=>({
+    fkMedioPago: fp.medioId,
+    fkPlanPago : fp.planId,
+    importe    : fp.importe,
+    referencia1: fp.ref1||null,
+    referencia2: fp.ref2||null,
+    referencia3: fp.ref3||null
+  })) : [];
+
+  // Desc/Rec globales si aplica
+  var dr = _rows.length ? _rows[0].descRec : 0;
+  var mismoDr = _rows.every(r=>r.descRec===dr);
+  var descGlobal = (BONIF===0 && mismoDr && dr!==0) ? (dr<0?Math.abs(dr):null) : null;
+  var recGlobal  = (BONIF===0 && mismoDr && dr!==0) ? (dr>0?Math.abs(dr):null) : null;
+
+  var dto = {
+    total          : total,
+    costo          : costo,
+    fkCliente      : _clienteId,
+    fkCajero       : 0,
+    iva            : iva,
+    descuento      : descGlobal,
+    recargo        : recGlobal,
+    fkVendedor     : parseInt(document.getElementById('cboVendedor')?.value||0)||0,
+    comision       : (parseFloat(document.getElementById('txtComision')?.value||0)||0)/100,
+    impuesto       : impPct,
+    llevaCC        : @(p.LlevaCC == 1 ? "true" : "false"),
+    imputaEnVenta  : @(p.ImputaEnVenta == 1 ? "true" : "false"),
+    tieneMediosPagos:@(p.TieneMediosPagos == 1 ? "true" : "false"),
+    importeCobro   : importeCobro,
+    haceCaja       : @(p.TieneCaja == 1 ? "true" : "false"),
+    cajaId         : 0,
+    pedidoCargado  : _pedidoCargado||0,
+    detalle        : detalle,
+    formasPago     : formasPago
+  };
+
+  // Pre-abrir popup del comprobante para NO perder el contexto del click (evita popup blocker).
+  // Cuando tengamos el ventaId, le cambiamos la URL. Si se bloquea, queda null y usamos fallback.
+  var popupComprobante = null;
+  var abreComprobante  = !(_ordenFacturar && FACTURA_EN_VENTA===1);
+  if (abreComprobante){
+    try { popupComprobante = window.open('about:blank', '_blank'); } catch(e){ popupComprobante = null; }
+  }
+
+  // Deshabilitar botones y abrir progreso
+  toggleBtns(true);
+  progAbrir();
+  try{
+    var nItems = dto.detalle.length;
+    progActualizar('Enviando venta al servidor...', 20,
+      nItems+' producto'+(nItems!==1?'s':'')+' — total $'+fmt(dto.total));
+
+    // Mientras el servidor procesa, animamos suavemente la barra hasta 55%
+    progAutoAvanzar(55, 120);
+
+    var resp = await fetch('?handler=GrabarVenta', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(dto)
+    });
+
+    progAutoDetener();
+    progActualizar('Procesando respuesta...', 65, '');
+    var r = await resp.json();
+    if (!r.ok){
+      progCerrar();
+      if (popupComprobante){ try{ popupComprobante.close(); }catch(e){} }
+      showAlert('Error al guardar venta: '+(r.msg||'Error desconocido.'));
+      toggleBtns(false);
+      return;
+    }
+
+    var ventaId = r.ventaId;
+
+    // ── Disparar evento para guardar componentes de promos ─────────────────
+    document.dispatchEvent(new CustomEvent('ventaGrabada', { detail: { ventaId: ventaId } }));
+
+    // Post-venta: facturación / impresión
+    if (_ordenFacturar && FACTURA_EN_VENTA===1){
+      if (FACTURA_FISCAL===1){
+        progCerrar();
+        showAlert('La facturación fiscal (controlador fiscal) no está disponible en la versión web. La venta fue registrada correctamente. Use el sistema de escritorio para facturar.');
+        toggleBtns(false);
+        limpiarFormulario();
+        return;
+      }
+      if (FACTURA_ELEC===1){
+        progActualizar('Emitiendo factura electrónica...', 80, 'Comunicando con AFIP...');
+        progAutoAvanzar(92, 200);
+        var fResp = await fetch('?handler=Facturar',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ventaId:ventaId})
+        });
+        progAutoDetener();
+        var fR = await fResp.json();
+        progActualizar('Factura electrónica procesada.', 100, '');
+        if (fR.ok){
+          var msgFE = 'Factura electrónica emitida. CAE: '+(fR.cae||'');
+          if (fR.pdfUrl){
+            msgFE += ' — <a href="'+fR.pdfUrl+'" target="_blank">Ver PDF</a>';
+            window.open(fR.pdfUrl,'_blank');
+          }
+          showInfo(msgFE);
+        } else {
+          showAlert('Error en factura electrónica: '+((fR.errores||[]).join(', ')||fR.msg||'Error'));
+        }
+        progCerrar();
+      }
+    } else {
+      // Navegamos el popup previamente abierto al comprobante
+      // Si el parámetro ventas/notaVentaTK==1, usa ticket X (térmico) con auto-print.
+      // Si es 0, usa comprobante X en A4.
+      var urlComp = (HACE_NOTA_VENTA_TK===1)
+                     ? '/Ventas/Ventas/TicketX/'+ventaId
+                     : '/Ventas/Ventas/ComprobanteX/'+ventaId;
+      progActualizar('Abriendo comprobante...', 90, 'Venta N° '+ventaId);
+      if (popupComprobante && !popupComprobante.closed){
+        try { popupComprobante.location.href = urlComp; popupComprobante.focus(); }
+        catch(e){ popupComprobante = null; }
+      }
+      // Si no se pudo abrir o fue bloqueado: mostrar link visible
+      if (!popupComprobante || popupComprobante.closed){
+        showInfo('Venta N° '+ventaId+' registrada. '+
+          '<a href="'+urlComp+'" target="_blank" style="font-weight:700;">Abrir comprobante</a> '+
+          '(tu navegador bloqueó la apertura automática).');
+      }
+    }
+
+    progActualizar('¡Venta registrada!', 100, 'N° '+ventaId);
+    setTimeout(progCerrar, 900);
+    limpiarFormulario();
+    if (!popupComprobante || popupComprobante.closed){
+      // si ya mostramos el info con el link, no pisar
+    } else {
+      showInfo('Venta N° '+ventaId+' registrada correctamente.');
+    }
+  } catch(ex){
+    progCerrar();
+    if (popupComprobante){ try{ popupComprobante.close(); }catch(e){} }
+    showAlert('Error técnico: '+ex.message);
+  }
+  toggleBtns(false);
+};
+
+function toggleBtns(disabled){
+  document.querySelectorAll('.btn-vender').forEach(b=>b.disabled=disabled);
+}
+
+// ── Limpiar formulario ─────────────────────────────────────────────────────
+window.limpiarFormulario = function(){
+  _rows=[];
+  _pedidoCargado=0;
+  document.getElementById('hPedidoCargado').value=0;
+  document.getElementById('txtBusqCB').value='';
+  document.getElementById('txtBusqCP').value='';
+  document.getElementById('txtBusqDesc').value='';
+  document.getElementById('txtBusqCant').value='1';
+  var _acD = document.getElementById('acDesc'); if (_acD){ _acD.style.display='none'; _acD.innerHTML=''; }
+  _limpiarPendiente();
+  @if (p.TieneMediosPagos == 1)
+  {
+    <text>_formasPago=[]; renderFormasPago();</text>
+  }
+  // Restaurar cliente consumidor final si corresponde
+  @if (p.TieneConsumidorFinal == 1)
+  {
+    <text>
+  _clienteId=@p.ClienteConsumidorFinal;
+  cargarClientePorId(@p.ClienteConsumidorFinal);
+    </text>
+  }
+  else
+  {
+    <text>
+  _clienteId=0;
+  document.getElementById('hClienteId').value='0';
+  document.getElementById('txtBuscarCliente').value='';
+  document.getElementById('ci-nombre').textContent='';
+  document.getElementById('ci-telefono').textContent='';
+  document.getElementById('ci-direccion').textContent='';
+  document.getElementById('ci-condiva').textContent='';
+  document.getElementById('clienteInfo').style.display='none';
+  document.getElementById('clienteVacio').style.display='';
+    </text>
+  }
+  // Resetear combos IVA e Ing. Brutos a valor 0
+  var _selIva = document.getElementById('txtIva');
+  for (var _i=0; _i<_selIva.options.length; _i++){ if (parseFloat(_selIva.options[_i].value)===0){ _selIva.selectedIndex=_i; break; } }
+  document.getElementById('cboIngBrutos').value='0';
+  recalcularTodo();
+  renderGrilla();
+};
+
+// ── Progreso venta ─────────────────────────────────────────────────────────
+var _progModal = null;
+var _progAutoTimer = null;
+var _progCurrent = 0;
+function progAbrir(){
+  _progModal = new bootstrap.Modal(document.getElementById('modalProgresoVenta'));
+  progActualizar('Preparando datos...', 10, '');
+  _progModal.show();
+}
+function progActualizar(msg, pct, detalle){
+  _progCurrent = pct;
+  document.getElementById('progVentaMsg').textContent    = msg;
+  document.getElementById('progVentaDetalle').textContent= detalle||'';
+  var bar = document.getElementById('progVentaBar');
+  bar.style.width       = pct+'%';
+  bar.setAttribute('aria-valuenow', pct);
+}
+// Avanza lentamente la barra hasta un tope mientras esperamos una operación larga
+function progAutoAvanzar(tope, pasoMs){
+  progAutoDetener();
+  _progAutoTimer = setInterval(function(){
+    if (_progCurrent >= tope){ progAutoDetener(); return; }
+    _progCurrent = Math.min(tope, _progCurrent + 1);
+    var bar = document.getElementById('progVentaBar');
+    bar.style.width = _progCurrent+'%';
+    bar.setAttribute('aria-valuenow', _progCurrent);
+  }, pasoMs||150);
+}
+function progAutoDetener(){
+  if (_progAutoTimer){ clearInterval(_progAutoTimer); _progAutoTimer=null; }
+}
+function progCerrar(){
+  progAutoDetener();
+  if (_progModal){ _progModal.hide(); _progModal=null; }
+}
+
+// ── Alertas ────────────────────────────────────────────────────────────────
+function showAlert(msg){
+  var d=document.getElementById('alertDiv');
+  document.getElementById('alertMsg').textContent=msg;
+  d.className='alert alert-danger alert-dismissible';
+  d.style.display='block';
+  d.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function showInfo(msg){
+  var d=document.getElementById('alertDiv');
+  document.getElementById('alertMsg').innerHTML=msg;
+  d.className='alert alert-success alert-dismissible';
+  d.style.display='block';
+  setTimeout(()=>d.style.display='none', 6000);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ── MÓDULO PROMOCIONES ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+
+var _resultadoPromo = null;   // último resultado de CalcularPromociones
+
+// Llama al servidor para saber si hay promos formables con los productos en grilla.
+// Devuelve true si hay promos (modal abierto), false si puede continuar con vender.
+async function _verificarPromociones(){
+  if (!_rows.length) return false;
+
+  var carrito = _rows.map(function(r){ return { fkProducto: r.fkProducto, cantidad: r.cantidad }; });
+
+  var resp, data;
+  try {
+    resp = await fetch('?handler=CalcularPromociones', {
+      method : 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body   : JSON.stringify(carrito)
+    });
+    if (!resp.ok){ console.error('CalcularPromociones HTTP', resp.status); return false; }
+    data = await resp.json();
+  } catch(err){
+    console.error('CalcularPromociones error:', err);
+    return false;
+  }
+
+  var tieneFormadas    = data && data.formadas && data.formadas.length > 0;
+  var tieneCasi        = data && data.casiCompletas && data.casiCompletas.length > 0;
+  if (!data || !data.hayPromociones || (!tieneFormadas && !tieneCasi)) return false;
+
+  _resultadoPromo = data;
+  _renderModalPromo(data);
+  var modalEl = document.getElementById('modalConfirmarPromo');
+  if (!modalEl){ console.error('Modal no encontrado'); return false; }
+  bootstrap.Modal.getOrCreateInstance(modalEl).show();
+  return true;
+}
+
+function _renderModalPromo(data){
+  var html = '';
+
+  if (data.formadas && data.formadas.length){
+    html += '<h6 class="fw-bold" style="color:#1cc88a;">✔ Promociones a formar:</h6><ul class="mb-2">';
+    data.formadas.forEach(function(f){
+      html += '<li><strong>'+escHtml(f.nombrePromo)+'</strong> &times; '+f.cantidad;
+      if (f.componentesUsados && f.componentesUsados.length){
+        html += '<ul class="text-muted" style="font-size:.76rem;">';
+        f.componentesUsados.forEach(function(c){
+          html += '<li>'+escHtml(c.descripcion)+' &mdash; '+fmtN(c.cantidadUsada, DEC_CANT)+' u.</li>';
+        });
+        html += '</ul>';
+      }
+      html += '</li>';
+    });
+    html += '</ul>';
+  }
+
+  if (data.casiCompletas && data.casiCompletas.length){
+    html += '<hr><h6 class="fw-bold" style="color:#e67e22;">⚠ Casi completas (falta 1 unidad):</h6><ul class="mb-1">';
+    data.casiCompletas.forEach(function(c){
+      var cod = c.codBarrasFaltante ? ' ['+escHtml(c.codBarrasFaltante)+']' : '';
+      html += '<li><strong>'+escHtml(c.nombrePromo)+'</strong>: agregar <em>'+escHtml(c.productoFaltante)+cod+'</em></li>';
+    });
+    html += '</ul>';
+    html += '<p class="text-muted" style="font-size:.76rem;">Puede cerrar este aviso y agregar el producto faltante para completar la promoción.</p>';
+  }
+
+  document.getElementById('cuerpoModalPromo').innerHTML = html;
+}
+
+window.volverAgregarPromo = function(){
+  bootstrap.Modal.getInstance(document.getElementById('modalConfirmarPromo'))?.hide();
+  _resultadoPromo = null;
+  // El usuario regresa a la grilla para seguir editando
+};
+
+window.confirmarYVender = function(){
+  bootstrap.Modal.getInstance(document.getElementById('modalConfirmarPromo'))?.hide();
+  _aplicarPromociones(_resultadoPromo);
+  grabarVenta();
+};
+
+function _aplicarPromociones(data){
+  if (!data || !data.formadas) return;
+
+  data.formadas.forEach(function(f){
+    // Descontar cantidades usadas de los componentes en _rows
+    f.componentesUsados.forEach(function(c){
+      var idx = _rows.findIndex(function(r){ return r.fkProducto === c.fkProducto; });
+      if (idx === -1) return;
+      _rows[idx].cantidad = (_rows[idx].cantidad || 0) - (c.cantidadUsada || 0);
+      if (_rows[idx].cantidad <= 0) _rows.splice(idx, 1);
+    });
+
+    // Agregar línea de producto-promo (una por cada cantidad formada)
+    for (var i = 0; i < f.cantidad; i++){
+      _rows.push({
+        fkProducto  : f.fkProductoPromo,
+        codBarras   : '',
+        codProveedor: '',
+        descripcion : f.nombrePromo,
+        precioSinIva: 0,
+        descRec     : 0,
+        cantidad    : 1,
+        stock       : 0,
+        fraccionado : false,
+        costo       : 0,
+        dolarizado  : false,
+        sel         : false
+      });
+    }
+  });
+
+  renderGrilla();
+  recalcularTotales();
+}
+
+// Escuchar evento 'ventaGrabada' → guardar componentes usados y descontar stock
+document.addEventListener('ventaGrabada', async function(e){
+  var ventaId = e.detail?.ventaId;
+  if (!ventaId || !_resultadoPromo || !_resultadoPromo.formadas.length){
+    _resultadoPromo = null;
+    return;
+  }
+
+  var grupos = _resultadoPromo.formadas.map(function(f){
+    return {
+      fkProductoPromo: f.fkProductoPromo,
+      componentes    : f.componentesUsados.map(function(c){
+        return { fkSlot: c.fkSlot, fkProducto: c.fkProducto, cantidad: c.cantidadUsada };
+      })
+    };
+  });
+
+  var token = (document.querySelector('[name=__RequestVerificationToken]') || {}).value || '';
+  await fetch('?handler=GuardarComponentes', {
+    method : 'POST',
+    headers: { 'Content-Type':'application/json', 'RequestVerificationToken': token },
+    body   : JSON.stringify({ ventaId: ventaId, grupos: grupos })
+  });
+
+  _resultadoPromo = null;
+});
+
+// ── Fin MÓDULO PROMOCIONES ─────────────────────────────────────────────────
+
+// ── Inicialización (todas las funciones ya están definidas) ────────────────
+(function init(){
+  // Limpieza defensiva: remover backdrops de modal colgados de navegación previa
+  document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+  document.body.classList.remove('modal-open');
+  document.body.style.removeProperty('overflow');
+  document.body.style.removeProperty('padding-right');
+
+  // Asegurar que ningún input/select del panel quede deshabilitado por estado cacheado
+  document.querySelectorAll('#txtBusqCB, #txtBusqCP, #txtBusqDesc, #txtBusqCant').forEach(el => {
+    el.disabled = false;
+    el.readOnly = false;
+  });
+
+  // Cargar cliente consumidor final si corresponde
+  if (_clienteId > 0){ cargarClientePorId(_clienteId); }
+
+  // El placeholder de la caja de CB ya se setea desde el Razor según TIENE_CB
+
+  // Columna Sel visible si bonif=1
+  if (BONIF === 0){
+    document.querySelectorAll('#thSel,[data-sel-col]').forEach(el=>el.style.display='none');
+  }
+
+  setDrMode('desc');
+})();
+
+})();
+</script>
+}

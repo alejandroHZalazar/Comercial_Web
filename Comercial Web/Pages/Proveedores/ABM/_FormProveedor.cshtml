@@ -1,65 +1,85 @@
-﻿@model Domain.Entities.Proveedore
+@model Domain.Entities.Proveedore
 
-<form method="post" asp-page-handler="Guardar" class="needs-validation" novalidate>
-    <!-- Header -->
-    <div class="modal-header bg-light border-bottom">
-        <h5 class="modal-title fw-semibold">
-            <i class="bi bi-building"></i>
-            @((Model.Id == 0) ? "Agregar Proveedor" : "Editar Proveedor")
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+<form method="post" asp-page="/Proveedores/ABM/Index" asp-page-handler="Guardar">
+    @* Header *@
+    <div class="modal-header-custom">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#fff" viewBox="0 0 16 16">
+            <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4z"/>
+        </svg>
+        <h5>@((Model.Id == 0) ? "Agregar Proveedor" : "Editar Proveedor")</h5>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Cerrar"></button>
     </div>
 
-    <!-- Body -->
+    @* Body *@
     <div class="modal-body p-4">
         <input type="hidden" asp-for="Id" />
 
+        <div class="modal-section-title">Datos Generales</div>
+        <div class="row g-3 mb-3">
+            <div class="col-md-8">
+                <label class="modal-field-label">Nombre Comercial <span style="color:#e74a3b;">*</span></label>
+                <input type="text" asp-for="NombreComercial" class="form-control form-control-sm" style="border-radius:8px;" placeholder="Razón social o nombre…" />
+            </div>
+            <div class="col-md-4">
+                <label class="modal-field-label">CUIL</label>
+                <input type="text" asp-for="Cuil" class="form-control form-control-sm" style="border-radius:8px;" placeholder="XX-XXXXXXXX-X" />
+            </div>
+            <div class="col-12">
+                <label class="modal-field-label">Dirección</label>
+                <input type="text" asp-for="Direccion" class="form-control form-control-sm" style="border-radius:8px;" placeholder="Calle, número, ciudad…" />
+            </div>
+        </div>
+
+        <div class="modal-section-title">Contacto</div>
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label class="modal-field-label">Email</label>
+                <input type="email" asp-for="Email" class="form-control form-control-sm" style="border-radius:8px;" placeholder="correo@dominio.com" />
+            </div>
+            <div class="col-md-3">
+                <label class="modal-field-label">Teléfono</label>
+                <input type="text" asp-for="Telefono" class="form-control form-control-sm" style="border-radius:8px;" placeholder="(0XXX) XXXXXXX" />
+            </div>
+            <div class="col-md-3">
+                <label class="modal-field-label">Celular</label>
+                <input type="text" asp-for="Celular" class="form-control form-control-sm" style="border-radius:8px;" placeholder="(11) XXXXXXXX" />
+            </div>
+        </div>
+
+        <div class="modal-section-title">Precios</div>
         <div class="row g-3">
-            <div class="col-md-6">
-                <label class="form-label fw-bold">Nombre Comercial</label>
-                <input type="text" asp-for="NombreComercial" class="form-control form-control-sm" />
-            </div>
-            <div class="col-md-6">
-                <label class="form-label fw-bold">CUIL</label>
-                <input type="text" asp-for="Cuil" class="form-control form-control-sm" />
-            </div>
-
-            <div class="col-md-12">
-                <label class="form-label fw-bold">Dirección</label>
-                <input type="text" asp-for="Direccion" class="form-control form-control-sm" />
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label fw-bold">Email</label>
-                <input type="email" asp-for="Email" class="form-control form-control-sm" />
+            <div class="col-md-3">
+                <label class="modal-field-label">Ganancia (%)</label>
+                <div style="position:relative;">
+                    <input type="number" asp-for="Ganancia" class="form-control form-control-sm text-end" style="border-radius:8px;" step="0.01" min="0" placeholder="0,00" />
+                    <span style="position:absolute;right:.65rem;top:50%;transform:translateY(-50%);font-size:.75rem;color:#1cc88a;font-weight:700;pointer-events:none;">%</span>
+                </div>
             </div>
             <div class="col-md-3">
-                <label class="form-label fw-bold">Teléfono</label>
-                <input type="text" asp-for="Telefono" class="form-control form-control-sm" />
+                <label class="modal-field-label">Descuento (%)</label>
+                <div style="position:relative;">
+                    <input type="number" asp-for="Descuento" class="form-control form-control-sm text-end" style="border-radius:8px;" step="0.01" min="0" placeholder="0,00" />
+                    <span style="position:absolute;right:.65rem;top:50%;transform:translateY(-50%);font-size:.75rem;color:#e74a3b;font-weight:700;pointer-events:none;">%</span>
+                </div>
             </div>
-            <div class="col-md-3">
-                <label class="form-label fw-bold">Celular</label>
-                <input type="text" asp-for="Celular" class="form-control form-control-sm" />
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label fw-bold">Ganancia (%)</label>
-                <input type="number" asp-for="Ganancia" class="form-control form-control-sm text-end" step="0.01" />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label fw-bold">Descuento (%)</label>
-                <input type="number" asp-for="Descuento" class="form-control form-control-sm text-end" step="0.01" />
+            <div class="col-md-6 d-flex align-items-end">
+                <div style="background:#f0f9ff;border:1px solid #bee3f8;border-radius:8px;padding:.45rem .85rem;font-size:.77rem;color:#2b6cb0;width:100%;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="margin-right:4px;"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg>
+                    Estos porcentajes se usan al calcular precios desde este proveedor.
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Footer -->
-    <div class="modal-footer bg-light border-top">
-        <button type="submit" class="btn btn-primary">
-            <i class="bi bi-save"></i> Guardar
+    @* Footer *@
+    <div class="modal-footer-custom">
+        <button type="button" class="btn-prov btn-prov-secondary" data-bs-dismiss="modal">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854z"/></svg>
+            Cancelar
         </button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-            <i class="bi bi-x-circle"></i> Cancelar
+        <button type="submit" class="btn-prov btn-prov-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4.5a.5.5 0 0 0-.146-.354l-3-3A.5.5 0 0 0 11.5 1H2zm0 1h9.293L14 4.707V14H2V2zM5 12a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H5zm1-1h4V9H6v2zM5 5a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1H5z"/></svg>
+            @((Model.Id == 0) ? "Agregar" : "Guardar cambios")
         </button>
     </div>
 </form>

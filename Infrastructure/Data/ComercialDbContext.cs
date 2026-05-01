@@ -92,6 +92,24 @@ public partial class ComercialDbContext : DbContext
     public virtual DbSet<DocumentoTipo> DocumentosTipo { get; set; }
     public virtual DbSet<VentasFormasPago> VentasFormasPago { get; set; }
     public virtual DbSet<MovimientoCC>    MovimientosCC    { get; set; }
+    public virtual DbSet<Documento>       Documentos       { get; set; }
+    public virtual DbSet<Cobro>           Cobros           { get; set; }
+    public virtual DbSet<CobroDetalle>    CobrosDetalle    { get; set; }
+    public virtual DbSet<Caja>            Cajas            { get; set; }
+    public virtual DbSet<Imputacion>      Imputaciones     { get; set; }
+    public virtual DbSet<CajaMovimiento>  CajaMovimientos  { get; set; }
+    public virtual DbSet<TipoGasto>       TiposGasto       { get; set; }
+    public virtual DbSet<Gasto>           Gastos           { get; set; }
+    public virtual DbSet<Pago>            Pagos            { get; set; }
+    public virtual DbSet<ComprobanteFiscal> ComprobantesFiscales { get; set; }
+    public virtual DbSet<ErrorFe>           ErroresFE            { get; set; }
+    public virtual DbSet<NotaDebito>        NotasDebito          { get; set; }
+
+    // ── Módulo Promociones ───────────────────────────────────────────────────
+    public virtual DbSet<Promocion>              Promociones              { get; set; }
+    public virtual DbSet<PromocionSlot>          PromocionSlots           { get; set; }
+    public virtual DbSet<PromocionSlotProducto>  PromocionSlotProductos   { get; set; }
+    public virtual DbSet<VentaPromoComponente>   VentaPromoComponentes    { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
@@ -266,6 +284,9 @@ public partial class ComercialDbContext : DbContext
             entity.Property(e => e.TotalDevolucion)
                 .HasPrecision(18, 4)
                 .HasColumnName("totalDevolucion");
+            entity.Property(e => e.Impuesto)
+                .HasPrecision(18, 4)
+                .HasColumnName("impuesto");
         });
 
         modelBuilder.Entity<DevolucionesDetalle>(entity =>
@@ -568,6 +589,15 @@ public partial class ComercialDbContext : DbContext
             entity.Property(e => e.Subtotal)
                 .HasPrecision(18, 4)
                 .HasColumnName("subtotal");
+            entity.Property(e => e.Descuento)
+                .HasColumnType("decimal(18,2)")
+                .HasColumnName("descuento");
+            entity.Property(e => e.Recargo)
+                .HasColumnType("decimal(18,2)")
+                .HasColumnName("recargo");
+            entity.Property(e => e.SubtotalSinIva)
+                .HasColumnType("decimal(18,2)")
+                .HasColumnName("subtotalSinIva");
         });
 
         modelBuilder.Entity<Permiso>(entity =>
@@ -650,6 +680,9 @@ public partial class ComercialDbContext : DbContext
                 .HasColumnName("iva");
             entity.Property(e => e.Fraccionado).HasColumnName("fraccionado");
             entity.Property(e => e.Dolarizado).HasColumnName("dolarizado");
+            entity.Property(e => e.EsPromocion)
+                .HasDefaultValueSql("'0'")
+                .HasColumnName("esPromocion");
         });
 
         modelBuilder.Entity<ProductosAcrear>(entity =>
@@ -1208,6 +1241,228 @@ public partial class ComercialDbContext : DbContext
             entity.Property(e => e.SaldoPendiente)
                 .HasPrecision(18, 2)
                 .HasColumnName("SaldoPendiente");
+        });
+
+        modelBuilder.Entity<Cobro>(entity =>
+        {
+            entity.HasKey(e => e.CobroId).HasName("PRIMARY");
+            entity.ToTable("Cobros");
+            entity.Property(e => e.CobroId).HasColumnType("int").HasColumnName("CobroId");
+            entity.Property(e => e.ClienteId).HasColumnType("int").HasColumnName("ClienteId");
+            entity.Property(e => e.Fecha).HasColumnType("datetime").HasColumnName("Fecha");
+            entity.Property(e => e.ImporteTotal).HasPrecision(18, 2).HasColumnName("ImporteTotal");
+            entity.Property(e => e.EstadoId).HasColumnType("int").HasDefaultValue(null).HasColumnName("Estado_Id");
+            entity.Property(e => e.DocumentoId).HasColumnType("int").HasColumnName("DocumentoId");
+            entity.Property(e => e.TipoCobro).HasColumnType("int").HasDefaultValue(null).HasColumnName("tipoCobro");
+            entity.Property(e => e.Observaciones).HasMaxLength(100).HasDefaultValue(null).HasColumnName("Observaciones");
+        });
+
+        modelBuilder.Entity<CobroDetalle>(entity =>
+        {
+            entity.HasKey(e => e.CobroDetalleId).HasName("PRIMARY");
+            entity.ToTable("CobrosDetalle");
+            entity.Property(e => e.CobroDetalleId).HasColumnType("int").HasColumnName("CobroDetalleId");
+            entity.Property(e => e.CobroId).HasColumnType("int").HasColumnName("CobroId");
+            entity.Property(e => e.MedioPagoId).HasColumnType("int").HasColumnName("MedioPagoId");
+            entity.Property(e => e.Importe).HasPrecision(18, 2).HasColumnName("Importe");
+            entity.Property(e => e.Referencia1).HasMaxLength(50).HasDefaultValue(null).HasColumnName("Referencia1");
+            entity.Property(e => e.Referencia2).HasMaxLength(50).HasDefaultValue(null).HasColumnName("Referencia2");
+            entity.Property(e => e.Referencia3).HasMaxLength(50).HasDefaultValue(null).HasColumnName("Referencia3");
+        });
+
+        modelBuilder.Entity<Caja>(entity =>
+        {
+            entity.HasKey(e => e.CajaId).HasName("PRIMARY");
+            entity.ToTable("caja");
+            entity.Property(e => e.CajaId).HasColumnType("int").HasColumnName("caja_id");
+            entity.Property(e => e.UsuarioId).HasColumnType("int").HasColumnName("usuario_id");
+            entity.Property(e => e.FechaApertura).HasColumnType("datetime").HasColumnName("fecha_apertura");
+            entity.Property(e => e.FechaCierre).HasColumnType("datetime").HasDefaultValue(null).HasColumnName("fecha_cierre");
+            entity.Property(e => e.SaldoInicial).HasPrecision(18, 2).HasColumnName("saldo_inicial");
+            entity.Property(e => e.SaldoCierre).HasPrecision(18, 2).HasDefaultValue(null).HasColumnName("saldo_cierre");
+            entity.Property(e => e.Estado).HasColumnType("enum('ABIERTA','CERRADA')").HasColumnName("estado");
+            entity.Property(e => e.Observaciones).HasMaxLength(500).HasDefaultValue(null).HasColumnName("observaciones");
+        });
+
+        modelBuilder.Entity<Imputacion>(entity =>
+        {
+            entity.HasKey(e => e.ImputacionId).HasName("PRIMARY");
+            entity.ToTable("Imputaciones");
+            entity.Property(e => e.ImputacionId).HasColumnType("int").HasColumnName("ImputacionId");
+            entity.Property(e => e.MovimientoDebitoId).HasColumnType("int").HasColumnName("MovimientoDebitoId");
+            entity.Property(e => e.MovimientoCreditoId).HasColumnType("int").HasColumnName("MovimientoCreditoId");
+            entity.Property(e => e.Importe).HasPrecision(18, 2).HasColumnName("Importe");
+            entity.Property(e => e.Fecha).HasColumnType("datetime").HasColumnName("Fecha")
+                  .HasDefaultValueSql("CURRENT_TIMESTAMP");
+        });
+
+        modelBuilder.Entity<CajaMovimiento>(entity =>
+        {
+            entity.HasKey(e => e.MovimientoCajaId).HasName("PRIMARY");
+            entity.ToTable("movimientos_caja");
+            entity.Property(e => e.MovimientoCajaId).HasColumnType("int").HasColumnName("movimiento_caja_id");
+            entity.Property(e => e.CajaId).HasColumnType("int").HasColumnName("caja_id");
+            entity.Property(e => e.Fecha).HasColumnType("datetime").HasColumnName("fecha");
+            entity.Property(e => e.ConceptoCajaId).HasColumnType("int").HasColumnName("concepto_caja_id");
+            entity.Property(e => e.MedioPagoId).HasColumnType("int").HasColumnName("medio_pago_id");
+            entity.Property(e => e.Importe).HasPrecision(18, 2).HasColumnName("importe");
+            entity.Property(e => e.Observaciones).HasMaxLength(500).HasDefaultValue(null).HasColumnName("observaciones");
+        });
+
+        modelBuilder.Entity<TipoGasto>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+            entity.ToTable("tipo_gastos");
+            entity.Property(e => e.Id).HasColumnType("int").HasColumnName("id");
+            entity.Property(e => e.Nombre).HasMaxLength(100).HasColumnName("nombre");
+        });
+
+        modelBuilder.Entity<Gasto>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+            entity.ToTable("gastos");
+            entity.Property(e => e.Id).HasColumnType("int").HasColumnName("id");
+            entity.Property(e => e.IdMovimientoCaja).HasColumnType("int").HasColumnName("id_movimiento_caja");
+            entity.Property(e => e.IdTipoGasto).HasColumnType("int").HasColumnName("id_tipo_gasto");
+        });
+
+        modelBuilder.Entity<Pago>(entity =>
+        {
+            entity.HasKey(e => e.PagoId).HasName("PRIMARY");
+            entity.ToTable("Pagos");
+            entity.Property(e => e.PagoId)
+                .HasColumnType("int")
+                .HasColumnName("PagoId")
+                .ValueGeneratedOnAdd();
+            entity.Property(e => e.ProveedorId)
+                .HasColumnType("int")
+                .HasColumnName("ProveedorId");
+            entity.Property(e => e.Fecha)
+                .HasColumnType("datetime")
+                .HasColumnName("Fecha");
+            entity.Property(e => e.ImporteTotal)
+                .HasPrecision(18, 2)
+                .HasColumnName("ImporteTotal");
+            entity.Property(e => e.Observaciones)
+                .HasMaxLength(100)
+                .HasColumnName("Observaciones")
+                .HasDefaultValue(null);
+        });
+
+        modelBuilder.Entity<Documento>(entity =>
+        {
+            entity.HasKey(e => e.ID).HasName("PRIMARY");
+
+            entity.ToTable("Documentos");
+
+            entity.Property(e => e.ID)
+                .HasColumnType("int")
+                .HasColumnName("ID");
+            entity.Property(e => e.ClienteId)
+                .HasColumnType("int")
+                .HasColumnName("ClienteId");
+            entity.Property(e => e.TipoDocumento)
+                .HasMaxLength(2)
+                .IsFixedLength()
+                .HasColumnName("TipoDocumento");
+            entity.Property(e => e.Numero)
+                .HasMaxLength(30)
+                .HasColumnName("Numero");
+            entity.Property(e => e.Fecha)
+                .HasColumnType("datetime")
+                .HasColumnName("Fecha");
+            entity.Property(e => e.Total)
+                .HasPrecision(18, 2)
+                .HasColumnName("Total");
+        });
+
+        modelBuilder.Entity<ComprobanteFiscal>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+            entity.ToTable("comprobantes_fiscales");
+            entity.Property(e => e.Id).HasColumnType("bigint").HasColumnName("id");
+            entity.Property(e => e.TipoComprobante).HasMaxLength(20).HasColumnName("tipo_comprobante");
+            entity.Property(e => e.Letra).HasMaxLength(1).IsFixedLength().HasColumnName("letra");
+            entity.Property(e => e.PuntoVenta).HasColumnType("int").HasColumnName("punto_venta");
+            entity.Property(e => e.Numero).HasColumnType("int").HasColumnName("numero");
+            entity.Property(e => e.FechaEmision).HasColumnType("datetime").HasColumnName("fecha_emision");
+            entity.Property(e => e.NroReferencia).HasColumnType("int").HasDefaultValue(null).HasColumnName("nroReferencia");
+            entity.Property(e => e.FkCliente).HasColumnType("int").HasDefaultValue(null).HasColumnName("fk_cliente");
+            entity.Property(e => e.RazonSocial).HasMaxLength(150).HasDefaultValue(null).HasColumnName("razon_social");
+            entity.Property(e => e.Cuit).HasMaxLength(20).HasDefaultValue(null).HasColumnName("cuit");
+            entity.Property(e => e.ImporteTotal).HasPrecision(18, 2).HasColumnName("importe_total");
+            entity.Property(e => e.Cae).HasMaxLength(20).HasDefaultValue(null).HasColumnName("cae");
+            entity.Property(e => e.FechaVencimientoCae).HasColumnType("datetime").HasDefaultValue(null).HasColumnName("fecha_vencimiento_cae");
+            entity.Property(e => e.Estado).HasMaxLength(20).HasDefaultValue(null).HasColumnName("estado");
+            entity.Property(e => e.FiscalStatus).HasColumnType("int").HasDefaultValue(null).HasColumnName("fiscal_status");
+            entity.Property(e => e.NumeroJornada).HasColumnType("int").HasDefaultValue(null).HasColumnName("numero_jornada");
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime").HasColumnName("created_at");
+            entity.Property(e => e.AfipQr).HasMaxLength(500).HasDefaultValue(null).HasColumnName("afip_qr");
+            entity.Property(e => e.LinkPdf).HasMaxLength(500).HasDefaultValue(null).HasColumnName("linkPDF");
+        });
+
+        modelBuilder.Entity<ErrorFe>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+            entity.ToTable("erroresFE");
+            entity.Property(e => e.Id).HasColumnType("int").HasColumnName("id");
+            entity.Property(e => e.FkVenta).HasColumnType("int").HasDefaultValue(null).HasColumnName("fk_venta");
+            entity.Property(e => e.Error).HasMaxLength(2000).HasDefaultValue(null).HasColumnName("error");
+        });
+
+        modelBuilder.Entity<NotaDebito>(e =>
+        {
+            e.ToTable("NotasDebito");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnName("Id");
+            e.Property(x => x.ClienteId).HasColumnName("ClienteId");
+            e.Property(x => x.Fecha).HasColumnName("Fecha");
+            e.Property(x => x.ImporteTotal).HasColumnName("ImporteTotal").HasColumnType("decimal(18,2)");
+            e.Property(x => x.EstadoId).HasColumnName("Estado_Id");
+            e.Property(x => x.Observaciones).HasColumnName("Observaciones").HasMaxLength(100);
+        });
+
+        // ── Promociones ──────────────────────────────────────────────────────────
+        modelBuilder.Entity<Promocion>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+            entity.ToTable("promociones");
+            entity.Property(e => e.Id).HasColumnType("int(11)").HasColumnName("id");
+            entity.Property(e => e.FkProducto).HasColumnType("int(11)").HasColumnName("fk_producto");
+            entity.Property(e => e.Activa).HasColumnName("activa").HasDefaultValueSql("'1'");
+            entity.Property(e => e.FechaDesde).HasColumnName("fechaDesde");
+            entity.Property(e => e.FechaHasta).HasColumnName("fechaHasta");
+        });
+
+        modelBuilder.Entity<PromocionSlot>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+            entity.ToTable("promociones_slots");
+            entity.Property(e => e.Id).HasColumnType("int(11)").HasColumnName("id");
+            entity.Property(e => e.FkPromocion).HasColumnType("int(11)").HasColumnName("fk_promocion");
+            entity.Property(e => e.Numero).HasColumnType("int(11)").HasColumnName("numero");
+            entity.Property(e => e.CantidadRequerida).HasPrecision(18, 4).HasColumnName("cantidadRequerida");
+            entity.Property(e => e.Descripcion).HasMaxLength(100).HasColumnName("descripcion");
+        });
+
+        modelBuilder.Entity<PromocionSlotProducto>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+            entity.ToTable("promociones_slot_productos");
+            entity.Property(e => e.Id).HasColumnType("int(11)").HasColumnName("id");
+            entity.Property(e => e.FkSlot).HasColumnType("int(11)").HasColumnName("fk_slot");
+            entity.Property(e => e.FkProducto).HasColumnType("int(11)").HasColumnName("fk_producto");
+        });
+
+        modelBuilder.Entity<VentaPromoComponente>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+            entity.ToTable("ventas_promo_componentes");
+            entity.Property(e => e.Id).HasColumnType("int(11)").HasColumnName("id");
+            entity.Property(e => e.FkVentaDetalle).HasColumnType("bigint(20)").HasColumnName("fk_ventaDetalle");
+            entity.Property(e => e.FkSlot).HasColumnType("int(11)").HasColumnName("fk_slot");
+            entity.Property(e => e.FkProducto).HasColumnType("int(11)").HasColumnName("fk_producto");
+            entity.Property(e => e.Cantidad).HasPrecision(18, 4).HasColumnName("cantidad");
         });
 
         OnModelCreatingPartial(modelBuilder);

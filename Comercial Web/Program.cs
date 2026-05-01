@@ -52,6 +52,7 @@ builder.Services.AddScoped<IProductoService, ProductoService>();
 builder.Services.AddScoped<IOrdenCompraService, OrdenCompraService>();
 builder.Services.AddScoped<IIngresoProductosService, IngresoProductosService>();
 builder.Services.AddScoped<IConceptoCajaService, ConceptoCajaService>();
+builder.Services.AddScoped<ICajaService, CajaService>();
 builder.Services.AddScoped<IMedioPagoService, MedioPagoService>();
 builder.Services.AddScoped<IPlanPagoService, PlanPagoService>();
 builder.Services.AddScoped<IDocumentoTipoService, DocumentoTipoService>();
@@ -63,6 +64,19 @@ builder.Services.AddScoped<IAltaMasivaProductosService, AltaMasivaProductosServi
 builder.Services.AddScoped<IListaPreciosService, ListaPreciosService>();
 builder.Services.AddScoped<IGestionStockService, GestionStockService>();
 builder.Services.AddScoped<IMovimientosProductosService, MovimientosProductosService>();
+builder.Services.AddScoped<ICambiosPreciosMasivoService, CambiosPreciosMasivoService>();
+builder.Services.AddScoped<ICambiosPreciosService, CambiosPreciosService>();
+builder.Services.AddScoped<IImpresionEtiquetasService, ImpresionEtiquetasService>();
+builder.Services.AddScoped<ICuentaCorrienteService, CuentaCorrienteService>();
+builder.Services.AddScoped<ICobroService, CobroService>();
+builder.Services.AddScoped<INotaCreditoService, NotaCreditoService>();
+builder.Services.AddScoped<IPedidoService, PedidoService>();
+builder.Services.AddScoped<IFacturacionElectronicaService, FacturacionElectronicaService>();
+builder.Services.AddScoped<IVentaService, VentaService>();
+builder.Services.AddScoped<IReporteVentasService, ReporteVentasService>();
+builder.Services.AddScoped<IDevolucionService, DevolucionService>();
+builder.Services.AddScoped<IPromocionService, PromocionService>();
+builder.Services.AddScoped<IFacturacionLotesService, FacturacionLotesService>();
 
 // Add services to the container.
 builder.Services.AddRazorPages();

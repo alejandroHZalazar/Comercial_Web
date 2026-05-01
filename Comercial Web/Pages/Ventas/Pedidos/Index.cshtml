@@ -1,0 +1,1475 @@
+@page
+@model Comercial_Web.Pages.Ventas.Pedidos.IndexModel
+@{
+    ViewData["Title"] = "Pedidos";
+}
+
+<style>
+.ped-header { background:linear-gradient(135deg,#1a3a5c 0%,#2e6da4 100%);border-radius:12px;padding:1.1rem 1.5rem;margin-bottom:1.2rem;color:#fff;display:flex;align-items:center;gap:.8rem; }
+.ped-header h4 { margin:0;font-weight:700;font-size:1.1rem; }
+.ped-card { background:#fff;border:1px solid #e3e6f0;border-radius:10px;padding:1rem 1.2rem;box-shadow:0 2px 8px rgba(0,0,0,.05);height:100%; }
+.ped-card-title { font-size:.75rem;font-weight:700;color:#6c757d;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.7rem;border-bottom:1px solid #f0f0f0;padding-bottom:.4rem; }
+.ped-label { font-size:.78rem;font-weight:600;color:#5a5c69;margin-bottom:.2rem;display:block; }
+.ped-input { font-size:.82rem; }
+.ac-wrap { position:relative; }
+.ac-drop { display:none;position:absolute;top:100%;left:0;right:0;z-index:2000;background:#fff;border:1px solid #d1d3e2;border-radius:0 0 8px 8px;max-height:220px;overflow-y:auto;box-shadow:0 6px 18px rgba(0,0,0,.12); }
+.ac-drop.open { display:block; }
+.ac-item { padding:.45rem .8rem;font-size:.8rem;cursor:pointer;border-bottom:1px solid #f5f5f5;color:#2c3e50; }
+.ac-item:hover,.ac-item.active { background:#eef3ff; }
+.ac-item small { display:block;color:#888;font-size:.72rem; }
+.cliente-info { background:#f8f9fc;border:1px solid #e3e6f0;border-radius:8px;padding:.8rem 1rem;font-size:.82rem; }
+.cliente-info strong { color:#2c3e50; }
+.cliente-info .ci-row { display:flex;gap:.5rem;margin-bottom:.25rem;align-items:flex-start; }
+.ci-lbl { color:#6c757d;min-width:70px;font-size:.75rem;font-weight:600; }
+.prod-search { background:#fff;border:1px solid #e3e6f0;border-radius:10px;padding:.9rem 1.2rem;margin-bottom:.8rem;box-shadow:0 2px 6px rgba(0,0,0,.04); }
+.prod-search-title { font-size:.75rem;font-weight:700;color:#6c757d;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem; }
+.prod-cant-wrap { display:flex;align-items:center;gap:.5rem;margin-top:.5rem; }
+/* Grid */
+#tblDetalle { font-size:.78rem;width:100%; }
+#tblDetalle thead tr { background:#1a3a5c;color:#fff; }
+#tblDetalle thead th { padding:.45rem .5rem;white-space:nowrap;font-weight:600; }
+#tblDetalle tbody tr:nth-child(even) { background:#f8f9fc; }
+#tblDetalle tbody td { padding:.3rem .4rem;vertical-align:middle; }
+#tblDetalle input.td-edit { border:1px solid transparent;background:transparent;width:100%;font-size:.78rem;padding:.15rem .3rem;border-radius:4px;text-align:right; }
+#tblDetalle input.td-edit:focus { border-color:#4e73df;background:#fff;outline:none; }
+#tblDetalle input.td-obs { text-align:left; }
+.td-calc { text-align:right;color:#2c3e50; }
+.td-neg  { color:#e74a3b; }
+.td-pos  { color:#1cc88a; }
+.btn-del-row { background:none;border:none;color:#e74a3b;cursor:pointer;padding:0 .3rem;font-size:.9rem; }
+.totales-bar { background:#fff;border:1px solid #e3e6f0;border-radius:10px;padding:.9rem 1.2rem;margin-top:.8rem;box-shadow:0 2px 6px rgba(0,0,0,.04);display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap; }
+.tot-item { display:flex;flex-direction:column;align-items:flex-end; }
+.tot-lbl { font-size:.7rem;color:#6c757d;text-transform:uppercase;letter-spacing:.05em; }
+.tot-val { font-size:1rem;font-weight:700;color:#2c3e50; }
+.tot-val.total-gral { font-size:1.2rem;color:#1a3a5c; }
+.btn-confirmar { background:linear-gradient(135deg,#1a3a5c,#2e6da4);color:#fff;border:none;border-radius:8px;padding:.6rem 2rem;font-size:.9rem;font-weight:700;cursor:pointer;transition:.2s; }
+.btn-confirmar:hover { opacity:.9; }
+.btn-confirmar:disabled { opacity:.5;cursor:not-allowed; }
+/* Progress */
+#progressWrap { display:none;margin-top:1rem; }
+/* Modales */
+.ped-modal-header { background:linear-gradient(135deg,#1a3a5c,#2e6da4);padding:.75rem 1rem;display:flex;align-items:center;gap:.6rem;color:#fff; }
+.ped-modal-header h5 { margin:0;font-size:.92rem;font-weight:700; }
+/* Modal nuevo cliente (mismo estilo que ABM clientes) */
+.modal-header-cli { background:linear-gradient(135deg,#1a2a4a 0%,#2d4a7a 100%);padding:.9rem 1.25rem;display:flex;align-items:center;gap:.75rem; }
+.modal-header-cli h5 { margin:0;color:#fff;font-weight:700;font-size:.95rem; }
+.modal-header-cli .btn-close { filter:invert(1);opacity:.8;margin-left:auto; }
+.modal-section-title { font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#4e73df;padding:.35rem 0 .2rem;border-bottom:1px solid #e3e6f0;margin-bottom:.75rem; }
+.modal-footer-cli { background:#f8f9fc;border-top:1px solid #e3e6f0;padding:.85rem 1.25rem;display:flex;justify-content:flex-end;gap:.5rem;border-radius:0 0 12px 12px; }
+.modal-field-label { font-size:.8rem;font-weight:600;color:#4a5568;margin-bottom:3px;display:block; }
+.btn-cli { border:none;border-radius:8px;padding:.42rem 1rem;font-size:.83rem;font-weight:600;display:inline-flex;align-items:center;gap:.4rem;cursor:pointer;transition:all .18s;white-space:nowrap; }
+.btn-cli-primary   { background:#4e73df;color:#fff; } .btn-cli-primary:hover   { background:#3a5bc7; }
+.btn-cli-secondary { background:#858796;color:#fff; } .btn-cli-secondary:hover { background:#6a6b7a; }
+/* Multi-select dropdowns en modal buscar pedido */
+.bp-multisel-wrap { position:relative; }
+.bp-multisel-btn {
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:.4rem;
+  background:#fff;border:1px solid #d1d3e2;border-radius:6px;padding:.3rem .6rem;
+  font-size:.8rem;color:#5a5c69;cursor:pointer;text-align:left;
+}
+.bp-multisel-btn:hover { border-color:#4e73df; }
+.bp-multisel-drop {
+  display:none;position:absolute;top:100%;left:0;right:0;z-index:2100;
+  background:#fff;border:1px solid #d1d3e2;border-radius:0 0 8px 8px;
+  box-shadow:0 6px 18px rgba(0,0,0,.12);
+}
+.bp-multisel-drop.open { display:block; }
+.bp-multisel-item {
+  display:flex;align-items:center;gap:.4rem;padding:.3rem .6rem;font-size:.78rem;
+  cursor:pointer;margin:0;
+}
+.bp-multisel-item:hover { background:#f0f4ff; }
+.bp-multisel-item input[type=checkbox] { margin:0;cursor:pointer; }
+</style>
+
+@* ===== PAGE HEADER ===== *@
+<div class="ped-header">
+  <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="26" height="26">
+    <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM3.102 4l1.313 7h8.17l1.313-7H3.102zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+  </svg>
+  <h4>Pedidos</h4>
+  <div style="margin-left:auto;display:flex;gap:.5rem;">
+    <button class="btn btn-sm btn-outline-light" onclick="abrirBuscarPedido()">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" height="13" style="margin-right:.3rem;vertical-align:-.1em;">
+        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85-.017.016zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+      </svg>Buscar Pedido
+    </button>
+    <button class="btn btn-sm btn-outline-light" onclick="limpiarTodo()">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" height="13" style="margin-right:.3rem;vertical-align:-.1em;">
+        <path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5z"/>
+      </svg>Limpiar
+    </button>
+  </div>
+</div>
+
+@* ===== SECCIÓN SUPERIOR: Cliente + Cabecera Pedido ===== *@
+<div class="row g-3 mb-3">
+
+  @* ── Cliente ── *@
+  <div class="col-md-5">
+    <div class="ped-card">
+      <div class="ped-card-title">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" height="13" style="margin-right:.3rem;vertical-align:-.1em;">
+          <path d="M3 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H3zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+        </svg>Cliente
+      </div>
+      <div class="ac-wrap mb-2">
+        <input type="text" id="txtBuscarCliente" class="form-control form-control-sm ped-input"
+               placeholder="Buscar cliente por nombre..." autocomplete="off"
+               oninput="onClienteInput(this.value)" onkeydown="onClienteKeydown(event)">
+        <div id="dropClientes" class="ac-drop"></div>
+      </div>
+      <div style="display:flex;gap:.4rem;margin-bottom:.7rem;">
+        <button class="btn btn-sm btn-outline-primary" style="font-size:.75rem;" onclick="abrirNuevoCliente()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="11" height="11" style="margin-right:.2rem;vertical-align:-.1em;">
+            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+          </svg>Nuevo Cliente
+        </button>
+      </div>
+
+      <div id="clienteInfo" style="display:none;">
+        <div class="cliente-info">
+          <div class="ci-row"><span class="ci-lbl">Nombre</span><strong id="ci-nombre"></strong></div>
+          <div class="ci-row"><span class="ci-lbl">Teléfono</span><span id="ci-telefono"></span></div>
+          <div class="ci-row"><span class="ci-lbl">Dirección</span><span id="ci-direccion"></span></div>
+          <div class="ci-row"><span class="ci-lbl">Contacto</span><span id="ci-contacto"></span></div>
+        </div>
+        <input type="hidden" id="hClienteId" value="0">
+      </div>
+      <div id="clienteVacio" style="color:#aaa;font-size:.78rem;padding:.4rem 0;">
+        Busque o cree un cliente para comenzar.
+      </div>
+    </div>
+  </div>
+
+  @* ── Cabecera del pedido ── *@
+  <div class="col-md-7">
+    <div class="ped-card">
+      <div class="ped-card-title">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" height="13" style="margin-right:.3rem;vertical-align:-.1em;">
+          <path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/>
+        </svg>Datos del Pedido
+        <span id="lblPedidoId" style="margin-left:.5rem;font-size:.7rem;color:#4e73df;"></span>
+      </div>
+      <div class="row g-2">
+        <div class="col-md-6">
+          <label class="ped-label">IVA %</label>
+          <select id="selIva" class="form-select form-select-sm ped-input" onchange="recalcularTodo()">
+            @foreach (var iva in Model.ListaIvas)
+            {
+              <option value="@iva.Value">@iva.Text</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="ped-label">Vendedor</label>
+          <select id="selVendedor" class="form-select form-select-sm ped-input">
+            <option value="0">-- Seleccione --</option>
+            @foreach (var v in Model.ListaVendedores)
+            {
+              <option value="@v.Value">@v.Text</option>
+            }
+          </select>
+        </div>
+        <div class="col-12">
+          <label class="ped-label">Observaciones del pedido</label>
+          <textarea id="txtObservacion" class="form-control form-control-sm ped-input" rows="3"
+                    placeholder="Observaciones generales..." maxlength="500"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+@* ===== BÚSQUEDA DE PRODUCTOS ===== *@
+<div class="prod-search">
+  <div class="prod-search-title">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="12" height="12" style="margin-right:.3rem;vertical-align:-.1em;">
+      <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85-.017.016zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+    </svg>Agregar Productos
+  </div>
+  <div class="row g-2 align-items-end">
+    <div class="col-md-3">
+      <label class="ped-label">Cód. de Barras</label>
+      <div class="ac-wrap">
+        <input type="text" id="txtCodBarras" class="form-control form-control-sm ped-input"
+               placeholder="Escanear o escribir..." autocomplete="off"
+               onkeydown="onProdExactoKeydown(event,'codBarras')"
+               oninput="onProdInput(this.value,'codBarras')">
+        <div id="dropBarras" class="ac-drop"></div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <label class="ped-label">Cód. Proveedor</label>
+      <div class="ac-wrap">
+        <input type="text" id="txtCodProv" class="form-control form-control-sm ped-input"
+               placeholder="Código proveedor..." autocomplete="off"
+               onkeydown="onProdExactoKeydown(event,'codProveedor')"
+               oninput="onProdInput(this.value,'codProveedor')">
+        <div id="dropCodProv" class="ac-drop"></div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <label class="ped-label">Descripción</label>
+      <div class="ac-wrap">
+        <input type="text" id="txtDescripcion" class="form-control form-control-sm ped-input"
+               placeholder="Buscar por descripción..." autocomplete="off"
+               oninput="onProdDescInput(this.value)"
+               onkeydown="onProdDescKeydown(event)">
+        <div id="dropDesc" class="ac-drop"></div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <label class="ped-label">Cantidad</label>
+      <input type="number" id="txtCantidad" class="form-control form-control-sm ped-input"
+             min="0" step="0.01" placeholder="0.00"
+             onkeydown="onCantidadKeydown(event)"
+             style="text-align:right;">
+    </div>
+  </div>
+</div>
+
+@* ===== BARRA APLICAR DESC/REC ===== *@
+<div id="descRecBar" style="background:#fff;border:1px solid #e3e6f0;border-radius:10px;padding:.65rem 1.1rem;margin-bottom:.5rem;box-shadow:0 2px 6px rgba(0,0,0,.04);display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;">
+  <span class="ped-card-title" style="margin:0;border:none;padding:0;white-space:nowrap;">Desc / Rec:</span>
+  <div style="display:flex;border:1px solid #d1d3e2;border-radius:6px;overflow:hidden;">
+    <input type="radio" id="rdDescuento" name="tipoDescRec" value="desc" checked style="display:none;">
+    <label for="rdDescuento" id="lblDescuento" style="padding:.25rem .75rem;font-size:.78rem;font-weight:600;cursor:pointer;margin:0;background:#e74a3b;color:#fff;transition:.15s;">Descuento ▼</label>
+    <input type="radio" id="rdRecargo" name="tipoDescRec" value="rec" style="display:none;">
+    <label for="rdRecargo" id="lblRecargo" style="padding:.25rem .75rem;font-size:.78rem;font-weight:600;cursor:pointer;margin:0;background:#f0f0f0;color:#666;transition:.15s;">Recargo ▲</label>
+  </div>
+  <div style="display:flex;align-items:center;gap:.3rem;">
+    <input type="number" id="txtDescRecPct" class="form-control form-control-sm ped-input" min="0" max="100" step="0.01" placeholder="0.00" style="width:90px;text-align:right;" onkeydown="if(event.key==='Enter'){event.preventDefault();aplicarDescRec();}">
+    <span style="font-size:.82rem;font-weight:600;color:#5a5c69;">%</span>
+  </div>
+  <button class="btn btn-sm btn-primary" onclick="aplicarDescRec()" style="font-size:.78rem;white-space:nowrap;">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="12" height="12" style="margin-right:.3rem;vertical-align:-.1em;"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>
+    Aplicar
+  </button>
+  <button class="btn btn-sm btn-outline-secondary" onclick="limpiarDescRec()" style="font-size:.78rem;" title="Quitar todos los descuentos/recargos">
+    Limpiar
+  </button>
+  <span id="descRecMsg" style="font-size:.75rem;color:#6c757d;"></span>
+</div>
+
+@* ===== GRILLA ===== *@
+<div style="background:#fff;border:1px solid #e3e6f0;border-radius:10px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,.04);">
+  <div style="overflow-x:auto;">
+    <table id="tblDetalle" class="table table-sm mb-0">
+      <thead>
+        <tr>
+          <th id="thSel" class="text-center" style="width:36px;">
+            <input type="checkbox" id="chkSelAll" title="Seleccionar / deseleccionar todas las filas"
+                   onchange="seleccionarTodas(this.checked)" style="cursor:pointer;">
+          </th>
+          <th style="width:90px;">Cód.Barras</th>
+          <th style="width:90px;">Cód.Prov.</th>
+          <th>Descripción</th>
+          <th style="width:120px;">Obs.</th>
+          <th style="width:65px;text-align:right;">Stock</th>
+          <th style="width:90px;text-align:right;">P.S/IVA</th>
+          <th style="width:70px;text-align:right;">Desc/Rec%</th>
+          <th style="width:90px;text-align:right;">SubT.S/IVA</th>
+          <th style="width:90px;text-align:right;">P.C/IVA</th>
+          <th style="width:75px;text-align:right;">Cantidad</th>
+          <th style="width:90px;text-align:right;">Subtotal</th>
+          <th style="width:32px;"></th>
+        </tr>
+      </thead>
+      <tbody id="tbodyDetalle">
+        <tr id="trVacio">
+          <td colspan="13" style="text-align:center;padding:1.5rem;color:#aaa;font-size:.82rem;">
+            No hay productos en el pedido. Utilice el buscador para agregar.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@* ===== TOTALIZADORES + BOTÓN ===== *@
+<div class="totales-bar mt-2">
+  <div class="tot-item">
+    <span class="tot-lbl">SubTotal S/IVA</span>
+    <span class="tot-val" id="totSubSIva">$ 0,00</span>
+  </div>
+  <div class="tot-item">
+    <span class="tot-lbl">Desc/Rec Total</span>
+    <span class="tot-val" id="totDescRec">$ 0,00</span>
+  </div>
+  <div class="tot-item">
+    <span class="tot-lbl">Total S/IVA</span>
+    <span class="tot-val" id="totSIva">$ 0,00</span>
+  </div>
+  <div class="tot-item" style="margin-left:auto;">
+    <span class="tot-lbl">TOTAL GENERAL</span>
+    <span class="tot-val total-gral" id="totGeneral">$ 0,00</span>
+  </div>
+  <button class="btn-confirmar" id="btnConfirmar" onclick="guardarPedido()">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="15" height="15" style="margin-right:.4rem;vertical-align:-.15em;">
+      <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+    </svg>Confirmar Pedido
+  </button>
+</div>
+
+@* Progress *@
+<div id="progressWrap">
+  <div class="progress mt-2" style="height:22px;border-radius:8px;">
+    <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+         style="width:0%">Guardando...</div>
+  </div>
+</div>
+
+@* ===== MODAL: BUSCAR PEDIDO ===== *@
+<div class="modal fade" id="modalBuscarPedido" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content" style="border-radius:12px;overflow:hidden;border:none;box-shadow:0 8px 32px rgba(0,0,0,.2);">
+      <div class="ped-modal-header">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="18" height="18">
+          <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85-.017.016zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+        </svg>
+        <h5>Buscar Pedido</h5>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" style="filter:invert(1);opacity:.8;"></button>
+      </div>
+      <div class="modal-body">
+        @* Filtros *@
+        <div class="row g-2 mb-2">
+          <div class="col-md-2">
+            <label class="ped-label">Desde</label>
+            <input type="date" id="bpDesde" class="form-control form-control-sm ped-input">
+          </div>
+          <div class="col-md-2">
+            <label class="ped-label">Hasta</label>
+            <input type="date" id="bpHasta" class="form-control form-control-sm ped-input">
+          </div>
+          <div class="col-md-3">
+            <label class="ped-label">Vendedor</label>
+            <div class="bp-multisel-wrap" id="bpWrapVend">
+              <button type="button" class="bp-multisel-btn" onclick="bpToggleDrop('bpDropVend','bpWrapVend')">
+                <span id="bpLblVend">-- Todos --</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="#6c757d" viewBox="0 0 16 16" width="10" height="10"><path d="M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/></svg>
+              </button>
+              <div class="bp-multisel-drop" id="bpDropVend">
+                <div style="padding:.3rem .5rem;display:flex;gap:.5rem;border-bottom:1px solid #e3e6f0;">
+                  <a href="javascript:void(0)" onclick="bpSelAll('bpDropVend','bpLblVend')" style="font-size:.72rem;">Todos</a>
+                  <a href="javascript:void(0)" onclick="bpSelNone('bpDropVend','bpLblVend')" style="font-size:.72rem;">Ninguno</a>
+                </div>
+                @foreach (var v in Model.ListaVendedores)
+                {
+                  <label class="bp-multisel-item">
+                    <input type="checkbox" value="@v.Value" onchange="bpUpdateLabel('bpDropVend','bpLblVend')"> @v.Text
+                  </label>
+                }
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <label class="ped-label">Cliente</label>
+            <div class="bp-multisel-wrap" id="bpWrapCli">
+              <button type="button" class="bp-multisel-btn" onclick="bpToggleDrop('bpDropCli','bpWrapCli')">
+                <span id="bpLblCli">-- Todos --</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="#6c757d" viewBox="0 0 16 16" width="10" height="10"><path d="M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/></svg>
+              </button>
+              <div class="bp-multisel-drop" id="bpDropCli">
+                <div style="padding:.3rem .5rem;display:flex;gap:.5rem;border-bottom:1px solid #e3e6f0;">
+                  <a href="javascript:void(0)" onclick="bpSelAll('bpDropCli','bpLblCli')" style="font-size:.72rem;">Todos</a>
+                  <a href="javascript:void(0)" onclick="bpSelNone('bpDropCli','bpLblCli')" style="font-size:.72rem;">Ninguno</a>
+                </div>
+                <div style="padding:.3rem .5rem;border-bottom:1px solid #e3e6f0;">
+                  <input type="text" class="form-control form-control-sm" placeholder="Filtrar…" oninput="bpFilterItems('bpDropCli',this.value)" style="font-size:.75rem;">
+                </div>
+                <div id="bpDropCliItems" style="max-height:200px;overflow-y:auto;">
+                  @{
+                    var clientes = await Model.GetClientesListAsync();
+                  }
+                  @foreach (var c in clientes)
+                  {
+                    <label class="bp-multisel-item">
+                      <input type="checkbox" value="@c.Value" onchange="bpUpdateLabel('bpDropCli','bpLblCli')"> @c.Text
+                    </label>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-1" style="display:flex;align-items:flex-end;">
+            <button class="btn btn-primary btn-sm w-100" onclick="ejecutarBuscarPedido()">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="12" height="12">
+                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85-.017.016zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        @* Resultados *@
+        <div id="bpResultados" style="max-height:380px;overflow-y:auto;border:1px solid #e3e6f0;border-radius:8px;">
+          <table class="table table-sm mb-0" id="bpTable" style="font-size:.78rem;">
+            <thead style="background:#1a3a5c;color:#fff;position:sticky;top:0;z-index:1;">
+              <tr>
+                <th style="padding:.4rem .6rem;width:1rem;"></th>
+                <th style="padding:.4rem .6rem;">N° Pedido</th>
+                <th>Fecha</th>
+                <th>Cliente</th>
+                <th>Vendedor</th>
+                <th>Observación</th>
+                <th style="text-align:right;">Total</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="bpTbody">
+              <tr><td colspan="8" style="text-align:center;padding:1.5rem;color:#aaa;">Utilice los filtros y presione Buscar.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="font-size:.72rem;color:#6c757d;margin-top:.4rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="11" height="11" style="margin-right:.2rem;vertical-align:-.1em;"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg>
+          Click en una fila para ver el detalle del pedido.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+@* ===== MODAL: NUEVO CLIENTE ===== *@
+<div class="modal fade" id="modalNuevoCliente" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content" style="border:none;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);overflow:hidden;">
+
+      <div class="modal-header-cli">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#fff" viewBox="0 0 16 16"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4z"/></svg>
+        <h5 style="margin:0 0 0 .6rem;color:#fff;font-weight:700;font-size:.95rem;">Agregar Cliente</h5>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" style="filter:invert(1);opacity:.8;"></button>
+      </div>
+
+      <div class="modal-body p-4">
+        <div id="ncAlerta" style="display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:.5rem .8rem;margin-bottom:.8rem;font-size:.8rem;color:#856404;"></div>
+
+        <div class="modal-section-title">Datos Generales</div>
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="modal-field-label">Nombre Comercial <span style="color:#e74a3b;">*</span></label>
+            <input type="text" id="ncNombre" class="form-control form-control-sm" style="border-radius:8px;" maxlength="100" placeholder="Nombre o fantasía…">
+          </div>
+          <div class="col-md-6">
+            <label class="modal-field-label">Razón Social</label>
+            <input type="text" id="ncRazon" class="form-control form-control-sm" style="border-radius:8px;" maxlength="100">
+          </div>
+          <div class="col-md-4">
+            <label class="modal-field-label">CUIL / CUIT</label>
+            <input type="text" id="ncCuil" class="form-control form-control-sm" style="border-radius:8px;" maxlength="20" placeholder="XX-XXXXXXXX-X">
+          </div>
+          <div class="col-md-8">
+            <label class="modal-field-label">Dirección</label>
+            <input type="text" id="ncDireccion" class="form-control form-control-sm" style="border-radius:8px;" maxlength="150">
+          </div>
+        </div>
+
+        <div class="modal-section-title">Contacto</div>
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="modal-field-label">Email</label>
+            <input type="email" id="ncEmail" class="form-control form-control-sm" style="border-radius:8px;" maxlength="100">
+          </div>
+          <div class="col-md-3">
+            <label class="modal-field-label">Teléfono</label>
+            <input type="text" id="ncTelefono" class="form-control form-control-sm" style="border-radius:8px;" maxlength="30">
+          </div>
+          <div class="col-md-3">
+            <label class="modal-field-label">Celular</label>
+            <input type="text" id="ncCelular" class="form-control form-control-sm" style="border-radius:8px;" maxlength="30">
+          </div>
+          <div class="col-md-6">
+            <label class="modal-field-label">Contacto</label>
+            <input type="text" id="ncContacto" class="form-control form-control-sm" style="border-radius:8px;" maxlength="60" placeholder="Nombre del contacto…">
+          </div>
+        </div>
+
+        <div class="modal-section-title">Clasificación</div>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="modal-field-label">Condición IVA</label>
+            <select id="ncCondIva" class="form-select form-select-sm" style="border-radius:8px;">
+              <option value="">-- Seleccione --</option>
+              @foreach (var item in Model.ListaCondIvas)
+              {
+                <option value="@item.Value">@item.Text</option>
+              }
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="modal-field-label">Vendedor</label>
+            <select id="ncVendedor" class="form-select form-select-sm" style="border-radius:8px;">
+              <option value="">-- Seleccione --</option>
+              @foreach (var item in Model.ListaVendedores)
+              {
+                <option value="@item.Value">@item.Text</option>
+              }
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="modal-field-label">Localidad</label>
+            <select id="ncLocalidad" class="form-select form-select-sm" style="border-radius:8px;">
+              <option value="">-- Seleccione --</option>
+              @foreach (var item in Model.ListaLocalidades)
+              {
+                <option value="@item.Value">@item.Text</option>
+              }
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="modal-field-label">Zona</label>
+            <select id="ncZona" class="form-select form-select-sm" style="border-radius:8px;">
+              <option value="">-- Seleccione --</option>
+              @foreach (var item in Model.ListaZonas)
+              {
+                <option value="@item.Value">@item.Text</option>
+              }
+            </select>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer-cli">
+        <button type="button" class="btn-cli btn-cli-secondary" data-bs-dismiss="modal">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="14" height="14"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854z"/></svg>
+          Cancelar
+        </button>
+        <button type="button" class="btn-cli btn-cli-primary" onclick="guardarNuevoCliente()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="14" height="14"><path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4.5a.5.5 0 0 0-.146-.354l-3-3A.5.5 0 0 0 11.5 1H2zm0 1h9.293L14 4.707V14H2V2zM5 12a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H5zm1-1h4V9H6v2zM5 5a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1H5z"/></svg>
+          Agregar
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+// ======================================================================
+// PARÁMETROS DEL SISTEMA
+// ======================================================================
+const BONIF_POR_LINEA = @Model.BonificacionPorLinea;
+const PROD_DOLARIZADOS = @Model.ProductosDolarizados;
+const COTIZ_DOLAR = @Model.CotizDolar.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+// ======================================================================
+// ESTADO GLOBAL
+// ======================================================================
+let _clienteId = 0;
+let _pedidoId  = 0;
+let _rows      = [];
+let _lastProdInput = 'desc';
+let _prodSelIdx = -1;
+let _cliSelIdx  = -1;
+
+// Inicializar columna Sel y desc/rec bar según parámetro
+(function initBonif() {
+  if (BONIF_POR_LINEA === 0) {
+    document.getElementById('thSel').style.display = 'none';
+    document.getElementById('descRecMsg').textContent = 'Se aplicará a todos los productos.';
+  } else {
+    document.getElementById('descRecMsg').textContent = 'Se aplicará solo a filas seleccionadas (Sel ✓).';
+  }
+})();
+
+// ======================================================================
+// FORMATEO
+// ======================================================================
+function fmt(n) {
+  return '$\u00a0' + (+(n||0)).toLocaleString('es-AR', {minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fmtN(n, dec) {
+  dec = dec === undefined ? 2 : dec;
+  return (+(n||0)).toLocaleString('es-AR', {minimumFractionDigits:dec,maximumFractionDigits:dec});
+}
+
+// ======================================================================
+// CLIENTE AUTOCOMPLETE
+// ======================================================================
+let _cliTimer = null;
+function onClienteInput(val) {
+  clearTimeout(_cliTimer);
+  _cliSelIdx = -1;
+  if (val.length < 2) { cerrarDropCli(); return; }
+  _cliTimer = setTimeout(function() { fetchClientes(val); }, 300);
+}
+
+function onClienteKeydown(e) {
+  var drop = document.getElementById('dropClientes');
+  var items = drop.querySelectorAll('.ac-item');
+  if (e.key === 'ArrowDown') { e.preventDefault(); _cliSelIdx = Math.min(_cliSelIdx+1, items.length-1); highlightCli(items); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); _cliSelIdx = Math.max(_cliSelIdx-1, 0); highlightCli(items); }
+  else if (e.key === 'Enter') { e.preventDefault(); if (_cliSelIdx >= 0 && items[_cliSelIdx]) items[_cliSelIdx].click(); }
+  else if (e.key === 'Escape') cerrarDropCli();
+}
+function highlightCli(items) {
+  items.forEach(function(it,i) { it.classList.toggle('active', i === _cliSelIdx); });
+  if (items[_cliSelIdx]) items[_cliSelIdx].scrollIntoView({block:'nearest'});
+}
+
+async function fetchClientes(q) {
+  var r = await fetch('/Ventas/Pedidos?handler=BuscarClientes&q=' + encodeURIComponent(q));
+  var data = await r.json();
+  var drop = document.getElementById('dropClientes');
+  if (!data.length) { cerrarDropCli(); return; }
+  drop.innerHTML = data.map(function(c,i) {
+    return '<div class="ac-item" data-idx="' + i + '"'
+      + ' ondblclick="seleccionarCliente(' + escAttr(JSON.stringify(c)) + ')"'
+      + ' onclick="seleccionarCliente(' + escAttr(JSON.stringify(c)) + ')">'
+      + '<strong>' + (c.nombreComercial||'') + '</strong>'
+      + '<small>' + (c.direccionFull||'') + '</small>'
+      + '</div>';
+  }).join('');
+  drop.classList.add('open');
+}
+
+function seleccionarCliente(c) {
+  _clienteId = c.clienteId;
+  document.getElementById('hClienteId').value = c.clienteId;
+  document.getElementById('txtBuscarCliente').value = '';
+  cerrarDropCli();
+  document.getElementById('ci-nombre').textContent    = c.nombreComercial || '';
+  document.getElementById('ci-telefono').textContent  = c.telefono   || '--';
+  document.getElementById('ci-direccion').textContent = c.direccionFull || '--';
+  document.getElementById('ci-contacto').textContent  = c.contacto   || '--';
+  document.getElementById('clienteInfo').style.display  = 'block';
+  document.getElementById('clienteVacio').style.display = 'none';
+}
+function cerrarDropCli() {
+  document.getElementById('dropClientes').classList.remove('open');
+  document.getElementById('dropClientes').innerHTML = '';
+}
+
+// ======================================================================
+// BÚSQUEDA DE PRODUCTOS
+// ======================================================================
+let _prodTimer = null;
+let _prodSelIdxBarras=-1, _prodSelIdxCodProv=-1, _prodSelIdxDesc=-1;
+
+async function onProdExactoKeydown(e, tipo) {
+  var inputId = tipo === 'codBarras' ? 'txtCodBarras' : 'txtCodProv';
+  var dropId  = tipo === 'codBarras' ? 'dropBarras'   : 'dropCodProv';
+  var drop    = document.getElementById(dropId);
+  var items   = drop.querySelectorAll('.ac-item');
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    var idx = tipo==='codBarras'?_prodSelIdxBarras:_prodSelIdxCodProv;
+    idx = Math.min(idx+1, items.length-1);
+    if (tipo==='codBarras') _prodSelIdxBarras=idx; else _prodSelIdxCodProv=idx;
+    highlightProd(items, idx);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    var idx2 = tipo==='codBarras'?_prodSelIdxBarras:_prodSelIdxCodProv;
+    idx2 = Math.max(idx2-1, 0);
+    if (tipo==='codBarras') _prodSelIdxBarras=idx2; else _prodSelIdxCodProv=idx2;
+    highlightProd(items, idx2);
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    var idxSel = tipo==='codBarras'?_prodSelIdxBarras:_prodSelIdxCodProv;
+    if (items.length > 0 && items[idxSel]) { items[idxSel].click(); return; }
+    var val = document.getElementById(inputId).value.trim();
+    if (!val) return;
+    _lastProdInput = tipo;
+    var data = await fetchProductos(val, tipo);
+    if (data.length === 1) { seleccionarProducto(data[0]); }
+    else if (data.length > 1) { mostrarDropProd(data, dropId, tipo); }
+  }
+}
+
+function onProdInput(val, tipo) {
+  var dropId = tipo === 'codBarras' ? 'dropBarras' : 'dropCodProv';
+  clearTimeout(_prodTimer);
+  _lastProdInput = tipo;
+  if (!val) { cerrarDropProd(dropId); return; }
+  _prodTimer = setTimeout(async function() {
+    var data = await fetchProductos(val, tipo);
+    mostrarDropProd(data, dropId, tipo);
+  }, 300);
+}
+
+function onProdDescInput(val) {
+  clearTimeout(_prodTimer);
+  _lastProdInput = 'desc';
+  _prodSelIdxDesc = -1;
+  if (val.length < 2) { cerrarDropProd('dropDesc'); return; }
+  _prodTimer = setTimeout(async function() {
+    var data = await fetchProductos(val, 'descripcion');
+    mostrarDropProd(data, 'dropDesc', 'descripcion');
+  }, 300);
+}
+function onProdDescKeydown(e) {
+  var drop  = document.getElementById('dropDesc');
+  var items = drop.querySelectorAll('.ac-item');
+  if (e.key==='ArrowDown') { e.preventDefault(); _prodSelIdxDesc=Math.min(_prodSelIdxDesc+1,items.length-1); highlightProd(items,_prodSelIdxDesc); }
+  else if (e.key==='ArrowUp')   { e.preventDefault(); _prodSelIdxDesc=Math.max(_prodSelIdxDesc-1,0); highlightProd(items,_prodSelIdxDesc); }
+  else if (e.key==='Enter') { e.preventDefault(); if (_prodSelIdxDesc>=0&&items[_prodSelIdxDesc]) items[_prodSelIdxDesc].click(); }
+  else if (e.key==='Escape') cerrarDropProd('dropDesc');
+}
+function highlightProd(items, idx) {
+  items.forEach(function(it,i) { it.classList.toggle('active', i===idx); });
+  if (items[idx]) items[idx].scrollIntoView({block:'nearest'});
+}
+
+async function fetchProductos(q, tipo) {
+  var r = await fetch('/Ventas/Pedidos?handler=BuscarProductos&q=' + encodeURIComponent(q) + '&tipo=' + tipo);
+  return await r.json();
+}
+function mostrarDropProd(data, dropId, tipo) {
+  var drop = document.getElementById(dropId);
+  if (!data.length) { cerrarDropProd(dropId); return; }
+  drop.innerHTML = data.map(function(p) {
+    return '<div class="ac-item"'
+      + ' onclick="seleccionarProducto(' + escAttr(JSON.stringify(p)) + ')"'
+      + ' ondblclick="seleccionarProducto(' + escAttr(JSON.stringify(p)) + ')">'
+      + '<strong>' + (p.codProveedor||'') + '</strong> -- ' + (p.descripcion||'')
+      + '<small>Stock: ' + fmtN(p.stock) + ' | P.S/IVA: ' + fmt(p.precioSinIva) + '</small>'
+      + '</div>';
+  }).join('');
+  drop.classList.add('open');
+}
+function cerrarDropProd(dropId) {
+  var d = document.getElementById(dropId);
+  if(d) { d.classList.remove('open'); d.innerHTML=''; }
+}
+function cerrarTodosDropsProd() {
+  ['dropBarras','dropCodProv','dropDesc'].forEach(function(id) { cerrarDropProd(id); });
+}
+
+function escAttr(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+}
+
+let _prodPendiente = null;
+function seleccionarProducto(p) {
+  cerrarTodosDropsProd();
+  document.getElementById('txtCodBarras').value   = '';
+  document.getElementById('txtCodProv').value     = '';
+  document.getElementById('txtDescripcion').value = '';
+  _prodPendiente = p;
+  var cant = document.getElementById('txtCantidad');
+  cant.value = '';
+  cant.focus();
+  cant.select();
+}
+
+function onCantidadKeydown(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    var cant = parseFloat(document.getElementById('txtCantidad').value) || 0;
+    if (cant <= 0 || !_prodPendiente) return;
+    var rowIdx = agregarProducto(_prodPendiente, cant);
+    _prodPendiente = null;
+    document.getElementById('txtCantidad').value = '';
+    setTimeout(function() {
+      var obsInput = document.querySelector('#tbodyDetalle tr[data-idx="' + rowIdx + '"] input.td-obs');
+      var map = { codBarras:'txtCodBarras', codProveedor:'txtCodProv', desc:'txtDescripcion' };
+      var targetId = map[_lastProdInput] || 'txtDescripcion';
+      if (obsInput) {
+        obsInput.focus();
+        obsInput.addEventListener('keydown', function obsEnter(ev) {
+          if (ev.key === 'Enter') {
+            ev.preventDefault();
+            obsInput.removeEventListener('keydown', obsEnter);
+            var el = document.getElementById(targetId);
+            if (el) { el.focus(); el.select(); }
+          }
+        });
+      } else {
+        var el = document.getElementById(targetId);
+        if (el) { el.focus(); el.select(); }
+      }
+    }, 50);
+  } else if (e.key === 'Escape') {
+    _prodPendiente = null;
+    document.getElementById('txtCantidad').value = '';
+    var map = { codBarras:'txtCodBarras', codProveedor:'txtCodProv', desc:'txtDescripcion' };
+    var el  = document.getElementById(map[_lastProdInput] || 'txtDescripcion');
+    if (el) el.focus();
+  }
+}
+
+// ======================================================================
+// GRILLA
+// ======================================================================
+function getIva() { return parseFloat(document.getElementById('selIva').value) || 0; }
+
+function calcRow(row) {
+  var iva = getIva();
+  row.subtotalSinIva = row.precioSinIva * (1 + row.descRec / 100);
+  row.precioConIva   = row.subtotalSinIva * (1 + iva / 100);
+  row.subtotal       = row.precioConIva * row.cantidad;
+}
+
+function agregarProducto(p, cant) {
+  var iva = getIva();
+  var row = {
+    fkProducto:    p.productoId,
+    codBarras:     p.codBarras   || '',
+    codProveedor:  p.codProveedor || '',
+    descripcion:   p.descripcion  || '',
+    observ:        '',
+    stock:         p.stock        || 0,
+    precioSinIva:  p.precioSinIva || 0,
+    descRec:       0,
+    subtotalSinIva: p.precioSinIva || 0,
+    precioConIva:  (p.precioSinIva || 0) * (1 + iva/100),
+    cantidad:      cant,
+    subtotal:      (p.precioSinIva || 0) * (1 + iva/100) * cant,
+    dolarizado:    p.dolarizado || false,
+    costo:         p.costo       || 0,
+    precioOrig:    p.precioOrig  || 0,
+    selected:      false
+  };
+  calcRow(row);
+  _rows.push(row);
+  var idx = _rows.length - 1;
+  renderGrilla();
+  recalcularTotales();
+  return idx;
+}
+
+function eliminarFila(idx) {
+  _rows.splice(idx, 1);
+  renderGrilla();
+  recalcularTotales();
+}
+
+function _syncChkAll() {
+  var chkAll = document.getElementById('chkSelAll');
+  if (!chkAll) return;
+  var total = _rows.length;
+  var sel   = _rows.filter(function(r){ return r.selected; }).length;
+  chkAll.indeterminate = sel > 0 && sel < total;
+  chkAll.checked       = total > 0 && sel === total;
+}
+
+function renderGrilla() {
+  var tbody = document.getElementById('tbodyDetalle');
+  if (_rows.length === 0) {
+    tbody.innerHTML = '<tr id="trVacio"><td colspan="13" style="text-align:center;padding:1.5rem;color:#aaa;font-size:.82rem;">No hay productos en el pedido.</td></tr>';
+    _syncChkAll();
+    return;
+  }
+  tbody.innerHTML = _rows.map(function(r, i) {
+    var selVis = BONIF_POR_LINEA === 1 ? '' : 'display:none;';
+    var clsDescRec = r.descRec < 0 ? 'td-neg' : (r.descRec > 0 ? 'td-pos' : '');
+    return '<tr data-idx="' + i + '">'
+      + '<td style="' + selVis + 'text-align:center;"><input type="checkbox" class="row-sel" onchange="rowSelChange(' + i + ',this.checked)" ' + (r.selected?'checked':'') + '></td>'
+      + '<td style="font-size:.72rem;">' + escH(r.codBarras) + '</td>'
+      + '<td style="font-size:.72rem;">' + escH(r.codProveedor) + '</td>'
+      + '<td title="' + escH(r.descripcion) + '">' + escH(r.descripcion) + '</td>'
+      + '<td><input type="text" class="td-edit td-obs" value="' + escH(r.observ||'') + '" maxlength="50"'
+      +   ' oninput="_rows[' + i + '].observ=this.value" style="width:110px;text-align:left;"></td>'
+      + '<td class="td-calc">' + fmtN(r.stock) + '</td>'
+      + '<td><input type="number" class="td-edit" value="' + fmtNum(r.precioSinIva) + '" min="0" step="0.01"'
+      +   ' oninput="onChangePrecio(' + i + ',this.value)"'
+      +   ' onchange="onChangePrecio(' + i + ',this.value)"'
+      +   ' style="width:80px;"></td>'
+      + '<td><input type="number" class="td-edit ' + clsDescRec + '" value="' + fmtNum(r.descRec) + '" step="0.01"'
+      +   ' oninput="onChangeDescRec(' + i + ',this.value)"'
+      +   ' onchange="onChangeDescRec(' + i + ',this.value)"'
+      +   ' style="width:60px;"></td>'
+      + '<td class="td-calc">' + fmt(r.subtotalSinIva) + '</td>'
+      + '<td class="td-calc">' + fmt(r.precioConIva) + '</td>'
+      + '<td><input type="number" class="td-edit" value="' + fmtNum(r.cantidad) + '" min="0" step="0.01"'
+      +   ' oninput="onChangeCantidad(' + i + ',this.value)"'
+      +   ' onchange="onChangeCantidad(' + i + ',this.value)"'
+      +   ' style="width:65px;"></td>'
+      + '<td class="td-calc" id="sub-' + i + '">' + fmt(r.subtotal) + '</td>'
+      + '<td><button class="btn-del-row" title="Eliminar" onclick="eliminarFila(' + i + ')">&#x2715;</button></td>'
+      + '</tr>';
+  }).join('');
+  _syncChkAll();
+}
+
+function fmtNum(n) { return (+(n||0)).toFixed(2); }
+function escH(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function onChangePrecio(idx, val) {
+  _rows[idx].precioSinIva = parseFloat(val)||0;
+  calcRow(_rows[idx]);
+  actualizarCeldasCalc(idx);
+  recalcularTotales();
+}
+function onChangeDescRec(idx, val) {
+  var v = parseFloat(val) || 0;
+  if (BONIF_POR_LINEA === 0) {
+    // Aplica a TODAS las filas
+    _rows.forEach(function(r) { r.descRec = v; calcRow(r); });
+    renderGrilla();
+  } else {
+    // Solo a la fila actual
+    _rows[idx].descRec = v;
+    calcRow(_rows[idx]);
+    actualizarCeldasCalc(idx);
+  }
+  recalcularTotales();
+}
+
+// ======================================================================
+// DESC/REC — barra de aplicación global/selectiva
+// ======================================================================
+document.querySelectorAll('input[name="tipoDescRec"]').forEach(function(radio) {
+  radio.addEventListener('change', function() {
+    var isDesc = document.getElementById('rdDescuento').checked;
+    document.getElementById('lblDescuento').style.background = isDesc ? '#e74a3b' : '#f0f0f0';
+    document.getElementById('lblDescuento').style.color      = isDesc ? '#fff'    : '#666';
+    document.getElementById('lblRecargo').style.background   = isDesc ? '#f0f0f0': '#1cc88a';
+    document.getElementById('lblRecargo').style.color        = isDesc ? '#666'   : '#fff';
+  });
+});
+
+function aplicarDescRec() {
+  var pct   = parseFloat(document.getElementById('txtDescRecPct').value) || 0;
+  var isDesc = document.getElementById('rdDescuento').checked;
+  var valor  = isDesc ? -pct : pct;
+  var msg    = document.getElementById('descRecMsg');
+  if (pct === 0) { msg.textContent = 'Ingrese un porcentaje mayor a 0.'; return; }
+  if (_rows.length === 0) { msg.textContent = 'No hay productos en el pedido.'; return; }
+
+  if (BONIF_POR_LINEA === 0) {
+    _rows.forEach(function(r) { r.descRec = valor; calcRow(r); });
+    msg.textContent = (isDesc ? 'Descuento' : 'Recargo') + ' de ' + pct + '% aplicado a todos los productos.';
+  } else {
+    var selRows = _rows.filter(function(r) { return r.selected; });
+    if (selRows.length === 0) {
+      msg.textContent = 'Seleccione al menos una fila para aplicar.';
+      return;
+    }
+    selRows.forEach(function(r) { r.descRec = valor; calcRow(r); });
+    msg.textContent = (isDesc ? 'Descuento' : 'Recargo') + ' de ' + pct + '% aplicado a ' + selRows.length + ' fila(s) seleccionada(s).';
+  }
+  renderGrilla();
+  recalcularTotales();
+  // Limpiar mensaje después de 3s
+  setTimeout(function() { document.getElementById('descRecMsg').textContent = ''; }, 3000);
+}
+
+function limpiarDescRec() {
+  _rows.forEach(function(r) { r.descRec = 0; calcRow(r); });
+  renderGrilla();
+  recalcularTotales();
+  document.getElementById('txtDescRecPct').value = '';
+  var msg = document.getElementById('descRecMsg');
+  msg.textContent = 'Desc/Rec eliminado de todas las filas.';
+  setTimeout(function() { msg.textContent = ''; }, 3000);
+}
+function onChangeCantidad(idx, val) {
+  _rows[idx].cantidad = parseFloat(val)||0;
+  calcRow(_rows[idx]);
+  actualizarCeldasCalc(idx);
+  recalcularTotales();
+}
+function rowSelChange(idx, checked) {
+  _rows[idx].selected = checked;
+  // Sincronizar checkbox maestro
+  var chkAll = document.getElementById('chkSelAll');
+  if (chkAll) {
+    var total = _rows.length;
+    var seleccionadas = _rows.filter(function(r){ return r.selected; }).length;
+    chkAll.indeterminate = seleccionadas > 0 && seleccionadas < total;
+    chkAll.checked = seleccionadas === total && total > 0;
+  }
+}
+
+function seleccionarTodas(checked) {
+  _rows.forEach(function(r) { r.selected = checked; });
+  // Actualizar checkboxes en DOM sin re-renderizar toda la grilla
+  document.querySelectorAll('#tbodyDetalle input.row-sel').forEach(function(cb) {
+    cb.checked = checked;
+  });
+}
+function actualizarCeldasCalc(idx) {
+  var r = _rows[idx];
+  var tr = document.querySelector('#tbodyDetalle tr[data-idx="' + idx + '"]');
+  if (!tr) return;
+  var cells = tr.querySelectorAll('td');
+  cells[8].textContent = fmt(r.subtotalSinIva);
+  cells[9].textContent = fmt(r.precioConIva);
+  cells[11].textContent = fmt(r.subtotal);
+}
+
+// ======================================================================
+// TOTALIZADORES
+// ======================================================================
+function recalcularTodo() {
+  _rows.forEach(function(r) { calcRow(r); });
+  renderGrilla();
+  recalcularTotales();
+}
+function recalcularTotales() {
+  var subSIva  = _rows.reduce(function(a,r) { return a + r.precioSinIva * r.cantidad; }, 0);
+  var descRec  = _rows.reduce(function(a,r) { return a + (r.subtotalSinIva - r.precioSinIva) * r.cantidad; }, 0);
+  var totSIva  = _rows.reduce(function(a,r) { return a + r.subtotalSinIva * r.cantidad; }, 0);
+  var totGral  = _rows.reduce(function(a,r) { return a + r.subtotal; }, 0);
+  document.getElementById('totSubSIva').textContent = fmt(subSIva);
+  document.getElementById('totDescRec').textContent = fmt(descRec);
+  document.getElementById('totSIva').textContent    = fmt(totSIva);
+  document.getElementById('totGeneral').textContent = fmt(totGral);
+}
+
+// ======================================================================
+// GUARDAR PEDIDO
+// ======================================================================
+async function guardarPedido() {
+  if (_clienteId <= 0) { alert('Debe seleccionar un cliente.'); return; }
+  if (_rows.length === 0) { alert('Debe agregar al menos un producto.'); return; }
+  var vendId = parseInt(document.getElementById('selVendedor').value)||0;
+  if (vendId <= 0) { alert('Debe seleccionar un vendedor.'); return; }
+
+  var btn = document.getElementById('btnConfirmar');
+  btn.disabled = true;
+  document.getElementById('progressWrap').style.display='block';
+  animProgress();
+
+  var dto = {
+    pedidoId:    _pedidoId,
+    fkCliente:   _clienteId,
+    iva:         parseFloat(document.getElementById('selIva').value)||0,
+    fkVendedor:  vendId,
+    observacion: document.getElementById('txtObservacion').value.trim(),
+    total:       _rows.reduce(function(a,r){return a+r.subtotal;},0),
+    detalle:     _rows.map(function(r) {
+      return {
+        fkProducto:    r.fkProducto,
+        codBarras:     r.codBarras,
+        codProveedor:  r.codProveedor,
+        descripcion:   r.descripcion,
+        precioSinIva:  r.precioSinIva,
+        cantidad:      r.cantidad,
+        precioOrig:    r.precioOrig,
+        costo:         r.costo,
+        precioConIva:  r.precioConIva,
+        observ:        r.observ,
+        descuento:     r.descRec < 0 ? Math.abs(r.descRec) : 0,
+        recargo:       r.descRec > 0 ? r.descRec : 0,
+        subtotalSinIva: r.subtotalSinIva
+      };
+    })
+  };
+
+  try {
+    var resp = await fetch('/Ventas/Pedidos?handler=GuardarPedido', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(dto)
+    });
+    var ct = resp.headers.get('content-type')||'';
+    if (!ct.includes('application/json')) { throw new Error('Error del servidor (' + resp.status + ')'); }
+    var data = await resp.json();
+    if (data.ok) {
+      setProgress(100);
+      setTimeout(function() {
+        alert('Pedido N\u00b0 ' + String(data.pedidoId).padStart(6,'0') + ' guardado correctamente.');
+        limpiarTodo();
+      }, 400);
+    } else {
+      alert(data.msg || 'Error al guardar.');
+      btn.disabled = false;
+      document.getElementById('progressWrap').style.display='none';
+    }
+  } catch(e) {
+    alert('Error: ' + e.message);
+    btn.disabled = false;
+    document.getElementById('progressWrap').style.display='none';
+  }
+}
+
+let _progInterval = null;
+let _progVal = 0;
+function animProgress() {
+  _progVal = 0;
+  _progInterval = setInterval(function() {
+    _progVal = Math.min(_progVal + Math.random()*15, 90);
+    setProgress(_progVal);
+  }, 200);
+}
+function setProgress(v) {
+  if (v >= 100 && _progInterval) { clearInterval(_progInterval); _progInterval=null; }
+  var bar = document.getElementById('progressBar');
+  bar.style.width = v + '%';
+  bar.textContent = v < 100 ? 'Guardando...' : '¡Listo!';
+}
+
+// ======================================================================
+// LIMPIAR
+// ======================================================================
+function limpiarTodo() {
+  _clienteId = 0; _pedidoId = 0; _rows = [];
+  document.getElementById('clienteInfo').style.display  = 'none';
+  document.getElementById('clienteVacio').style.display = 'block';
+  document.getElementById('hClienteId').value           = '0';
+  document.getElementById('txtBuscarCliente').value     = '';
+  document.getElementById('txtObservacion').value       = '';
+  document.getElementById('txtCodBarras').value         = '';
+  document.getElementById('txtCodProv').value           = '';
+  document.getElementById('txtDescripcion').value       = '';
+  document.getElementById('txtCantidad').value          = '';
+  document.getElementById('lblPedidoId').textContent    = '';
+  document.getElementById('progressWrap').style.display = 'none';
+  document.getElementById('btnConfirmar').disabled       = false;
+  _prodPendiente = null;
+  renderGrilla();
+  recalcularTotales();
+}
+
+// ======================================================================
+// MODAL: BUSCAR PEDIDO — multi-select helpers
+// ======================================================================
+function abrirBuscarPedido() {
+  new bootstrap.Modal(document.getElementById('modalBuscarPedido')).show();
+}
+
+function bpToggleDrop(dropId, wrapId) {
+  var drop = document.getElementById(dropId);
+  var wrap = document.getElementById(wrapId);
+  // Cerrar otros
+  document.querySelectorAll('.bp-multisel-drop.open').forEach(function(d) { if (d.id !== dropId) d.classList.remove('open'); });
+  document.querySelectorAll('.bp-multisel-wrap').forEach(function(w) { if (w.id !== wrapId) w.classList.remove('open'); });
+  drop.classList.toggle('open');
+  wrap.classList.toggle('open');
+}
+function bpSelAll(dropId, lblId) {
+  document.querySelectorAll('#' + dropId + ' .bp-multisel-item input[type=checkbox]').forEach(function(cb) { cb.checked = true; });
+  bpUpdateLabel(dropId, lblId);
+}
+function bpSelNone(dropId, lblId) {
+  document.querySelectorAll('#' + dropId + ' .bp-multisel-item input[type=checkbox]').forEach(function(cb) { cb.checked = false; });
+  bpUpdateLabel(dropId, lblId);
+}
+function bpUpdateLabel(dropId, lblId) {
+  var checks = document.querySelectorAll('#' + dropId + ' .bp-multisel-item input[type=checkbox]');
+  var sel = [];
+  checks.forEach(function(cb) { if (cb.checked) sel.push(cb.parentElement.textContent.trim()); });
+  var lbl = document.getElementById(lblId);
+  if (sel.length === 0 || sel.length === checks.length) lbl.textContent = '-- Todos --';
+  else if (sel.length <= 2) lbl.textContent = sel.join(', ');
+  else lbl.textContent = sel.length + ' seleccionados';
+}
+function bpGetCheckedValues(dropId) {
+  var vals = [];
+  document.querySelectorAll('#' + dropId + ' .bp-multisel-item input[type=checkbox]:checked').forEach(function(cb) { vals.push(cb.value); });
+  return vals;
+}
+function bpFilterItems(dropId, q) {
+  var items = document.querySelectorAll('#' + dropId + ' .bp-multisel-item');
+  var lower = q.toLowerCase();
+  items.forEach(function(item) {
+    var txt = item.textContent.toLowerCase();
+    item.style.display = txt.includes(lower) ? '' : 'none';
+  });
+}
+// Cerrar dropdowns al click fuera
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.bp-multisel-wrap')) {
+    document.querySelectorAll('.bp-multisel-drop.open').forEach(function(d) { d.classList.remove('open'); });
+    document.querySelectorAll('.bp-multisel-wrap').forEach(function(w) { w.classList.remove('open'); });
+  }
+});
+
+async function ejecutarBuscarPedido() {
+  var desde    = document.getElementById('bpDesde').value;
+  var hasta    = document.getElementById('bpHasta').value;
+  var vendIds  = bpGetCheckedValues('bpDropVend');
+  var cliIds   = bpGetCheckedValues('bpDropCli');
+  var url = '/Ventas/Pedidos?handler=BuscarPedidos'
+    + (desde             ? '&desde='     + encodeURIComponent(desde)            : '')
+    + (hasta             ? '&hasta='     + encodeURIComponent(hasta)            : '')
+    + (vendIds.length    ? '&vendedores=' + encodeURIComponent(vendIds.join(',')): '')
+    + (cliIds.length     ? '&clientes='  + encodeURIComponent(cliIds.join(',')) : '');
+  var tbody = document.getElementById('bpTbody');
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:1rem;color:#aaa;">Buscando…</td></tr>';
+  try {
+    var r    = await fetch(url);
+    var data = await r.json();
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:1rem;color:#888;">Sin resultados.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(function(p) {
+      var fecha = p.fecha ? new Date(p.fecha).toLocaleDateString('es-AR') : '';
+      return '<tr class="bp-row" data-id="' + p.id + '" data-cli="' + (p.fkCliente||0) + '" style="cursor:pointer;" onclick="bpToggleDetalle(this,' + p.id + ',' + (p.fkCliente||0) + ')">'
+        + '<td style="padding:.35rem .4rem;text-align:center;color:#aaa;font-size:.7rem;">&#9654;</td>'
+        + '<td style="padding:.35rem .6rem;"><strong>' + p.id + '</strong></td>'
+        + '<td>' + fecha + '</td>'
+        + '<td>' + escH(p.nombreCliente||'') + '</td>'
+        + '<td>' + escH(p.nombreVendedor||'') + '</td>'
+        + '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escH(p.observacion||'') + '">' + escH(p.observacion||'') + '</td>'
+        + '<td style="text-align:right;">' + fmt(p.total) + '</td>'
+        + '<td><button class="btn btn-xs btn-primary" style="font-size:.72rem;padding:.2rem .5rem;" onclick="event.stopPropagation();cargarPedido(' + p.id + ',' + (p.fkCliente||0) + ')">Cargar</button></td>'
+        + '</tr>'
+        + '<tr class="bp-detalle-row" id="bpDet_' + p.id + '" style="display:none;"><td colspan="8" style="padding:0;background:#f8f9ff;"></td></tr>';
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:1rem;color:#dc3545;">Error al buscar.</td></tr>';
+  }
+}
+
+var _bpDetalleAbiertoId = null;
+async function bpToggleDetalle(trEl, pedidoId, fkCliente) {
+  var detTr = document.getElementById('bpDet_' + pedidoId);
+  var td    = detTr.querySelector('td');
+  if (_bpDetalleAbiertoId === pedidoId) {
+    detTr.style.display = 'none';
+    trEl.querySelector('td:first-child').innerHTML = '&#9654;';
+    _bpDetalleAbiertoId = null;
+    return;
+  }
+  if (_bpDetalleAbiertoId !== null) {
+    var prevDet = document.getElementById('bpDet_' + _bpDetalleAbiertoId);
+    if (prevDet) prevDet.style.display = 'none';
+    document.querySelectorAll('.bp-row').forEach(function(r){ r.querySelector('td:first-child').innerHTML = '&#9654;'; });
+  }
+  _bpDetalleAbiertoId = pedidoId;
+  trEl.querySelector('td:first-child').innerHTML = '&#9660;';
+  td.innerHTML = '<div style="padding:.6rem 1rem;color:#aaa;font-size:.78rem;">Cargando detalle…</div>';
+  detTr.style.display = '';
+  try {
+    var r    = await fetch('/Ventas/Pedidos?handler=Pedido&id=' + pedidoId);
+    var data = await r.json();
+    if (!data.ok) { td.innerHTML = '<div style="padding:.6rem;color:#dc3545;">Error al cargar el detalle.</div>'; return; }
+    var c   = data.cab;
+    var d   = data.detalle || [];
+    var iva = parseFloat(c.iva) || 0;
+
+    // Regla: si cabecera tiene descuento global, usarlo para toda las líneas
+    var descRecGlobalVis = null;
+    if (c.descuento != null) {
+      descRecGlobalVis = (c.descuento || 0) * -1 + (c.recargo || 0);
+    }
+
+    var html = '<div style="display:flex;gap:1rem;padding:.75rem 1rem;flex-wrap:wrap;">';
+    // Panel cliente
+    html += '<div style="min-width:200px;flex:0 0 auto;">'
+      + '<div style="font-size:.68rem;font-weight:700;color:#4e73df;text-transform:uppercase;letter-spacing:.4px;margin-bottom:.4rem;border-bottom:1px solid #dee2e6;padding-bottom:.2rem;">Datos del cliente</div>'
+      + '<table style="font-size:.78rem;border-collapse:collapse;">'
+      + '<tr><td style="color:#6c757d;padding:.1rem .4rem .1rem 0;white-space:nowrap;font-weight:600;">Nombre:</td><td>' + escH(c.nombreComercial||'\u2014') + '</td></tr>'
+      + '<tr><td style="color:#6c757d;padding:.1rem .4rem .1rem 0;white-space:nowrap;font-weight:600;">Tel\u00e9fono:</td><td>' + escH(c.telefono||'\u2014') + '</td></tr>'
+      + '<tr><td style="color:#6c757d;padding:.1rem .4rem .1rem 0;white-space:nowrap;font-weight:600;">Direcci\u00f3n:</td><td>' + escH(c.direccionFull||'\u2014') + '</td></tr>'
+      + '<tr><td style="color:#6c757d;padding:.1rem .4rem .1rem 0;white-space:nowrap;font-weight:600;">Contacto:</td><td>' + escH(c.contacto||'\u2014') + '</td></tr>'
+      + '</table></div>';
+
+    // Indicador si aplica descuento/recargo global
+    var globalTag = '';
+    if (descRecGlobalVis !== null && descRecGlobalVis !== 0) {
+      var globalLbl = descRecGlobalVis < 0
+        ? '<span style="color:#e74a3b;font-weight:700;">Desc. ' + Math.abs(descRecGlobalVis).toFixed(2) + '% global</span>'
+        : '<span style="color:#1cc88a;font-weight:700;">Rec. ' + descRecGlobalVis.toFixed(2) + '% global</span>';
+      globalTag = ' &nbsp;(' + globalLbl + ')';
+    }
+
+    // Tabla de detalle con cálculos
+    html += '<div style="flex:1;min-width:400px;overflow-x:auto;">'
+      + '<div style="font-size:.68rem;font-weight:700;color:#4e73df;text-transform:uppercase;letter-spacing:.4px;margin-bottom:.4rem;border-bottom:1px solid #dee2e6;padding-bottom:.2rem;">Detalle del pedido (IVA: ' + iva + '%)' + globalTag + '</div>'
+      + '<table style="width:100%;border-collapse:collapse;font-size:.76rem;">'
+      + '<thead><tr style="background:#e8edf5;">'
+      + '<th style="padding:.25rem .4rem;text-align:left;">Descripci\u00f3n</th>'
+      + '<th style="padding:.25rem .4rem;text-align:right;">P.S/IVA</th>'
+      + '<th style="padding:.25rem .4rem;text-align:right;">Desc/Rec%</th>'
+      + '<th style="padding:.25rem .4rem;text-align:right;">SubT.S/IVA</th>'
+      + '<th style="padding:.25rem .4rem;text-align:right;">P.C/IVA</th>'
+      + '<th style="padding:.25rem .4rem;text-align:right;">Cant.</th>'
+      + '<th style="padding:.25rem .4rem;text-align:right;">Subtotal</th>'
+      + '</tr></thead><tbody>';
+    var totSubt = 0;
+    d.forEach(function(l) {
+      var precioSIva = l.precioSinIva || 0;
+      // Aplicar descuento global de cabecera si corresponde, caso contrario usar el de la línea
+      var descRec = descRecGlobalVis !== null
+        ? descRecGlobalVis
+        : (l.descuento || 0) * -1 + (l.recargo || 0);
+      var subtSIva   = precioSIva * (1 + descRec / 100);
+      var pCIva      = subtSIva * (1 + iva / 100);
+      var cant       = l.cantidad || 0;
+      var subtotal   = pCIva * cant;
+      totSubt += subtotal;
+      var drClass = descRec < 0 ? 'color:#e74a3b;' : (descRec > 0 ? 'color:#1cc88a;' : '');
+      html += '<tr style="border-bottom:1px solid #f0f0f0;">'
+        + '<td style="padding:.2rem .4rem;">' + escH(l.descripcion||'') + '</td>'
+        + '<td style="padding:.2rem .4rem;text-align:right;">' + fmt(precioSIva) + '</td>'
+        + '<td style="padding:.2rem .4rem;text-align:right;' + drClass + '">' + (descRec !== 0 ? descRec.toFixed(2) + '%' : '-') + '</td>'
+        + '<td style="padding:.2rem .4rem;text-align:right;">' + fmt(subtSIva) + '</td>'
+        + '<td style="padding:.2rem .4rem;text-align:right;">' + fmt(pCIva) + '</td>'
+        + '<td style="padding:.2rem .4rem;text-align:right;">' + fmt(cant) + '</td>'
+        + '<td style="padding:.2rem .4rem;text-align:right;font-weight:600;">' + fmt(subtotal) + '</td>'
+        + '</tr>';
+    });
+    html += '<tr style="background:#e8edf5;font-weight:700;">'
+      + '<td colspan="6" style="padding:.3rem .4rem;text-align:right;">TOTAL:</td>'
+      + '<td style="padding:.3rem .4rem;text-align:right;">' + fmt(totSubt) + '</td>'
+      + '</tr>';
+    html += '</tbody></table></div></div>';
+    td.innerHTML = html;
+  } catch(e) {
+    td.innerHTML = '<div style="padding:.6rem;color:#dc3545;">Error: ' + e.message + '</div>';
+  }
+}
+
+async function cargarPedido(pedidoId, fkCliente) {
+  var r    = await fetch('/Ventas/Pedidos?handler=Pedido&id=' + pedidoId);
+  var data = await r.json();
+  if (!data.ok) { alert('Error al cargar el pedido.'); return; }
+
+  var modalEl = document.getElementById('modalBuscarPedido');
+  var modalInst = bootstrap.Modal.getInstance(modalEl);
+  if (modalInst) modalInst.hide();
+  limpiarTodo();
+
+  var c = data.cab;
+  _clienteId = c.fkCliente || 0;
+  _pedidoId  = c.id;
+  document.getElementById('hClienteId').value = _clienteId;
+  document.getElementById('ci-nombre').textContent    = c.nombreComercial || '';
+  document.getElementById('ci-telefono').textContent  = c.telefono  || '--';
+  document.getElementById('ci-direccion').textContent = c.direccionFull || '--';
+  document.getElementById('ci-contacto').textContent  = c.contacto  || '--';
+  document.getElementById('clienteInfo').style.display  = 'block';
+  document.getElementById('clienteVacio').style.display = 'none';
+  document.getElementById('lblPedidoId').textContent = '(Editando Pedido N\u00b0 ' + String(c.id).padStart(6,'0') + ')';
+
+  if (c.iva != null) {
+    var selIva = document.getElementById('selIva');
+    for (var i=0; i<selIva.options.length; i++) {
+      if (parseFloat(selIva.options[i].value) === c.iva) { selIva.options[i].selected=true; break; }
+    }
+  }
+  if (c.fkVendedor) {
+    var selV = document.getElementById('selVendedor');
+    for (var j=0; j<selV.options.length; j++) {
+      if (parseInt(selV.options[j].value) === c.fkVendedor) { selV.options[j].selected=true; break; }
+    }
+  }
+  document.getElementById('txtObservacion').value = c.observacion || '';
+
+  var iva = parseFloat(document.getElementById('selIva').value)||0;
+
+  // Regla: si pedido tiene descuento global (cabecera), aplicarlo a todas las líneas
+  var descRecGlobal = null;
+  if (c.descuento != null) {
+    descRecGlobal = (c.descuento || 0) * -1 + (c.recargo || 0);
+  }
+
+  _rows = (data.detalle||[]).map(function(d) {
+    var descRec = descRecGlobal !== null
+      ? descRecGlobal
+      : (d.recargo > 0 ? d.recargo : (d.descuento > 0 ? -d.descuento : 0));
+    var row = {
+      fkProducto:    d.fkProducto,
+      codBarras:     d.codBarras   || '',
+      codProveedor:  d.codProveedor|| '',
+      descripcion:   d.descripcion || '',
+      observ:        d.observ      || '',
+      stock:         d.stock,
+      precioSinIva:  d.precioSinIva,
+      descRec:       descRec,
+      subtotalSinIva: 0,
+      precioConIva:  0,
+      cantidad:      d.cantidad,
+      subtotal:      0,
+      dolarizado:    d.dolarizado,
+      costo:         d.costo,
+      precioOrig:    d.precioOrig,
+      selected:      false
+    };
+    calcRow(row);
+    return row;
+  });
+
+  // Si había descuento global, pre-cargar la barra Desc/Rec con ese valor
+  if (descRecGlobal !== null) {
+    var absPct = Math.abs(descRecGlobal);
+    document.getElementById('txtDescRecPct').value = absPct > 0 ? absPct : '';
+    document.getElementById(descRecGlobal < 0 ? 'rdDescuento' : 'rdRecargo').checked = true;
+    document.getElementById(descRecGlobal < 0 ? 'rdDescuento' : 'rdRecargo').dispatchEvent(new Event('change'));
+  }
+
+  renderGrilla();
+  recalcularTotales();
+}
+
+// ======================================================================
+// MODAL: NUEVO CLIENTE
+// ======================================================================
+function abrirNuevoCliente() {
+  ['ncNombre','ncRazon','ncCuil','ncDireccion','ncEmail',
+   'ncTelefono','ncCelular','ncContacto'].forEach(function(id) {
+    document.getElementById(id).value = '';
+  });
+  ['ncCondIva','ncVendedor','ncLocalidad','ncZona'].forEach(function(id) {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('ncAlerta').style.display = 'none';
+  new bootstrap.Modal(document.getElementById('modalNuevoCliente')).show();
+  setTimeout(function() { document.getElementById('ncNombre').focus(); }, 400);
+}
+async function guardarNuevoCliente() {
+  var alerta = document.getElementById('ncAlerta');
+  alerta.style.display = 'none';
+  var nombre = document.getElementById('ncNombre').value.trim();
+  if (!nombre) {
+    alerta.textContent = 'El nombre comercial es obligatorio.';
+    alerta.style.display = 'block';
+    return;
+  }
+  var strVal = function(id) { var v = document.getElementById(id).value.trim(); return v || null; };
+  var intVal = function(id) { var v = parseInt(document.getElementById(id).value,10); return v > 0 ? v : null; };
+  var dto = {
+    nombreComercial: nombre,
+    razonSocial:     strVal('ncRazon'),
+    cuil:            strVal('ncCuil'),
+    direccion:       strVal('ncDireccion'),
+    email:           strVal('ncEmail'),
+    telefono:        strVal('ncTelefono'),
+    celular:         strVal('ncCelular'),
+    contacto:        strVal('ncContacto'),
+    fkCondIva:       intVal('ncCondIva'),
+    fkVendedor:      intVal('ncVendedor'),
+    fkLocalidad:     intVal('ncLocalidad'),
+    fkZona:          intVal('ncZona')
+  };
+  try {
+    var r = await fetch('/Ventas/Pedidos?handler=CrearClienteRapido', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dto)
+    });
+    var ct = r.headers.get('Content-Type') || '';
+    if (!ct.includes('application/json')) {
+      var txt = await r.text();
+      alerta.textContent = 'Error del servidor (HTTP ' + r.status + '): ' + (txt || '').substring(0,300);
+      alerta.style.display = 'block';
+      console.error('CrearClienteRapido error', r.status, txt);
+      return;
+    }
+    var data = await r.json();
+    if (data.ok) {
+      var modalInst = bootstrap.Modal.getInstance(document.getElementById('modalNuevoCliente'));
+      if (modalInst) modalInst.hide();
+      seleccionarCliente({
+        clienteId:       data.clienteId,
+        nombreComercial: data.nombreComercial,
+        telefono:        data.telefono,
+        contacto:        data.contacto,
+        direccionFull:   data.direccion
+      });
+    } else {
+      alerta.textContent = data.msg || 'Error al crear el cliente.';
+      alerta.style.display = 'block';
+    }
+  } catch (err) {
+    alerta.textContent = 'Error inesperado: ' + err.message;
+    alerta.style.display = 'block';
+  }
+}
+
+// Cerrar dropdowns al hacer click fuera
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.ac-wrap')) {
+    cerrarDropCli();
+    cerrarTodosDropsProd();
+  }
+});
+</script>
+}

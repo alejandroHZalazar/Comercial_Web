@@ -7,6 +7,7 @@ namespace Domain.Contracts
     {
         Task<List<VentaResumenDto>> GetResumenVentasAsync(DateTime desde, DateTime hasta, int? clienteId, int? vendedorId, int? proveedorId);
         Task<List<VentaDetalleDto>> GetDetalleVentaAsync(long ventaId);
+        Task<List<VentaDetalleDto>> GetDetalleDevolucionAsync(long devolucionId);
 
     }
 

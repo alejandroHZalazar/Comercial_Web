@@ -31,5 +31,7 @@ public partial class Devolucione
 
     public int? FkVendedor { get; set; }
 
-    public decimal? Comision { get; set; }
+    public decimal? Comision  { get; set; }
+
+    public decimal? Impuesto  { get; set; }
 }

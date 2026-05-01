@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build:*)",
+      "Bash(cmd.exe /c \"dir /B \\\\\"C:\\\\Desarrollos\\\\Comercial-master\\\\Comercial Web\\\\Pages\\\\Ventas\\\\Ventas\\\\\"\")",
+      "Bash(cmd.exe /c \"dir /B /S \\\\\"C:\\\\Desarrollos\\\\Comercial-master\\\\Comercial Web\\\\Pages\\\\Ventas\\\\\"\")",
+      "Bash(cmd.exe /c \"dir /B \\\\\"C:\\\\Desarrollos\\\\Comercial-master\\\\Comercial Web\\\\Pages\\\\\"\")"
+    ]
+  }
+}

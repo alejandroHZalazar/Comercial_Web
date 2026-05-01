@@ -1,0 +1,772 @@
+@page
+@model Comercial_Web.Pages.Productos.CambiosPrecios.IndexModel
+@{
+    ViewData["Title"] = "Cambios de Precios";
+}
+
+<style>
+    .page-header {
+        background:linear-gradient(135deg,#1a2a4a 0%,#2d4a7a 100%);
+        border-radius:12px; padding:1.25rem 1.5rem; margin-bottom:1.5rem; color:#fff;
+    }
+    .page-header h4 { margin:0; font-weight:700; letter-spacing:.3px; }
+
+    .section-card {
+        background:#fff; border:1px solid #e3e6f0; border-radius:12px;
+        box-shadow:0 2px 8px rgba(0,0,0,.06); overflow:visible; margin-bottom:1.25rem;
+    }
+    .section-card-header {
+        background:linear-gradient(90deg,#f0f4ff 0%,#f8f9fc 100%);
+        border-bottom:1px solid #e3e6f0; padding:.65rem 1.1rem;
+        display:flex; align-items:center; gap:.5rem; border-radius:11px 11px 0 0;
+    }
+    .section-card-header span { font-weight:700; font-size:.75rem; text-transform:uppercase; letter-spacing:.5px; color:#4e73df; }
+    .section-card-body { padding:1rem 1.1rem; }
+    .form-label { font-size:.82rem; font-weight:600; color:#4a5568; margin-bottom:3px; }
+
+    /* BUTTONS */
+    .btn-cp {
+        border:none; border-radius:8px; padding:.42rem 1rem; font-size:.83rem; font-weight:600;
+        display:inline-flex; align-items:center; gap:.4rem;
+        cursor:pointer; transition:all .18s; white-space:nowrap;
+    }
+    .btn-cp svg { width:15px; height:15px; flex-shrink:0; }
+    .btn-cp-primary   { background:#4e73df; color:#fff; } .btn-cp-primary:hover   { background:#3a5bc7; }
+    .btn-cp-success   { background:#1cc88a; color:#fff; } .btn-cp-success:hover   { background:#17a673; }
+    .btn-cp-warning   { background:#f6c23e; color:#fff; } .btn-cp-warning:hover   { background:#e0a800; }
+    .btn-cp-danger    { background:#e74a3b; color:#fff; } .btn-cp-danger:hover    { background:#c93627; }
+    .btn-cp-secondary { background:#858796; color:#fff; } .btn-cp-secondary:hover { background:#6a6b7a; }
+    .btn-cp:disabled  { opacity:.55; cursor:not-allowed; }
+
+    /* MULTI-SELECT */
+    .ms-wrap { position:relative; }
+    .ms-input {
+        display:flex; align-items:center; justify-content:space-between;
+        border:1px solid #ced4da; border-radius:8px; padding:.38rem .75rem;
+        font-size:.83rem; cursor:pointer; background:#fff; user-select:none;
+        min-height:36px; transition:border-color .15s,box-shadow .15s;
+    }
+    .ms-input:hover,.ms-input.open { border-color:#4e73df; }
+    .ms-input.open { box-shadow:0 0 0 3px rgba(78,115,223,.15); }
+    .ms-label { flex:1; color:#495057; font-size:.82rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .ms-label.placeholder { color:#adb5bd; }
+    .ms-chevron { color:#6c757d; flex-shrink:0; transition:transform .2s; }
+    .ms-input.open .ms-chevron { transform:rotate(180deg); }
+    .ms-panel {
+        display:none; position:absolute; top:calc(100% + 4px); left:0; right:0;
+        background:#fff; border:1px solid #d0d7e8; border-radius:8px;
+        box-shadow:0 4px 18px rgba(0,0,0,.12); z-index:1200; overflow:hidden;
+    }
+    .ms-panel.open { display:block; }
+    .ms-sel-ops { display:flex; gap:.35rem; align-items:center; padding:.3rem .7rem; border-bottom:1px solid #eee; background:#f8f9fc; }
+    .ms-sel-ops span { font-size:.73rem; font-weight:600; cursor:pointer; padding:.1rem .45rem; border-radius:4px; transition:background .12s; }
+    .ms-sel-ops .lnk-all { color:#4e73df; } .ms-sel-ops .lnk-all:hover { background:#eef2ff; }
+    .ms-sel-ops .lnk-none { color:#e74a3b; } .ms-sel-ops .lnk-none:hover { background:#fdecea; }
+    .ms-sel-ops .sep { color:#dee2e6; }
+    .ms-search-box { padding:.5rem .65rem; border-bottom:1px solid #eee; position:sticky; top:0; background:#fff; z-index:1; }
+    .ms-search-box input { width:100%; border:1px solid #ced4da; border-radius:6px; padding:.28rem .6rem; font-size:.8rem; outline:none; }
+    .ms-search-box input:focus { border-color:#4e73df; }
+    .ms-options { max-height:200px; overflow-y:auto; padding:.3rem 0; }
+    .ms-option { display:flex; align-items:center; gap:.5rem; padding:.32rem .75rem; font-size:.82rem; cursor:pointer; transition:background .12s; }
+    .ms-option:hover { background:#f0f4ff; }
+    .ms-option input[type=checkbox] { width:14px; height:14px; accent-color:#4e73df; flex-shrink:0; }
+    .ms-option.hidden { display:none; }
+
+    /* PANEL AJUSTE */
+    .ajuste-panel {
+        background:linear-gradient(90deg,#fffbeb 0%,#fef9ec 100%);
+        border:1px solid #fde68a; border-radius:10px; padding:.9rem 1.1rem;
+    }
+    .ajuste-row { display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; margin-bottom:.55rem; }
+    .ajuste-row:last-child { margin-bottom:0; }
+    .ajuste-lbl { font-size:.78rem; font-weight:700; color:#78350f; text-transform:uppercase; letter-spacing:.4px; white-space:nowrap; min-width:110px; }
+    .toggle-group { display:flex; gap:.3rem; }
+    .tog-btn {
+        border:1px solid #d1b96a; border-radius:6px; padding:.26rem .7rem;
+        font-size:.81rem; font-weight:600; cursor:pointer; background:#fff; color:#78350f;
+        transition:all .15s; white-space:nowrap;
+    }
+    .tog-btn.active { background:#f6c23e; border-color:#e0a800; color:#fff; }
+    .inp-ajuste {
+        border:1px solid #d1b96a; border-radius:6px; padding:.3rem .6rem;
+        font-size:.9rem; font-weight:700; width:120px; text-align:right;
+        background:#fff; color:#1a1a1a;
+    }
+    .inp-ajuste:focus { border-color:#f6c23e; outline:none; box-shadow:0 0 0 2px rgba(246,194,62,.25); }
+    .simbolo-lbl { font-size:1rem; font-weight:700; color:#78350f; min-width:18px; text-align:center; }
+
+    /* Checkboxes aplicar sobre */
+    .sobre-wrap { display:none; align-items:center; gap:1rem; flex-wrap:wrap; }
+    .sobre-wrap.visible { display:flex; }
+    .sobre-chk { display:flex; align-items:center; gap:.4rem; font-size:.82rem; font-weight:600; color:#78350f; cursor:pointer; }
+    .sobre-chk input { width:15px; height:15px; accent-color:#f6c23e; }
+
+    /* Radio modo */
+    .modo-radio { display:flex; align-items:center; gap:.4rem; font-size:.82rem; font-weight:600; color:#4a5568; cursor:pointer; }
+    .modo-radio input[type=radio] { width:15px; height:15px; accent-color:#4e73df; }
+
+    /* TOOLBAR */
+    .cp-toolbar {
+        padding:.65rem 1rem; border-bottom:1px solid #e3e6f0; background:#f8f9fc;
+        border-radius:11px 11px 0 0; display:flex; align-items:center;
+        justify-content:space-between; flex-wrap:wrap; gap:.5rem;
+    }
+    .cnt-badge { background:#eef2ff; color:#4e73df; border-radius:12px; padding:.18rem .65rem; font-size:.75rem; font-weight:700; }
+
+    /* GRILLA */
+    .cp-table { width:100%; border-collapse:collapse; font-size:.79rem; }
+    .cp-table thead tr.tr-h1 { background:linear-gradient(90deg,#1a2a4a 0%,#2d4a7a 100%); }
+    .cp-table thead tr.tr-h2 { background:#182442; }
+    .cp-table th { padding:.45rem .6rem; color:#fff; font-size:.67rem; font-weight:700; text-transform:uppercase; letter-spacing:.4px; white-space:nowrap; }
+    .cp-table th.th-nuevo { background:#3a2800; }
+    .cp-table td { padding:.35rem .6rem; color:#2d3748; border-bottom:1px solid #f0f0f0; vertical-align:middle; }
+    .cp-table tbody tr:hover { background:#f8f9ff; }
+    .cp-table th.num, .cp-table td.num { text-align:right; }
+    .col-sep { border-left:2px solid #fde68a !important; }
+
+    /* Inputs precios nuevos */
+    .inp-precio {
+        border:1px solid #fde68a; border-radius:5px; padding:.18rem .4rem;
+        font-size:.79rem; font-weight:700; width:86px; text-align:right;
+        background:#fffef0; transition:border-color .15s;
+    }
+    .inp-precio:focus { border-color:#f6c23e; outline:none; box-shadow:0 0 0 2px rgba(246,194,62,.2); }
+    .inp-precio.changed { border-color:#1cc88a; background:#f0fdf7; }
+    .inp-precio.lower   { border-color:#e74a3b; background:#fdecea; }
+
+    /* Btn quitar fila */
+    .btn-del-row {
+        background:none; border:none; padding:.15rem .3rem; border-radius:5px;
+        cursor:pointer; color:#e74a3b; transition:all .15s; line-height:1;
+    }
+    .btn-del-row:hover { background:#fdecea; }
+
+    /* Badges */
+    .badge-ok    { background:#e6f9f2; color:#1cc88a; border-radius:20px; padding:.1rem .5rem; font-size:.7rem; font-weight:700; }
+    .badge-error { background:#fdecea; color:#e74a3b; border-radius:20px; padding:.1rem .5rem; font-size:.7rem; font-weight:700; }
+    .badge-pend  { background:#f4f6fb; color:#858796; border-radius:20px; padding:.1rem .5rem; font-size:.7rem; font-weight:700; }
+    .badge-proc  { background:#fff8e1; color:#b45309; border-radius:20px; padding:.1rem .5rem; font-size:.7rem; font-weight:700; }
+
+    /* PROGRESO */
+    .progress-wrap { height:16px; border-radius:8px; background:#e9ecef; overflow:hidden; }
+    .progress-bar-cp {
+        height:100%; border-radius:8px; background:linear-gradient(90deg,#4e73df 0%,#1cc88a 100%);
+        transition:width .3s; display:flex; align-items:center; justify-content:center;
+        font-size:.67rem; font-weight:700; color:#fff; min-width:2rem;
+    }
+    /* LOG */
+    .log-box {
+        background:#0d1117; border-radius:8px; padding:.7rem 1rem;
+        max-height:220px; overflow-y:auto;
+        font-family:'Consolas','Courier New',monospace; font-size:.77rem; line-height:1.7;
+    }
+    .log-entry { display:flex; gap:.6rem; align-items:flex-start; }
+    .log-ts   { color:#7c8fa1; flex-shrink:0; }
+    .log-row  { color:#8b98a8; flex-shrink:0; }
+    .log-ok   { color:#56d364; } .log-error { color:#f87171; } .log-info { color:#93c5fd; }
+
+    /* EMPTY */
+    .empty-state { text-align:center; padding:2.5rem 1rem; color:#bbb; }
+
+    /* Spinner */
+    .spinner-sm {
+        display:inline-block; width:14px; height:14px;
+        border:2px solid rgba(255,255,255,.35); border-top-color:#fff;
+        border-radius:50%; animation:spin .7s linear infinite; flex-shrink:0;
+    }
+    @@keyframes spin { to { transform:rotate(360deg); } }
+</style>
+
+@* PAGE HEADER *@
+<div class="page-header d-flex align-items-center gap-3">
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M4 10.781c.148 1.667 1.513 2.85 3.591 3.003V15h1.043v-1.216c2.27-.179 3.678-1.438 3.678-3.3 0-1.59-.947-2.51-2.956-3.028l-.722-.187V3.467c1.122.11 1.879.714 2.07 1.616h1.47c-.166-1.6-1.54-2.748-3.54-2.875V1H7.591v1.233c-1.939.23-3.27 1.472-3.27 3.156 0 1.454.966 2.483 2.661 2.917l.61.162v4.031c-1.149-.17-1.95-.8-2.161-1.718H4zm6.137-3.115c0 1.23-.627 1.955-1.96 2.164V7.677c1.116.248 1.96.905 1.96 1.989zm-5.05-1.9c0-1.064.603-1.796 1.719-2.019V8.21c-1.112-.244-1.719-.895-1.719-2.024z"/>
+    </svg>
+    <div>
+        <h4>Cambios de Precios</h4>
+        <small class="opacity-75">Consultá, ajustá y confirmá cambios masivos de precios</small>
+    </div>
+</div>
+
+@* ===== SECCIÓN 1: FILTROS ===== *@
+<div class="section-card">
+    <div class="section-card-header">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#4e73df" viewBox="0 0 16 16"><path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2z"/></svg>
+        <span>Filtros de Búsqueda</span>
+    </div>
+    <div class="section-card-body">
+        <div class="row g-3 align-items-end">
+            @* Proveedores *@
+            <div class="col-md-4">
+                <label class="form-label">Proveedores</label>
+                <div class="ms-wrap" id="msWrapProv">
+                    <div class="ms-input" id="msInputProv" onclick="toggleMs('Prov')">
+                        <span class="ms-label placeholder" id="msLabelProv">Todos los proveedores</span>
+                        <svg class="ms-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/></svg>
+                    </div>
+                    <div class="ms-panel" id="msPanelProv">
+                        <div class="ms-sel-ops">
+                            <span class="lnk-all" onclick="selTodos('Prov')">Seleccionar todo</span>
+                            <span class="sep">|</span>
+                            <span class="lnk-none" onclick="selNinguno('Prov')">Ninguno</span>
+                        </div>
+                        <div class="ms-search-box"><input type="text" placeholder="Buscar…" oninput="filterMs('Prov',this.value)"/></div>
+                        <div class="ms-options" id="msOptionsProv">
+                            @foreach (var p in Model.Proveedores)
+                            {
+                                <label class="ms-option" data-label="@p.Text.ToUpper()">
+                                    <input type="checkbox" class="ms-chk-prov" value="@p.Value" onchange="updateMsLabel('Prov')"/> @p.Text
+                                </label>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @* Rubros *@
+            <div class="col-md-3">
+                <label class="form-label">Rubros</label>
+                <div class="ms-wrap" id="msWrapRub">
+                    <div class="ms-input" id="msInputRub" onclick="toggleMs('Rub')">
+                        <span class="ms-label placeholder" id="msLabelRub">Todos los rubros</span>
+                        <svg class="ms-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/></svg>
+                    </div>
+                    <div class="ms-panel" id="msPanelRub">
+                        <div class="ms-sel-ops">
+                            <span class="lnk-all" onclick="selTodos('Rub')">Seleccionar todo</span>
+                            <span class="sep">|</span>
+                            <span class="lnk-none" onclick="selNinguno('Rub')">Ninguno</span>
+                        </div>
+                        <div class="ms-search-box"><input type="text" placeholder="Buscar…" oninput="filterMs('Rub',this.value)"/></div>
+                        <div class="ms-options" id="msOptionsRub">
+                            @foreach (var r in Model.Rubros)
+                            {
+                                <label class="ms-option" data-label="@r.Text.ToUpper()">
+                                    <input type="checkbox" class="ms-chk-rub" value="@r.Value" onchange="updateMsLabel('Rub')"/> @r.Text
+                                </label>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @* Texto *@
+            <div class="col-md-3">
+                <label class="form-label">Búsqueda libre</label>
+                <input type="text" id="txtBusqueda" class="form-control form-control-sm"
+                       placeholder="Cód. prov., barras o descripción…"
+                       style="border-radius:8px;font-size:.83rem;"
+                       onkeydown="if(event.key==='Enter') buscar()"/>
+            </div>
+            <div class="col-md-2">
+                <button class="btn-cp btn-cp-primary w-100" id="btnBuscar" onclick="buscar()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
+                    Buscar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ===== SECCIÓN 2: PANEL DE AJUSTE ===== *@
+<div class="section-card" id="cardAjuste" style="display:none;">
+    <div class="section-card-header">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#4e73df" viewBox="0 0 16 16"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>
+        <span>Ajuste de Precios</span>
+        <span class="ms-auto" style="font-size:.74rem;color:#6c757d;">Los cambios se previsualizan en la grilla antes de confirmar</span>
+    </div>
+    <div class="section-card-body">
+        <div class="ajuste-panel">
+
+            @* Fila 1: tipo, valor, dirección *@
+            <div class="ajuste-row">
+                <span class="ajuste-lbl">Tipo / Valor:</span>
+                <div class="toggle-group">
+                    <button type="button" class="tog-btn active" id="btnTipoPct" onclick="setTipo('pct')">% Porcentual</button>
+                    <button type="button" class="tog-btn"        id="btnTipoNom" onclick="setTipo('nom')">$ Nominal</button>
+                </div>
+                <span class="simbolo-lbl" id="lblSimbolo">%</span>
+                <input type="number" id="inpAjuste" class="inp-ajuste" value="0" min="0" step="0.01" placeholder="0.00"/>
+                <div class="toggle-group">
+                    <button type="button" class="tog-btn active" id="btnDirAum" onclick="setDir('aum')">▲ Aumento</button>
+                    <button type="button" class="tog-btn"        id="btnDirDes" onclick="setDir('des')">▼ Descuento</button>
+                </div>
+            </div>
+
+            @* Fila 2: modo de cálculo *@
+            <div class="ajuste-row">
+                <span class="ajuste-lbl">Modo cálculo:</span>
+                <label class="modo-radio">
+                    <input type="radio" name="modoCal" id="rModoP" value="prov" checked onchange="setModo('prov')"/>
+                    Desde proveedor <span style="font-size:.76rem;color:#888;font-weight:400;">(P.Prov ajustado → P.S/IVA y Costo calculados con % del proveedor)</span>
+                </label>
+                <label class="modo-radio">
+                    <input type="radio" name="modoCal" id="rModoI" value="ind" onchange="setModo('ind')"/>
+                    Independiente <span style="font-size:.76rem;color:#888;font-weight:400;">(aplicar a cada precio por separado)</span>
+                </label>
+            </div>
+
+            @* Fila 3: aplicar sobre (solo modo independiente) *@
+            <div class="ajuste-row" id="rowSobre" style="display:none;">
+                <span class="ajuste-lbl">Aplicar sobre:</span>
+                <div class="sobre-wrap visible">
+                    <label class="sobre-chk"><input type="checkbox" id="chkSobProv"   checked/> P. Proveedor</label>
+                    <label class="sobre-chk"><input type="checkbox" id="chkSobSiva"   checked/> P. S/IVA</label>
+                    <label class="sobre-chk"><input type="checkbox" id="chkSobCosto"  checked/> Costo</label>
+                </div>
+            </div>
+
+            @* Fila 4: botones *@
+            <div class="ajuste-row" style="border-top:1px solid #fde68a;padding-top:.6rem;margin-top:.2rem;">
+                <button class="btn-cp btn-cp-warning" onclick="aplicarAjuste()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/><path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/></svg>
+                    Previsualizar
+                </button>
+                <button class="btn-cp btn-cp-secondary" onclick="limpiarAjuste()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854z"/></svg>
+                    Limpiar
+                </button>
+                <span style="font-size:.78rem;color:#78350f;opacity:.8;">Podés editar cualquier precio individualmente en la grilla</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ===== SECCIÓN 3: GRILLA ===== *@
+<div class="section-card" id="cardGrilla" style="display:none;">
+    <div class="cp-toolbar">
+        <div class="d-flex align-items-center gap-2">
+            <span style="font-weight:700;font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;color:#4e73df;">Productos</span>
+            <span class="cnt-badge" id="cntFilas">0</span>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn-cp btn-cp-secondary" onclick="limpiarGrilla()">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854z"/></svg>
+                Limpiar grilla
+            </button>
+            <button class="btn-cp btn-cp-success" id="btnConfirmar" disabled onclick="confirmarCambios()">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022Z"/></svg>
+                Confirmar Cambios
+            </button>
+        </div>
+    </div>
+    <div style="overflow-x:auto;max-height:530px;overflow-y:auto;">
+        <table class="cp-table" id="tablaPrecios">
+            <thead>
+                <tr class="tr-h1">
+                    <th rowspan="2">#</th>
+                    <th rowspan="2">Cód. Prov.</th>
+                    <th rowspan="2" style="min-width:200px;">Descripción</th>
+                    <th colspan="3" style="text-align:center;">Precios Actuales</th>
+                    <th colspan="3" style="text-align:center;" class="col-sep th-nuevo">Precios Nuevos (editables)</th>
+                    <th rowspan="2">Estado</th>
+                    <th rowspan="2"></th>
+                </tr>
+                <tr class="tr-h2">
+                    <th class="num">P. Prov.</th>
+                    <th class="num">P. S/IVA</th>
+                    <th class="num">Costo</th>
+                    <th class="num col-sep th-nuevo">P. Prov.</th>
+                    <th class="num th-nuevo">P. S/IVA</th>
+                    <th class="num th-nuevo">Costo</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyPrecios"></tbody>
+        </table>
+    </div>
+    <div id="emptyGrilla" class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" style="width:40px;height:40px;opacity:.3;margin-bottom:.5rem;"><path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2z"/></svg>
+        <div style="font-size:.88rem;font-weight:600;">Sin resultados</div>
+        <div style="font-size:.78rem;margin-top:.25rem;">Aplicá filtros y hacé clic en <strong>Buscar</strong></div>
+    </div>
+</div>
+
+@* ===== SECCIÓN 4: PROGRESO ===== *@
+<div class="section-card" id="cardProgreso" style="display:none;">
+    <div class="section-card-header">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#4e73df" viewBox="0 0 16 16"><path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/></svg>
+        <span>Actualizando Precios</span>
+        <div class="ms-auto d-flex gap-2" id="statsBar"></div>
+    </div>
+    <div class="section-card-body">
+        <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="flex-grow-1">
+                <div class="d-flex justify-content-between mb-1">
+                    <span style="font-size:.75rem;font-weight:600;color:#6c757d;text-transform:uppercase;letter-spacing:.4px;">Progreso</span>
+                    <span id="lblPct" style="font-size:.75rem;font-weight:700;color:#4e73df;">0%</span>
+                </div>
+                <div class="progress-wrap"><div class="progress-bar-cp" id="progressBar" style="width:0%">0%</div></div>
+            </div>
+            <div style="font-size:.82rem;font-weight:600;color:#4a5568;" id="lblProgDetalle">0 / 0</div>
+        </div>
+        <div class="log-box" id="logBox">
+            <div class="log-entry log-info"><span class="log-ts">──</span><span>Esperando confirmación…</span></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ================================================================
+// CONFIG
+// ================================================================
+const DEC = @Model.Decimales;
+
+// ================================================================
+// ESTADO
+// ================================================================
+const grilla  = new Map();   // Map<productoId, item>
+let ajusteTipo = 'pct';      // 'pct' | 'nom'
+let ajusteDir  = 'aum';      // 'aum' | 'des'
+let modoCalc   = 'prov';     // 'prov' | 'ind'
+let procesando = false;
+
+// ================================================================
+// MULTI-SELECT
+// ================================================================
+function toggleMs(id) {
+    const input = document.getElementById('msInput'+id);
+    const panel = document.getElementById('msPanel'+id);
+    const isOpen = panel.classList.contains('open');
+    document.querySelectorAll('.ms-panel.open').forEach(p=>p.classList.remove('open'));
+    document.querySelectorAll('.ms-input.open').forEach(i=>i.classList.remove('open'));
+    if (!isOpen) {
+        panel.classList.add('open'); input.classList.add('open');
+        const s = panel.querySelector('.ms-search-box input');
+        if (s) { s.value=''; filterMs(id,''); s.focus(); }
+    }
+}
+function filterMs(id,val) {
+    const q = val.trim().toUpperCase();
+    document.querySelectorAll('#msOptions'+id+' .ms-option').forEach(opt=>
+        opt.classList.toggle('hidden', q!=='' && !(opt.dataset.label||'').includes(q)));
+}
+function updateMsLabel(id) {
+    const checked = [...document.querySelectorAll('.ms-chk-'+id.toLowerCase()+':checked')];
+    const lbl = document.getElementById('msLabel'+id);
+    if (!checked.length) { lbl.textContent = id==='Prov'?'Todos los proveedores':'Todos los rubros'; lbl.classList.add('placeholder'); }
+    else if (checked.length===1) { lbl.textContent=checked[0].closest('label').textContent.trim(); lbl.classList.remove('placeholder'); }
+    else { lbl.textContent=`${checked.length} seleccionado(s)`; lbl.classList.remove('placeholder'); }
+}
+function selTodos(id)  { document.querySelectorAll('#msOptions'+id+' .ms-option:not(.hidden) input').forEach(c=>c.checked=true);  updateMsLabel(id); }
+function selNinguno(id){ document.querySelectorAll('.ms-chk-'+id.toLowerCase()).forEach(c=>c.checked=false); updateMsLabel(id); }
+document.addEventListener('click', e=>{
+    if (!e.target.closest('.ms-wrap')) {
+        document.querySelectorAll('.ms-panel.open').forEach(p=>p.classList.remove('open'));
+        document.querySelectorAll('.ms-input.open').forEach(i=>i.classList.remove('open'));
+    }
+});
+
+// ================================================================
+// PANEL AJUSTE — tipo, dirección, modo
+// ================================================================
+function setTipo(t) {
+    ajusteTipo = t;
+    document.getElementById('btnTipoPct').classList.toggle('active', t==='pct');
+    document.getElementById('btnTipoNom').classList.toggle('active', t==='nom');
+    document.getElementById('lblSimbolo').textContent = t==='pct' ? '%' : '$';
+}
+function setDir(d) {
+    ajusteDir = d;
+    document.getElementById('btnDirAum').classList.toggle('active', d==='aum');
+    document.getElementById('btnDirDes').classList.toggle('active', d==='des');
+}
+function setModo(m) {
+    modoCalc = m;
+    document.getElementById('rowSobre').style.display = m==='ind' ? 'flex' : 'none';
+}
+
+// Calcula el valor ajustado a partir de un precio original
+function ajustar(original, valor) {
+    if (ajusteTipo === 'pct')
+        return ajusteDir==='aum' ? original*(1+valor/100) : original*(1-valor/100);
+    else
+        return ajusteDir==='aum' ? original+valor : original-valor;
+}
+
+function aplicarAjuste() {
+    const valor = parseFloat(document.getElementById('inpAjuste').value) || 0;
+    const sobProv  = document.getElementById('chkSobProv').checked;
+    const sobSiva  = document.getElementById('chkSobSiva').checked;
+    const sobCosto = document.getElementById('chkSobCosto').checked;
+
+    grilla.forEach((item, id) => {
+        if (modoCalc === 'prov') {
+            // Ajuste solo al precio de proveedor; los demás se recalculan con ganancia/descuento
+            const nuevoPProv = Math.max(0, ajustar(item.pProv, valor));
+            setInpPrecio(`inp-pp-${id}`,  nuevoPProv, item.pProv);
+            setInpPrecio(`inp-ps-${id}`,  round(nuevoPProv*(1+item.ganancia/100), DEC), item.pSiva);
+            setInpPrecio(`inp-co-${id}`,  round(nuevoPProv*(1-item.descuento/100), DEC), item.costo);
+        } else {
+            // Independiente: aplicar a cada precio marcado por separado
+            if (sobProv)  setInpPrecio(`inp-pp-${id}`, Math.max(0, ajustar(item.pProv,  valor)), item.pProv);
+            if (sobSiva)  setInpPrecio(`inp-ps-${id}`, Math.max(0, ajustar(item.pSiva,  valor)), item.pSiva);
+            if (sobCosto) setInpPrecio(`inp-co-${id}`, Math.max(0, ajustar(item.costo,  valor)), item.costo);
+        }
+    });
+
+    document.getElementById('btnConfirmar').disabled = grilla.size === 0;
+}
+
+function limpiarAjuste() {
+    document.getElementById('inpAjuste').value = '0';
+    grilla.forEach((item, id) => {
+        setInpPrecio(`inp-pp-${id}`, item.pProv,  item.pProv);
+        setInpPrecio(`inp-ps-${id}`, item.pSiva,  item.pSiva);
+        setInpPrecio(`inp-co-${id}`, item.costo,  item.costo);
+    });
+}
+
+// Establece el value de un input y aplica clase de color
+function setInpPrecio(inputId, nuevoVal, original) {
+    const inp = document.getElementById(inputId);
+    if (!inp) return;
+    inp.value = round(nuevoVal, DEC);
+    actualizarColorInp(inp, nuevoVal, original);
+}
+
+function actualizarColorInp(inp, nuevoVal, original) {
+    inp.classList.remove('changed','lower');
+    if (Math.abs(nuevoVal - original) > 0.001) {
+        inp.classList.add(nuevoVal > original ? 'changed' : 'lower');
+    }
+}
+
+// Cuando el usuario edita manualmente P.Prov. en modo "Desde proveedor"
+function onChangePProv(id) {
+    const item = grilla.get(id);
+    if (!item) return;
+    const inp = document.getElementById(`inp-pp-${id}`);
+    const nuevoPProv = parseFloat(inp?.value) || 0;
+    actualizarColorInp(inp, nuevoPProv, item.pProv);
+    if (modoCalc === 'prov') {
+        setInpPrecio(`inp-ps-${id}`, round(nuevoPProv*(1+item.ganancia/100), DEC), item.pSiva);
+        setInpPrecio(`inp-co-${id}`, round(nuevoPProv*(1-item.descuento/100), DEC), item.costo);
+    }
+}
+// Cuando edita P.S/IVA o Costo manualmente (solo actualiza color)
+function onChangePrecio(inputId, original) {
+    const inp = document.getElementById(inputId);
+    if (!inp) return;
+    actualizarColorInp(inp, parseFloat(inp.value)||0, original);
+}
+
+// ================================================================
+// BUSCAR
+// ================================================================
+async function buscar() {
+    const btn = document.getElementById('btnBuscar');
+    const prev = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-sm"></span> Buscando…';
+    try {
+        const provIds = [...document.querySelectorAll('.ms-chk-prov:checked')].map(c=>c.value);
+        const rubIds  = [...document.querySelectorAll('.ms-chk-rub:checked')].map(c=>c.value);
+        const texto   = document.getElementById('txtBusqueda').value.trim();
+        if (!provIds.length && !rubIds.length && !texto) {
+            mostrarToast('Ingresá al menos un filtro antes de buscar.', false); return;
+        }
+        const qs = new URLSearchParams();
+        provIds.forEach(v=>qs.append('proveedores',v));
+        rubIds.forEach(v =>qs.append('rubros',v));
+        if (texto) qs.set('texto',texto);
+
+        const resp = await fetch(`/Productos/CambiosPrecios?handler=Buscar&${qs}`);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const items = await resp.json();
+        if (!items.length) { mostrarToast('No se encontraron productos.', false); return; }
+
+        let agr=0, om=0;
+        items.forEach(item => {
+            if (!grilla.has(item.productoId)) { grilla.set(item.productoId, item); agregarFila(item); agr++; }
+            else om++;
+        });
+        actualizarEstado();
+        document.getElementById('cardAjuste').style.removeProperty('display');
+        document.getElementById('cardGrilla').style.removeProperty('display');
+        let msg = `${agr} producto(s) agregado(s).`;
+        if (om) msg += ` (${om} ya estaban)`;
+        mostrarToast(msg, true);
+    } catch(err) {
+        mostrarToast('Error al buscar: '+err.message, false);
+    } finally {
+        btn.disabled=false; btn.innerHTML=prev;
+    }
+}
+
+// ================================================================
+// GRILLA
+// ================================================================
+function agregarFila(item) {
+    const tbody = document.getElementById('tbodyPrecios');
+    const nro   = tbody.rows.length + 1;
+    const tr = document.createElement('tr');
+    tr.id = `row-${item.productoId}`;
+    tr.innerHTML = `
+        <td class="text-muted" style="font-size:.71rem;">${nro}</td>
+        <td><code style="font-size:.76rem;">${esc(item.codProveedor)}</code></td>
+        <td style="max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(item.descripcion)}">${esc(item.descripcion)}</td>
+        <td class="num">${fmt(item.pProv)}</td>
+        <td class="num">${fmt(item.pSiva)}</td>
+        <td class="num">${fmt(item.costo)}</td>
+        <td class="num col-sep">
+            <input type="number" class="inp-precio" id="inp-pp-${item.productoId}"
+                   value="${round(item.pProv,DEC)}" min="0" step="${step()}"
+                   oninput="onChangePProv(${item.productoId})"
+                   onchange="onChangePProv(${item.productoId})" />
+        </td>
+        <td class="num">
+            <input type="number" class="inp-precio" id="inp-ps-${item.productoId}"
+                   value="${round(item.pSiva,DEC)}" min="0" step="${step()}"
+                   oninput="onChangePrecio('inp-ps-${item.productoId}',${item.pSiva})"
+                   onchange="onChangePrecio('inp-ps-${item.productoId}',${item.pSiva})" />
+        </td>
+        <td class="num">
+            <input type="number" class="inp-precio" id="inp-co-${item.productoId}"
+                   value="${round(item.costo,DEC)}" min="0" step="${step()}"
+                   oninput="onChangePrecio('inp-co-${item.productoId}',${item.costo})"
+                   onchange="onChangePrecio('inp-co-${item.productoId}',${item.costo})" />
+        </td>
+        <td id="est-${item.productoId}"><span class="badge-pend">—</span></td>
+        <td>
+            <button class="btn-del-row" title="Quitar de la lista" onclick="quitarFila(${item.productoId})">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                    <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                </svg>
+            </button>
+        </td>`;
+    tbody.appendChild(tr);
+}
+
+function quitarFila(id) {
+    grilla.delete(id);
+    const tr = document.getElementById(`row-${id}`);
+    if (tr) tr.remove();
+    actualizarEstado();
+    if (!grilla.size) {
+        document.getElementById('cardAjuste').style.display   = 'none';
+        document.getElementById('cardGrilla').style.display   = 'none';
+        document.getElementById('cardProgreso').style.display = 'none';
+    }
+}
+
+function limpiarGrilla() {
+    grilla.clear();
+    document.getElementById('tbodyPrecios').innerHTML = '';
+    actualizarEstado();
+    document.getElementById('cardAjuste').style.display   = 'none';
+    document.getElementById('cardGrilla').style.display   = 'none';
+    document.getElementById('cardProgreso').style.display = 'none';
+    document.getElementById('btnConfirmar').disabled = true;
+}
+
+function actualizarEstado() {
+    const n = grilla.size;
+    document.getElementById('cntFilas').textContent = `${n} producto(s)`;
+    document.getElementById('emptyGrilla').style.display = n===0?'block':'none';
+    document.getElementById('btnConfirmar').disabled = n===0;
+}
+
+// ================================================================
+// CONFIRMAR CAMBIOS (row by row)
+// ================================================================
+async function confirmarCambios() {
+    if (procesando || !grilla.size) return;
+    procesando = true;
+    document.getElementById('btnConfirmar').disabled = true;
+
+    const card = document.getElementById('cardProgreso');
+    card.style.removeProperty('display');
+    document.getElementById('logBox').innerHTML = '';
+    setProgreso(0, grilla.size);
+    card.scrollIntoView({ behavior:'smooth', block:'start' });
+    appendLog('info', null, `Actualizando ${grilla.size} producto(s)…`);
+
+    let cntOk=0, cntErr=0;
+    const items = [...grilla.values()];
+
+    for (let i=0; i<items.length; i++) {
+        const item = items[i];
+        const est  = document.getElementById(`est-${item.productoId}`);
+        if (est) est.innerHTML = '<span class="badge-proc">Procesando…</span>';
+
+        const nuevoPProv = parseFloat(document.getElementById(`inp-pp-${item.productoId}`)?.value) || 0;
+        const nuevoPSiva = parseFloat(document.getElementById(`inp-ps-${item.productoId}`)?.value) || 0;
+        const nuevoCosto = parseFloat(document.getElementById(`inp-co-${item.productoId}`)?.value) || 0;
+
+        try {
+            const resp = await fetch('/Productos/CambiosPrecios?handler=ActualizarFila', {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({
+                    codProveedor: item.codProveedor,
+                    codBarras:    item.codBarras,
+                    idProveedor:  item.fkProveedor,
+                    pProv:  nuevoPProv,
+                    pSiva:  nuevoPSiva,
+                    costo:  nuevoCosto
+                })
+            });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const r = await resp.json();
+
+            if (r.success) {
+                cntOk++;
+                if (est) est.innerHTML = '<span class="badge-ok">✔ OK</span>';
+                appendLog('ok', i+1, `[${esc(item.codProveedor)}] ${esc(item.descripcion)}`);
+            } else {
+                cntErr++;
+                if (est) est.innerHTML = '<span class="badge-error">✘ Error</span>';
+                appendLog('error', i+1, `[${esc(item.codProveedor)}] — ${r.mensaje}`);
+            }
+        } catch(err) {
+            cntErr++;
+            if (est) est.innerHTML = '<span class="badge-error">✘ Red</span>';
+            appendLog('error', i+1, `[${esc(item.codProveedor)}] — ${err.message}`);
+        }
+
+        setProgreso(i+1, grilla.size);
+        document.getElementById('statsBar').innerHTML =
+            `<span style="font-size:.75rem;font-weight:700;color:#1cc88a;">✔ ${cntOk}</span>` +
+            `<span style="font-size:.75rem;font-weight:700;color:#e74a3b;margin-left:.5rem;">✘ ${cntErr}</span>`;
+    }
+
+    appendLog('info', null, `──── Finalizado · OK: ${cntOk} · Errores: ${cntErr} ────`);
+    procesando = false;
+    document.getElementById('btnConfirmar').disabled = false;
+}
+
+// ================================================================
+// HELPERS
+// ================================================================
+function round(n,d){ return parseFloat(Number(n).toFixed(d)); }
+function step()    { return DEC>0 ? '0.'+'0'.repeat(DEC-1)+'1' : '1'; }
+function fmt(n)    { return Number(n).toLocaleString('es-AR',{minimumFractionDigits:DEC,maximumFractionDigits:DEC}); }
+function esc(s)    { return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function pad(n)    { return String(n).padStart(2,'0'); }
+
+function setProgreso(actual,total) {
+    const pct = total>0 ? Math.round((actual/total)*100) : 0;
+    document.getElementById('progressBar').style.width = pct+'%';
+    document.getElementById('progressBar').textContent = pct+'%';
+    document.getElementById('lblPct').textContent       = pct+'%';
+    document.getElementById('lblProgDetalle').textContent = `${actual} / ${total}`;
+}
+function appendLog(tipo,nro,msg) {
+    const ts  = new Date();
+    const t   = `${pad(ts.getHours())}:${pad(ts.getMinutes())}:${pad(ts.getSeconds())}`;
+    const cls = tipo==='ok'?'log-ok':tipo==='error'?'log-error':'log-info';
+    const row = nro!=null?`<span class="log-row">[${nro}]</span>`:'';
+    const div = document.createElement('div');
+    div.className = 'log-entry';
+    div.innerHTML = `<span class="log-ts">${t}</span>${row}<span class="${cls}">${msg}</span>`;
+    const lb = document.getElementById('logBox');
+    lb.appendChild(div); lb.scrollTop = lb.scrollHeight;
+}
+function mostrarToast(msg, ok) {
+    const a = document.createElement('div');
+    a.className = `alert alert-${ok?'success':'danger'} alert-dismissible fade show position-fixed`;
+    a.style.cssText = 'bottom:1.2rem;right:1.2rem;z-index:9999;min-width:290px;font-size:.85rem;max-width:430px;';
+    a.innerHTML = `${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+    document.body.appendChild(a);
+    setTimeout(()=>{ try{a.remove();}catch{} }, 4500);
+}
+</script>

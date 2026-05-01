@@ -1,0 +1,439 @@
+@page "{id:int?}"
+@model Comercial_Web.Pages.Productos.Promociones.EditModel
+@{
+    ViewData["Title"] = Model.Id > 0 ? "Editar Promoción" : "Nueva Promoción";
+    var esNuevo = Model.Id == 0;
+    var promo   = Model.Promo;
+    // Serializar con camelCase para que JS pueda leer s.numero, s.productos, etc.
+    var jsonOpts  = new System.Text.Json.JsonSerializerOptions
+                        { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
+    var slotsJson = System.Text.Json.JsonSerializer.Serialize(promo.Slots, jsonOpts);
+}
+
+<style>
+  .edit-card       { border:1px solid #d5dce6; border-radius:.65rem; background:#fff; }
+  .edit-header     { background:linear-gradient(135deg,#1a5276,#2980b9); color:#fff;
+                     padding:.85rem 1.2rem; border-radius:.65rem .65rem 0 0;
+                     display:flex; align-items:center; gap:.6rem; }
+  .edit-header h5  { margin:0; font-size:.97rem; font-weight:600; }
+  .section-title   { font-size:.78rem; text-transform:uppercase; letter-spacing:.06em;
+                     color:#1a5276; font-weight:700; border-bottom:2px solid #d5dce6;
+                     padding-bottom:.3rem; margin-bottom:.9rem; }
+  .vt-label        { font-size:.76rem; font-weight:600; color:#445; margin-bottom:.2rem; }
+  .vt-input        { font-size:.85rem; border-color:#ccd3da; }
+  .vt-input:focus  { border-color:#2980b9; box-shadow:0 0 0 .15rem rgba(41,128,185,.2); }
+  /* Slots */
+  .slot-card       { border:1px solid #c8d6e5; border-radius:.5rem; background:#f8fbff;
+                     margin-bottom:1rem; overflow:hidden; }
+  .slot-head       { background:#2980b9; color:#fff; padding:.45rem .8rem;
+                     display:flex; align-items:center; justify-content:space-between; font-size:.82rem; }
+  .slot-body       { padding:.8rem; }
+  .chip-prod       { display:inline-flex; align-items:center; gap:.3rem;
+                     background:#e8f0fa; border:1px solid #b5cde8; border-radius:1rem;
+                     font-size:.76rem; padding:.15rem .5rem; margin:.2rem; }
+  .chip-prod .rm   { cursor:pointer; color:#e74c3c; font-weight:700; line-height:1; }
+  /* Autocomplete */
+  .ac-wrap         { position:relative; }
+  .ac-drop         { position:absolute; left:0; right:0; top:100%; z-index:100;
+                     background:#fff; border:1px solid #ccd3da; border-radius:.4rem;
+                     box-shadow:0 4px 12px rgba(0,0,0,.1); max-height:220px; overflow-y:auto; }
+  .ac-item         { padding:.45rem .7rem; font-size:.83rem; cursor:pointer; }
+  .ac-item:hover   { background:#eaf2fb; }
+  .ac-empty        { padding:.5rem .7rem; color:#888; font-size:.8rem; }
+  /* Botones */
+  .btn-add-slot    { font-size:.8rem; }
+  #alertDiv        { font-size:.82rem; }
+</style>
+
+<div class="container-fluid py-3" style="max-width:900px;">
+
+  <!-- Título ────────────────────────────────────────────── -->
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <a href="/Productos/Promociones" class="btn btn-sm btn-secondary d-flex align-items-center gap-1" style="font-size:.78rem;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="currentColor" viewBox="0 0 16 16">
+        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+      </svg>
+      Volver
+    </a>
+    <h4 class="mb-0 fw-bold text-dark" style="font-size:1.1rem;">@ViewData["Title"]</h4>
+  </div>
+
+  <!-- Alerta ─────────────────────────────────────────────── -->
+  <div id="alertDiv" class="alert alert-danger d-flex align-items-center gap-2 mb-3"
+       style="display:none!important; font-size:.83rem;" role="alert">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+      <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+      <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
+    </svg>
+    <span id="alertMsg"></span>
+  </div>
+
+  <!-- Formulario principal ──────────────────────────────── -->
+  <div class="edit-card shadow-sm mb-3">
+    <div class="edit-header">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M2 1a1 1 0 0 0-1 1v4.586a1 1 0 0 0 .293.707l7 7a1 1 0 0 0 1.414 0l4.586-4.586a1 1 0 0 0 0-1.414l-7-7A1 1 0 0 0 6.586 1zm4 3.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"/>
+      </svg>
+      <h5>Datos de la Promoción</h5>
+    </div>
+    <div class="p-3">
+
+      <!-- Producto base ──────────────────────────────────── -->
+      <div class="mb-3">
+        <div class="section-title">Producto base (el combo)</div>
+        <div class="row g-2">
+          <div class="col-12">
+            <label class="vt-label">Producto <span class="text-danger">*</span></label>
+            <div class="ac-wrap">
+              <input type="text" id="txtProductoBase" class="form-control form-control-sm vt-input"
+                     placeholder="Buscar por descripción, cód. barras o cód. proveedor…"
+                     value="@(promo.NombreProducto ?? "")"
+                     autocomplete="off" oninput="buscarBase(this.value)" />
+              <div id="dropBase" class="ac-drop" style="display:none;"></div>
+            </div>
+            <input type="hidden" id="fkProductoBase" value="@promo.FkProducto" />
+            <div id="infoBase" class="text-muted" style="font-size:.76rem; margin-top:.2rem;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Estado y fechas ────────────────────────────────── -->
+      <div class="section-title">Estado y vigencia</div>
+      <div class="row g-2 mb-1">
+        <div class="col-auto d-flex align-items-center gap-2">
+          <input type="checkbox" id="chkActiva" class="form-check-input" @(promo.Activa ? "checked" : "") />
+          <label for="chkActiva" class="vt-label mb-0" style="cursor:pointer;">Promoción activa</label>
+        </div>
+      </div>
+      <div class="row g-2 mt-1">
+        <div class="col-sm-6">
+          <label class="vt-label">Fecha desde (opcional)</label>
+          <input type="date" id="txtDesde" class="form-control form-control-sm vt-input"
+                 value="@(promo.FechaDesde.HasValue ? promo.FechaDesde.Value.ToString("yyyy-MM-dd") : "")" />
+        </div>
+        <div class="col-sm-6">
+          <label class="vt-label">Fecha hasta (opcional)</label>
+          <input type="date" id="txtHasta" class="form-control form-control-sm vt-input"
+                 value="@(promo.FechaHasta.HasValue ? promo.FechaHasta.Value.ToString("yyyy-MM-dd") : "")" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slots ──────────────────────────────────────────────── -->
+  <div class="edit-card shadow-sm mb-3">
+    <div class="edit-header">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5zm8 0A1.5 1.5 0 0 1 10.5 9h3A1.5 1.5 0 0 1 15 10.5v3A1.5 1.5 0 0 1 13.5 15h-3A1.5 1.5 0 0 1 9 13.5z"/>
+      </svg>
+      <h5>Slots de la Promoción</h5>
+      <button type="button" class="btn btn-sm btn-light ms-auto btn-add-slot" onclick="agregarSlot()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 1a.5.5 0 0 1 .5.5V7.5H14a.5.5 0 0 1 0 1H8.5V14a.5.5 0 0 1-1 0V8.5H2a.5.5 0 0 1 0-1h5.5V1.5A.5.5 0 0 1 8 1"/>
+        </svg>
+        Agregar Slot
+      </button>
+    </div>
+    <div class="p-3">
+      <p class="text-muted mb-2" style="font-size:.8rem;">
+        Cada slot define un grupo de productos alternativos y la cantidad necesaria.
+        El operador elige cualquier combinación que sume la cantidad requerida.
+      </p>
+      <div id="slotsContainer"></div>
+      <div id="emptySlots" class="text-center text-muted py-3" style="font-size:.84rem;">
+        <em>Sin slots configurados. Haga clic en <strong>Agregar Slot</strong>.</em>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botones guardar ────────────────────────────────────── -->
+  <div class="d-flex gap-2 justify-content-end">
+    <a href="/Productos/Promociones" class="btn btn-sm btn-secondary">Cancelar</a>
+    <button type="button" class="btn btn-sm btn-primary d-flex align-items-center gap-1" onclick="guardar()" id="btnGuardar">
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4.5a.5.5 0 0 0-.146-.354l-3-3A.5.5 0 0 0 11.5 1zm3 11v-2.5h6V12z"/>
+        <path d="M11 1.5v3H5V1.5H4v3.25c0 .138.112.25.25.25h7.5A.25.25 0 0 0 12 4.75V1.5z"/>
+      </svg>
+      Guardar Promoción
+    </button>
+  </div>
+</div>
+
+<!-- Modal buscador de productos para slot ──────────────────────────────────── -->
+<div class="modal fade" id="modalBuscarProd" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:540px;">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header py-2" style="background:#2980b9; color:#fff;">
+        <div>
+          <h6 class="modal-title mb-0" style="font-size:.88rem;">Agregar productos al slot</h6>
+          <div id="slotProdContador" style="font-size:.72rem;opacity:.85;"></div>
+        </div>
+        <button type="button" class="btn-close btn-close-white btn-sm ms-auto" data-bs-dismiss="modal"
+                onclick="renderSlots()"></button>
+      </div>
+      <div class="modal-body pb-2">
+        <label class="vt-label">Buscar producto</label>
+        <input type="text" id="txtBuscarSlotProd" class="form-control form-control-sm vt-input mb-2"
+               placeholder="Descripción, cód. barras, cód. proveedor…"
+               autocomplete="off" oninput="buscarSlotProd(this.value)" />
+        <div id="listaSlotProds" style="max-height:260px; overflow-y:auto; font-size:.83rem;">
+          <div class="text-muted p-2">Escriba para buscar…</div>
+        </div>
+      </div>
+      <div class="modal-footer py-2" style="background:#f8fbff; border-top:1px solid #d5dce6;">
+        <span id="slotProdResumen" class="text-muted me-auto" style="font-size:.78rem;"></span>
+        <button type="button" class="btn btn-sm btn-primary" data-bs-dismiss="modal"
+                onclick="renderSlots()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="margin-right:.2rem;">
+            <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0"/>
+          </svg>
+          Listo
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+  // ── Estado ─────────────────────────────────────────────────────────────────
+  var _slots      = @Html.Raw(slotsJson);   // array de SlotDto cargado del servidor
+  var _slotSeq    = _slots.length ? Math.max(..._slots.map(s=>s.numero)) : 0;
+  var _slotActivo = -1;                     // índice del slot al que agregar producto
+  var _baseTimer  = null;
+  var _slotTimer  = null;
+
+  // ── Render inicial ─────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function(){
+    renderSlots();
+    // El nombre del producto base ya viene pre-llenado desde el servidor (NombreProducto)
+  });
+
+  // ── Render slots ───────────────────────────────────────────────────────────
+  function renderSlots(){
+    var container = document.getElementById('slotsContainer');
+    var empty     = document.getElementById('emptySlots');
+    if(!_slots.length){ container.innerHTML=''; empty.style.display=''; return; }
+    empty.style.display = 'none';
+
+    container.innerHTML = _slots.map(function(s, idx){
+      var chips = (s.productos||[]).map(function(p){
+        return '<span class="chip-prod">'
+          + escH(p.descripcion)
+          + (p.codBarras ? ' <small class="text-muted">('+escH(p.codBarras)+')</small>' : '')
+          + '<span class="rm" onclick="quitarProd('+idx+','+p.fkProducto+')">×</span>'
+          + '</span>';
+      }).join('');
+
+      return '<div class="slot-card" id="slot-'+idx+'">'
+        + '<div class="slot-head">'
+        +   '<span><strong>Slot '+s.numero+'</strong>'+(s.descripcion?' — '+escH(s.descripcion):' ')+'</span>'
+        +   '<button type="button" class="btn btn-sm btn-outline-light py-0" style="font-size:.72rem;" onclick="quitarSlot('+idx+')">'
+        +     '× Quitar slot'
+        +   '</button>'
+        + '</div>'
+        + '<div class="slot-body">'
+        +   '<div class="row g-2 mb-2">'
+        +     '<div class="col-sm-6">'
+        +       '<label class="vt-label">Descripción del slot (opcional)</label>'
+        +       '<input type="text" class="form-control form-control-sm vt-input" value="'+escAttr(s.descripcion||'')+'"'
+        +         ' oninput="_slots['+idx+'].descripcion=this.value" />'
+        +     '</div>'
+        +     '<div class="col-sm-4">'
+        +       '<label class="vt-label">Cantidad requerida <span class="text-danger">*</span></label>'
+        +       '<input type="number" class="form-control form-control-sm vt-input" min="0.001" step="0.001"'
+        +         ' value="'+s.cantidadRequerida+'" oninput="_slots['+idx+'].cantidadRequerida=parseFloat(this.value)||0" />'
+        +     '</div>'
+        +   '</div>'
+        +   '<div class="mb-1 vt-label">Productos elegibles:</div>'
+        +   '<div id="chips-'+idx+'">'+(chips||'<span class="text-muted" style="font-size:.78rem;">Sin productos</span>')+'</div>'
+        +   '<button type="button" class="btn btn-sm btn-outline-primary mt-2" style="font-size:.75rem;" onclick="abrirBuscadorProd('+idx+')">'
+        +     '+ Agregar producto al slot'
+        +   '</button>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  function agregarSlot(){
+    _slotSeq++;
+    _slots.push({ id:0, numero:_slotSeq, cantidadRequerida:1, descripcion:'', productos:[] });
+    renderSlots();
+  }
+
+  function quitarSlot(idx){
+    _slots.splice(idx,1);
+    // Re-numerar
+    _slots.forEach(function(s,i){ s.numero = i+1; });
+    _slotSeq = _slots.length;
+    renderSlots();
+  }
+
+  function quitarProd(slotIdx, fkProducto){
+    _slots[slotIdx].productos = _slots[slotIdx].productos.filter(function(p){ return p.fkProducto !== fkProducto; });
+    renderSlots();
+  }
+
+  // ── Buscador producto base ─────────────────────────────────────────────────
+  var _listaBaseCache = [];
+
+  function buscarBase(val){
+    clearTimeout(_baseTimer);
+    var drop = document.getElementById('dropBase');
+    if(val.length < 2){ drop.style.display='none'; return; }
+    _baseTimer = setTimeout(async function(){
+      var res  = await fetch('?handler=BuscarProductoBase&q='+encodeURIComponent(val));
+      _listaBaseCache = await res.json();
+      if(!_listaBaseCache.length){
+        drop.innerHTML='<div class="ac-empty">Sin resultados</div>';
+        drop.style.display='';
+        return;
+      }
+      drop.innerHTML = _listaBaseCache.map(function(p, i){
+        return '<div class="ac-item" data-idx="'+i+'">'
+          + '<strong>'+escH(p.descripcion)+'</strong>'
+          + (p.codBarras ? ' <small class="text-muted">'+escH(p.codBarras)+'</small>' : '')
+          + '</div>';
+      }).join('');
+      // Usar event delegation en lugar de onclick inline
+      drop.querySelectorAll('.ac-item').forEach(function(el){
+        el.addEventListener('click', function(){
+          var p = _listaBaseCache[parseInt(el.dataset.idx)];
+          if(!p) return;
+          document.getElementById('fkProductoBase').value = p.fkProducto;
+          document.getElementById('txtProductoBase').value = p.descripcion||'';
+          document.getElementById('infoBase').textContent  = 'ID: '+p.fkProducto;
+          drop.style.display = 'none';
+        });
+      });
+      drop.style.display = '';
+    }, 280);
+  }
+
+  document.addEventListener('click', function(e){
+    if(!e.target.closest('.ac-wrap')) document.getElementById('dropBase').style.display='none';
+  });
+
+  // ── Buscador productos slot ────────────────────────────────────────────────
+  var _slotProdModal  = null;
+  var _listaSlotCache = [];
+
+  function abrirBuscadorProd(slotIdx){
+    _slotActivo = slotIdx;
+    document.getElementById('txtBuscarSlotProd').value = '';
+    document.getElementById('listaSlotProds').innerHTML = '<div class="text-muted p-2">Escriba para buscar…</div>';
+    _actualizarContadorSlot();
+    _slotProdModal = new bootstrap.Modal(document.getElementById('modalBuscarProd'));
+    _slotProdModal.show();
+    // Foco automático al input
+    document.getElementById('modalBuscarProd').addEventListener('shown.bs.modal', function handler(){
+      document.getElementById('txtBuscarSlotProd').focus();
+      document.getElementById('modalBuscarProd').removeEventListener('shown.bs.modal', handler);
+    });
+  }
+
+  function _actualizarContadorSlot(){
+    var n    = (_slots[_slotActivo]?.productos||[]).length;
+    var cont = document.getElementById('slotProdContador');
+    var res  = document.getElementById('slotProdResumen');
+    if(cont) cont.textContent = n > 0 ? n+' producto'+(n!==1?'s':'')+' seleccionado'+(n!==1?'s':'') : 'Ningún producto seleccionado aún';
+    if(res)  res.textContent  = n > 0 ? '✓ '+n+' producto'+(n!==1?'s':'')+' en este slot' : '';
+  }
+
+  function _renderListaSlot(){
+    var container = document.getElementById('listaSlotProds');
+    if(!_listaSlotCache.length){ container.innerHTML='<div class="text-muted p-2">Sin resultados.</div>'; return; }
+
+    var yaIds = (_slots[_slotActivo]?.productos||[]).map(function(p){ return p.fkProducto; });
+
+    container.innerHTML = _listaSlotCache.map(function(p, i){
+      var ya = yaIds.includes(p.fkProducto);
+      return '<div class="p-2 d-flex align-items-center justify-content-between border-bottom" style="font-size:.82rem;">'
+        + '<span><strong>'+escH(p.descripcion)+'</strong>'
+        + (p.codBarras?' <small class="text-muted">'+escH(p.codBarras)+'</small>':'')+' </span>'
+        + (ya
+          ? '<span class="badge bg-success" style="font-size:.7rem;">✓ Agregado</span>'
+          : '<button class="btn btn-sm btn-outline-primary" style="font-size:.72rem;padding:.15rem .55rem;" data-idx="'+i+'">+ Agregar</button>')
+        + '</div>';
+    }).join('');
+
+    // Botones Agregar — sin cerrar el modal para permitir selección múltiple
+    container.querySelectorAll('button[data-idx]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var p = _listaSlotCache[parseInt(btn.dataset.idx)];
+        if(!p || _slotActivo < 0) return;
+        _slots[_slotActivo].productos.push({
+          id: 0, fkProducto: p.fkProducto,
+          descripcion: p.descripcion, codBarras: p.codBarras||null, codProveedor: p.codProveedor||null
+        });
+        // Re-renderizar solo la lista del modal (no cerrar)
+        _renderListaSlot();
+        _actualizarContadorSlot();
+      });
+    });
+  }
+
+  function buscarSlotProd(val){
+    clearTimeout(_slotTimer);
+    if(val.length < 2){
+      document.getElementById('listaSlotProds').innerHTML='<div class="text-muted p-2">Escriba al menos 2 caracteres…</div>';
+      return;
+    }
+    _slotTimer = setTimeout(async function(){
+      var res  = await fetch('?handler=BuscarProductos&q='+encodeURIComponent(val));
+      _listaSlotCache = await res.json();
+      _renderListaSlot();
+    }, 280);
+  }
+
+  // ── Guardar ────────────────────────────────────────────────────────────────
+  async function guardar(){
+    var btn = document.getElementById('btnGuardar');
+    btn.disabled = true;
+
+    var fk = parseInt(document.getElementById('fkProductoBase').value)||0;
+    if(fk<=0){ showAlert('Debe seleccionar el producto base del combo.'); btn.disabled=false; return; }
+
+    var dto = {
+      id        : @promo.Id,
+      fkProducto: fk,
+      activa    : document.getElementById('chkActiva').checked,
+      fechaDesde: document.getElementById('txtDesde').value || null,
+      fechaHasta: document.getElementById('txtHasta').value || null,
+      slots     : _slots.map(function(s,i){
+        return {
+          id               : s.id||0,
+          numero           : i+1,
+          cantidadRequerida: s.cantidadRequerida||1,
+          descripcion      : s.descripcion||'',
+          productos        : (s.productos||[]).map(function(p){
+            return { id:p.id||0, fkProducto:p.fkProducto, descripcion:p.descripcion, codBarras:p.codBarras||null, codProveedor:p.codProveedor||null };
+          })
+        };
+      })
+    };
+
+    var res = await fetch('?handler=Guardar', {
+      method : 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body   : JSON.stringify(dto)
+    });
+
+    btn.disabled = false;
+
+    var data = await res.json();
+    if(!data.ok){ showAlert(data.error||'Error al guardar.'); return; }
+    window.location.href = '/Productos/Promociones';
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function showAlert(msg){
+    var el = document.getElementById('alertDiv');
+    document.getElementById('alertMsg').textContent = msg;
+    el.style.cssText = 'display:flex!important;';
+    el.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+  function escH(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function escAttr(s){ return escH(s).replace(/"/g,'&quot;'); }
+</script>
+}

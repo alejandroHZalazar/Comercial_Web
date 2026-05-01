@@ -1,0 +1,1153 @@
+@page
+@model Comercial_Web.Pages.Contable.Caja.IndexModel
+@{
+    ViewData["Title"] = "Caja";
+    var fmt = (decimal v) => v.ToString("C2", new System.Globalization.CultureInfo("es-AR"));
+}
+
+<style>
+    .ck-header  { background:linear-gradient(135deg,#1a3a5c 0%,#2e6da4 100%); border-radius:12px; padding:1rem 1.5rem; margin-bottom:1.1rem; color:#fff; display:flex; align-items:center; gap:.8rem; }
+    .ck-header h4 { margin:0; font-weight:700; font-size:1.1rem; }
+    .ck-card    { background:#fff; border:1px solid #e3e6f0; border-radius:10px; padding:.9rem 1.1rem; box-shadow:0 2px 8px rgba(0,0,0,.05); margin-bottom:.85rem; }
+    .ck-label   { font-size:.74rem; font-weight:600; color:#6c757d; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.15rem; }
+    .ck-value   { font-size:1rem; font-weight:700; color:#1a3a5c; }
+    .ck-state   { display:inline-block; padding:.2rem .65rem; border-radius:20px; font-size:.78rem; font-weight:700; letter-spacing:.05em; }
+    .ck-state.abierta { background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
+    .ck-state.cerrada { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
+    .ck-tot-card{ background:#f8f9fc; border:1px solid #e3e6f0; border-radius:8px; padding:.65rem .9rem; }
+    .ck-tot-lbl { font-size:.75rem; color:#6c757d; font-weight:600; }
+    .ck-tot-val { font-size:1.05rem; font-weight:800; color:#1a3a5c; }
+    .ck-tot-val.debe  { color:#c0392b; }
+    .ck-tot-val.haber { color:#1cc88a; }
+    .ck-btn-group { display:flex; flex-wrap:wrap; gap:.5rem; }
+    .ck-btn { font-size:.82rem; font-weight:600; padding:.45rem .9rem; border-radius:8px; border:none; cursor:pointer; transition:transform .1s, opacity .15s; display:inline-flex; align-items:center; gap:.4rem; }
+    .ck-btn:hover:not(:disabled){ transform:translateY(-1px); opacity:.92; }
+    .ck-btn:disabled { opacity:.45; cursor:not-allowed; }
+    .ck-btn.success { background:linear-gradient(135deg,#1cc88a,#13855c); color:#fff; }
+    .ck-btn.danger  { background:linear-gradient(135deg,#e74a3b,#a92e22); color:#fff; }
+    .ck-btn.warn    { background:linear-gradient(135deg,#f6c23e,#dd9a04); color:#fff; }
+    .ck-btn.info    { background:linear-gradient(135deg,#36b9cc,#258391); color:#fff; }
+    .ck-btn.primary { background:linear-gradient(135deg,#1a3a5c,#2e6da4); color:#fff; }
+    .ck-btn.secondary{background:linear-gradient(135deg,#858796,#5a5c69); color:#fff; }
+    #tblResumen { font-size:.85rem; }
+    #tblResumen thead tr { background:#1a3a5c; color:#fff; }
+    #tblResumen thead th { padding:.45rem .6rem; font-weight:600; }
+    #tblResumen tbody td { padding:.35rem .6rem; vertical-align:middle; }
+    #tblResumen tbody tr:nth-child(even) { background:#f8f9fc; }
+    .modal-header-ck { background:linear-gradient(135deg,#1a3a5c,#2e6da4); color:#fff; }
+</style>
+
+<div class="ck-header">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="26" height="26">
+        <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.01a1 1 0 1 1 0-.01V4a1 1 0 0 0 1 1zm13 1V5a1 1 0 0 1-1-1V4a1 1 0 0 0-1-1zm-1 1a1 1 0 0 1 1 1V11a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM8 6a3 3 0 1 0 0 6 3 3 0 0 0 0-6"/>
+    </svg>
+    <h4>Caja</h4>
+</div>
+
+@if (!Model.HaceCaja)
+{
+    <div class="alert alert-warning d-flex align-items-center" role="alert">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="me-2" viewBox="0 0 16 16">
+            <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/>
+        </svg>
+        <div>
+            <strong>El módulo de Caja no está habilitado.</strong><br />
+            Para utilizar esta funcionalidad debe activarse el parámetro <code>caja / haceCaja = 1</code>.
+        </div>
+    </div>
+    return;
+}
+
+@* ══ ESTADO + USUARIO + BOTONES ═════════════════════════════════════════════ *@
+<div class="ck-card">
+    <div class="row g-3 align-items-center">
+        <div class="col-md-3">
+            <div class="ck-label">Usuario</div>
+            <div class="ck-value">@Model.NombreUsuario</div>
+        </div>
+        <div class="col-md-3">
+            <div class="ck-label">Estado</div>
+            <div>
+                <span class="ck-state @(Model.Estado.Abierta ? "abierta" : "cerrada")" id="lblEstadoCaja">
+                    @(Model.Estado.Abierta ? "ABIERTA" : "CERRADA")
+                </span>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="ck-label">Apertura</div>
+            <div class="ck-value" id="lblApertura">
+                @(Model.Estado.Abierta && Model.Estado.FechaApertura.HasValue
+                    ? Model.Estado.FechaApertura.Value.ToString("dd/MM/yyyy HH:mm")
+                    : "—")
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="ck-label">Saldo Inicial</div>
+            <div class="ck-value" id="lblSaldoInicial">
+                @(Model.Estado.Abierta ? fmt(Model.Estado.SaldoInicial) : "—")
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ══ BOTONERA ══════════════════════════════════════════════════════════════ *@
+<div class="ck-card">
+    <div class="ck-btn-group">
+        <button type="button" id="btnAbrirCaja"     class="ck-btn success"   onclick="abrirModal('modalAbrir')">▲ Abrir Caja</button>
+        <button type="button" id="btnCerrarCaja"    class="ck-btn danger"    onclick="abrirModal('modalCerrar')">▼ Cerrar Caja</button>
+        <button type="button" id="btnIngresoDinero" class="ck-btn info"      onclick="abrirMovimiento('ingreso')">+ Ingreso de Dinero</button>
+        <button type="button" id="btnEgresoDinero"  class="ck-btn warn"      onclick="abrirMovimiento('egreso')">− Extracción de Dinero</button>
+        <button type="button" id="btnGastos"        class="ck-btn secondary" onclick="abrirGastos()">📋 Gastos</button>
+        <button type="button" id="btnArqueo"        class="ck-btn primary"   onclick="abrirArqueo()">⚖ Arqueo de Caja</button>
+        <button type="button" id="btnPagoProv"      class="ck-btn warn"      onclick="abrirPagoProv()">🏷 Pago a Proveedores</button>
+    </div>
+</div>
+
+@* ══ TOTALES ═══════════════════════════════════════════════════════════════ *@
+<div class="row g-2 mb-2">
+    <div class="col-md-4">
+        <div class="ck-tot-card">
+            <div class="ck-tot-lbl">Total Debe</div>
+            <div class="ck-tot-val debe" id="lblTotalDebe">@fmt(Model.TotalDebe)</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="ck-tot-card">
+            <div class="ck-tot-lbl">Total Haber</div>
+            <div class="ck-tot-val haber" id="lblTotalHaber">@fmt(Model.TotalHaber)</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="ck-tot-card" style="background:#fff7e6;border-color:#ffc107;">
+            <div class="ck-tot-lbl" style="color:#856404;">Saldo en Efectivo</div>
+            <div class="ck-tot-val" id="lblEfectivo" style="color:#856404;">@fmt(Model.SaldoEfectivo)</div>
+        </div>
+    </div>
+</div>
+
+@* ══ GRILLA RESUMEN ════════════════════════════════════════════════════════ *@
+<div class="ck-card" style="padding:.4rem .6rem;">
+    <div class="table-responsive">
+        <table id="tblResumen" class="table table-bordered table-sm mb-0">
+            <thead>
+                <tr>
+                    <th>Debe</th>
+                    <th style="text-align:right;width:170px;">Importe Debe</th>
+                    <th>Haber</th>
+                    <th style="text-align:right;width:170px;">Importe Haber</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyResumen">
+                @if (Model.Estado.Abierta && Model.Resumen.Count > 0)
+                {
+                    foreach (var r in Model.Resumen)
+                    {
+                        <tr>
+                            <td>@(r.Debe ?? "")</td>
+                            <td style="text-align:right;">@(r.ImporteDebe.HasValue ? fmt(r.ImporteDebe.Value) : "")</td>
+                            <td>@(r.Haber ?? "")</td>
+                            <td style="text-align:right;">@(r.ImporteHaber.HasValue ? fmt(r.ImporteHaber.Value) : "")</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr id="rowVacio">
+                        <td colspan="4" style="text-align:center;color:#aaa;padding:1rem;font-size:.85rem;">
+                            @(Model.Estado.Abierta ? "Sin movimientos registrados aún." : "La caja está cerrada.")
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@* ══ MODAL: ABRIR CAJA ═════════════════════════════════════════════════════ *@
+<div class="modal fade" id="modalAbrir" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header modal-header-ck py-3">
+                <div class="d-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="20" height="20">
+                        <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.01a1 1 0 1 1 0-.01V4a1 1 0 0 0 1 1zm13 1V5a1 1 0 0 1-1-1V4a1 1 0 0 0-1-1zm-1 1a1 1 0 0 1 1 1V11a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM8 6a3 3 0 1 0 0 6 3 3 0 0 0 0-6"/>
+                    </svg>
+                    <h5 class="modal-title mb-0 fw-bold">Apertura de Caja</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body p-4">
+
+                @* ── Datos del usuario y último cierre ── *@
+                <div class="row g-3 mb-4">
+                    <div class="col-12">
+                        <div style="background:#f0f4ff;border:1px solid #b8caff;border-radius:8px;padding:.75rem 1rem;">
+                            <div class="row g-2 align-items-center">
+                                <div class="col-sm-4">
+                                    <div style="font-size:.72rem;font-weight:700;color:#6c757d;text-transform:uppercase;letter-spacing:.05em;">Usuario</div>
+                                    <div style="font-size:.95rem;font-weight:700;color:#1a3a5c;" id="abrUsuario">@Model.NombreUsuario</div>
+                                </div>
+                                <div class="col-sm-4">
+                                    <div style="font-size:.72rem;font-weight:700;color:#6c757d;text-transform:uppercase;letter-spacing:.05em;">Último cierre</div>
+                                    <div style="font-size:.88rem;font-weight:600;color:#1a3a5c;" id="abrFechaCierre">
+                                        @(Model.Estado.Existe && Model.Estado.FechaCierre.HasValue
+                                            ? Model.Estado.FechaCierre.Value.ToString("dd/MM/yyyy HH:mm")
+                                            : "Sin cierres previos")
+                                    </div>
+                                </div>
+                                <div class="col-sm-4">
+                                    <div style="font-size:.72rem;font-weight:700;color:#6c757d;text-transform:uppercase;letter-spacing:.05em;">Saldo del último cierre</div>
+                                    <div style="font-size:1.05rem;font-weight:800;color:#1cc88a;" id="abrSaldoCierreDisplay">
+                                        @fmt(Model.Estado.SaldoCierre ?? 0m)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @* ── Observaciones ── *@
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" style="font-size:.83rem;">Observaciones</label>
+                    <textarea id="abrObservaciones" class="form-control" rows="3"
+                              placeholder="Ingrese observaciones de apertura (opcional)…"
+                              style="font-size:.85rem;resize:vertical;"></textarea>
+                </div>
+
+                @* ── Leyenda informativa ── *@
+                <div class="alert mb-0 d-flex align-items-start gap-2 py-2 px-3"
+                     style="background:#fff8e1;border:1px solid #ffe082;border-radius:8px;font-size:.8rem;color:#6d4c00;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="16" height="16" style="margin-top:.1rem;flex-shrink:0;">
+                        <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2"/>
+                    </svg>
+                    <span>
+                        En caso de extracción o ingreso de dinero de la caja anterior,
+                        <strong>debe registrar el movimiento al abrir la caja</strong> usando los botones correspondientes.
+                    </span>
+                </div>
+
+            </div>
+
+            <div class="modal-footer border-top-0 px-4 pb-4 pt-0">
+                <button type="button" class="btn btn-light border" data-bs-dismiss="modal" style="font-size:.85rem;">
+                    Cancelar
+                </button>
+                <button type="button" id="btnConfirmarAbrir" class="btn btn-success fw-semibold px-4"
+                        onclick="confirmarAbrir()" style="font-size:.85rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="15" height="15" style="margin-right:.35rem;vertical-align:-.1em;">
+                        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                    </svg>
+                    Abrir Caja
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ══ MODAL: CERRAR CAJA ════════════════════════════════════════════════════ *@
+<div class="modal fade" id="modalCerrar" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header modal-header-ck py-3">
+                <div class="d-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="20" height="20">
+                        <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2m3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2"/>
+                    </svg>
+                    <h5 class="modal-title mb-0 fw-bold">Cierre de Caja</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body p-4">
+
+                @* ── Datos del usuario y la caja abierta ── *@
+                <div class="mb-4">
+                    <div style="background:#fff3f3;border:1px solid #f5c6cb;border-radius:8px;padding:.75rem 1rem;">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-sm-4">
+                                <div style="font-size:.72rem;font-weight:700;color:#6c757d;text-transform:uppercase;letter-spacing:.05em;">Usuario</div>
+                                <div style="font-size:.95rem;font-weight:700;color:#1a3a5c;">@Model.NombreUsuario</div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div style="font-size:.72rem;font-weight:700;color:#6c757d;text-transform:uppercase;letter-spacing:.05em;">Fecha apertura</div>
+                                <div style="font-size:.88rem;font-weight:600;color:#1a3a5c;" id="cerFechaApertura">
+                                    @(Model.Estado.Abierta && Model.Estado.FechaApertura.HasValue
+                                        ? Model.Estado.FechaApertura.Value.ToString("dd/MM/yyyy HH:mm")
+                                        : "—")
+                                </div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div style="font-size:.72rem;font-weight:700;color:#6c757d;text-transform:uppercase;letter-spacing:.05em;">Saldo final en efectivo</div>
+                                <div style="font-size:1.05rem;font-weight:800;color:#c0392b;" id="cerSaldoFinalDisplay">
+                                    @fmt(Model.SaldoEfectivo)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @* ── Observaciones ── *@
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" style="font-size:.83rem;">Observaciones</label>
+                    <textarea id="cerObservaciones" class="form-control" rows="3"
+                              placeholder="Ingrese observaciones de cierre (opcional)…"
+                              style="font-size:.85rem;resize:vertical;"></textarea>
+                </div>
+
+                @* ── Leyenda informativa ── *@
+                <div class="d-flex align-items-start gap-2 py-2 px-3"
+                     style="background:#fff8e1;border:1px solid #ffe082;border-radius:8px;font-size:.8rem;color:#6d4c00;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="16" height="16" style="margin-top:.1rem;flex-shrink:0;">
+                        <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2"/>
+                    </svg>
+                    <span>
+                        En caso de extracción o ingreso de dinero de la caja actual,
+                        <strong>debe registrar el movimiento antes de cerrar la caja</strong> usando los botones correspondientes.
+                    </span>
+                </div>
+
+            </div>
+
+            <div class="modal-footer border-top-0 px-4 pb-4 pt-0">
+                <button type="button" class="btn btn-light border" data-bs-dismiss="modal" style="font-size:.85rem;">
+                    Cancelar
+                </button>
+                <button type="button" id="btnConfirmarCerrar" class="btn btn-danger fw-semibold px-4"
+                        onclick="confirmarCerrar()" style="font-size:.85rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="15" height="15" style="margin-right:.35rem;vertical-align:-.1em;">
+                        <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2m3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2"/>
+                    </svg>
+                    Cerrar Caja
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ══ MODAL: MOVIMIENTO (ingreso / egreso / gasto / pago prov) ══════════════ *@
+<div class="modal fade" id="modalMovimiento" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header modal-header-ck">
+                <h5 class="modal-title" id="lblTituloMov">Movimiento</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="movProveedorWrap" class="mb-3" style="display:none;">
+                    <label class="form-label fw-semibold">Proveedor</label>
+                    <select id="movProveedor" class="form-select"></select>
+                </div>
+                <div class="mb-3" id="movConceptoWrap">
+                    <label class="form-label fw-semibold">Concepto</label>
+                    <select id="movConcepto" class="form-select"></select>
+                </div>
+                <div class="mb-3" id="movConceptoFijoWrap" style="display:none;">
+                    <label class="form-label fw-semibold">Concepto</label>
+                    <div class="form-control bg-light text-muted d-flex align-items-center gap-2" style="cursor:default;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="14" height="14"><path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5"/><path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"/></svg>
+                        <span id="movConceptoFijoNombre" class="fw-semibold text-dark"></span>
+                        <span class="text-muted small">(automático)</span>
+                    </div>
+                </div>
+                <div class="mb-3" id="movMedioPagoWrap">
+                    <label class="form-label fw-semibold">Medio de Pago</label>
+                    <select id="movMedioPago" class="form-select">
+                        @foreach (var mp in Model.ListaMediosPago)
+                        {
+                            <option value="@mp.Value">@mp.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-3" id="movEfectivoWrap" style="display:none;">
+                    <label class="form-label fw-semibold">Medio de Pago</label>
+                    <div class="form-control bg-light text-muted d-flex align-items-center gap-2" style="cursor:default;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="15" height="15"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.01a1 1 0 1 1 0-.01V4a1 1 0 0 0 1 1zm13 1V5a1 1 0 0 1-1-1V4a1 1 0 0 0-1-1zm-1 1a1 1 0 0 1 1 1V11a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM8 6a3 3 0 1 0 0 6 3 3 0 0 0 0-6"/></svg>
+                        <strong>Efectivo</strong> <span class="text-muted small">(único permitido para este tipo de movimiento)</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Importe</label>
+                    <input type="number" id="movImporte" class="form-control" value="0" min="0.01" step="0.01" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Observaciones</label>
+                    <textarea id="movObservaciones" class="form-control" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="confirmarMovimiento()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ══ MODAL: GASTOS ═════════════════════════════════════════════════════════ *@
+<div class="modal fade" id="modalGastos" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header modal-header-ck py-3">
+                <div class="d-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="20" height="20">
+                        <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5"/>
+                        <path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"/>
+                    </svg>
+                    <h5 class="modal-title mb-0 fw-bold">Registrar Gasto</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body p-4">
+                @* Alerta cuando los parámetros no están configurados *@
+                <div id="gastoParamAlert" class="alert alert-warning d-flex align-items-start gap-2 mb-3" style="display:none!important;font-size:.83rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="16" height="16" style="flex-shrink:0;margin-top:.1rem;">
+                        <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/>
+                    </svg>
+                    <div id="gastoParamAlertMsg"></div>
+                </div>
+
+                @* Formulario de gasto *@
+                <div id="gastoFormWrap">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" style="font-size:.83rem;">Importe <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" id="gastoImporte" class="form-control" value="" min="0.01" step="0.01"
+                                   placeholder="0,00" style="font-size:.9rem;" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" style="font-size:.83rem;">Tipo de Gasto <span class="text-danger">*</span></label>
+                        <select id="gastoTipo" class="form-select" style="font-size:.88rem;">
+                            <option value="0">— Seleccione un tipo —</option>
+                        </select>
+                    </div>
+                    <div class="mb-1">
+                        <label class="form-label fw-semibold" style="font-size:.83rem;">Observaciones <span class="text-danger">*</span></label>
+                        <textarea id="gastoObservaciones" class="form-control" rows="3"
+                                  placeholder="Descripción del gasto (obligatorio)…"
+                                  style="font-size:.85rem;resize:vertical;"></textarea>
+                    </div>
+                    <div class="mt-2 px-1" style="font-size:.78rem;color:#6c757d;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" height="13" class="me-1"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.01a1 1 0 1 1 0-.01V4a1 1 0 0 0 1 1zm13 1V5a1 1 0 0 1-1-1V4a1 1 0 0 0-1-1zm-1 1a1 1 0 0 1 1 1V11a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM8 6a3 3 0 1 0 0 6 3 3 0 0 0 0-6"/></svg>
+                        Medio de pago: <strong>Efectivo</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer border-top px-4 pb-3 pt-2">
+                <button type="button" class="btn btn-light border" data-bs-dismiss="modal" style="font-size:.85rem;">Cancelar</button>
+                <button type="button" id="btnConfirmarGasto" class="btn btn-secondary fw-semibold px-4"
+                        onclick="confirmarGasto()" style="font-size:.85rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="15" height="15" style="margin-right:.35rem;vertical-align:-.1em;">
+                        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                    </svg>
+                    Guardar Gasto
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ══ MODAL: PAGO A PROVEEDOR ═══════════════════════════════════════════════ *@
+<div class="modal fade" id="modalPagoProv" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+
+            <div class="modal-header modal-header-ck py-3">
+                <div class="d-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="20" height="20">
+                        <path d="M6 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5 6s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zM11 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1-.5-.5m.5 2.5a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1zm2 3a.5.5 0 0 0 0 1h2a.5.5 0 0 0 0-1zm0 3a.5.5 0 0 0 0 1h2a.5.5 0 0 0 0-1z"/>
+                    </svg>
+                    <h5 class="modal-title mb-0 fw-bold">Pago a Proveedor</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body p-4">
+
+                @* Alerta de parámetros no configurados *@
+                <div id="pagoProvParamAlert" class="alert alert-warning d-flex align-items-start gap-2 mb-3"
+                     style="display:none!important;font-size:.83rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="16" height="16" style="flex-shrink:0;margin-top:.1rem;">
+                        <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/>
+                    </svg>
+                    <div id="pagoProvParamAlertMsg"></div>
+                </div>
+
+                <div id="pagoProvFormWrap">
+
+                    @* ── Proveedor ── *@
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" style="font-size:.83rem;">
+                            Proveedor <span class="text-danger">*</span>
+                        </label>
+                        <select id="ppProveedor" class="form-select" style="font-size:.88rem;">
+                            <option value="0">— Cargando… —</option>
+                        </select>
+                    </div>
+
+                    @* ── Importe ── *@
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" style="font-size:.83rem;">
+                            Importe <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text fw-bold">$</span>
+                            <input type="number" id="ppImporte" class="form-control"
+                                   value="" min="0.01" step="0.01" placeholder="0,00"
+                                   style="font-size:.95rem;" />
+                        </div>
+                    </div>
+
+                    @* ── Descripción / Observaciones ── *@
+                    <div class="mb-1">
+                        <label class="form-label fw-semibold" style="font-size:.83rem;">Descripción</label>
+                        <textarea id="ppObservaciones" class="form-control" rows="3"
+                                  placeholder="Ingrese una descripción u observación (opcional)…"
+                                  style="font-size:.85rem;resize:vertical;"></textarea>
+                    </div>
+
+                    @* ── Leyenda efectivo ── *@
+                    <div class="mt-2 px-1" style="font-size:.78rem;color:#6c757d;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" height="13" class="me-1"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.01a1 1 0 1 1 0-.01V4a1 1 0 0 0 1 1zm13 1V5a1 1 0 0 1-1-1V4a1 1 0 0 0-1-1zm-1 1a1 1 0 0 1 1 1V11a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM8 6a3 3 0 1 0 0 6 3 3 0 0 0 0-6"/></svg>
+                        Medio de pago: <strong>Efectivo</strong>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer border-top px-4 pb-3 pt-2">
+                <button type="button" class="btn btn-light border" data-bs-dismiss="modal" style="font-size:.85rem;">
+                    Cancelar
+                </button>
+                <button type="button" id="btnConfirmarPagoProv" class="btn fw-semibold px-4"
+                        onclick="confirmarPagoProv()"
+                        style="font-size:.85rem;background:linear-gradient(135deg,#f6c23e,#dd9a04);color:#fff;border:none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="15" height="15" style="margin-right:.35rem;vertical-align:-.1em;">
+                        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                    </svg>
+                    Registrar Pago
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ══ MODAL: ARQUEO ═════════════════════════════════════════════════════════ *@
+<div class="modal fade" id="modalArqueo" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+
+            <div class="modal-header modal-header-ck py-3">
+                <div class="d-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="20" height="20">
+                        <path d="M7.5 1.018a7 7 0 0 0-4.79 11.566L7.5 7.793zm1 0V7.5h6.482A7.001 7.001 0 0 0 8.5 1.018M14.982 8.5H8.5v6.482a7 7 0 0 0 6.482-6.482M7.5 14.982V8.207L2.215 13.49A6.97 6.97 0 0 0 7.5 14.982M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8"/>
+                    </svg>
+                    <h5 class="modal-title mb-0 fw-bold">Arqueo de Caja</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body p-4">
+
+                @* ── Saldo según sistema ── *@
+                <div class="mb-4">
+                    <div style="background:#f0f4ff;border:1px solid #b8caff;border-radius:8px;padding:.85rem 1.1rem;">
+                        <div style="font-size:.72rem;font-weight:700;color:#6c757d;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.25rem;">
+                            Saldo según sistema (efectivo)
+                        </div>
+                        <div id="arqSaldoSisDisplay" style="font-size:1.6rem;font-weight:800;color:#1a3a5c;letter-spacing:-.01em;">
+                            —
+                        </div>
+                        <div style="font-size:.75rem;color:#6c757d;margin-top:.15rem;">
+                            Calculado a partir de todos los movimientos en efectivo de esta caja.
+                        </div>
+                    </div>
+                </div>
+
+                @* ── Dinero físico contado ── *@
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" style="font-size:.83rem;">
+                        Dinero físico contado <span class="text-danger">*</span>
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text fw-bold">$</span>
+                        <input type="number" id="arqSaldoFisico" class="form-control"
+                               value="" min="0" step="0.01" placeholder="0,00"
+                               oninput="arqActualizarDiff()" style="font-size:.95rem;" />
+                    </div>
+                </div>
+
+                @* ── Panel de diferencia en tiempo real ── *@
+                <div id="arqDiffPanel" class="mb-3 p-3" style="border-radius:8px;display:none;">
+                    <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.2rem;" id="arqDiffLabel"></div>
+                    <div id="arqDiffValor" style="font-size:1.25rem;font-weight:800;"></div>
+                </div>
+
+                @* ── Observaciones (obligatorio) ── *@
+                <div class="mb-1">
+                    <label class="form-label fw-semibold" style="font-size:.83rem;">
+                        Observaciones <span class="text-danger">*</span>
+                    </label>
+                    <textarea id="arqObservaciones" class="form-control" rows="3"
+                              placeholder="Descripción del arqueo (obligatorio)…"
+                              style="font-size:.85rem;resize:vertical;"></textarea>
+                </div>
+                <div class="mt-1 px-1" style="font-size:.78rem;color:#6c757d;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" height="13" class="me-1"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.01a1 1 0 1 1 0-.01V4a1 1 0 0 0 1 1zm13 1V5a1 1 0 0 1-1-1V4a1 1 0 0 0-1-1zm-1 1a1 1 0 0 1 1 1V11a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM8 6a3 3 0 1 0 0 6 3 3 0 0 0 0-6"/></svg>
+                    Si hay diferencia se registra un movimiento automático. Medio de pago: <strong>Efectivo</strong>.
+                </div>
+
+            </div>
+
+            <div class="modal-footer border-top px-4 pb-3 pt-2">
+                <button type="button" class="btn btn-light border" data-bs-dismiss="modal" style="font-size:.85rem;">
+                    Cancelar
+                </button>
+                <button type="button" id="btnConfirmarArqueo" class="btn btn-primary fw-semibold px-4"
+                        onclick="confirmarArqueo()" style="font-size:.85rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="15" height="15" style="margin-right:.35rem;vertical-align:-.1em;">
+                        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                    </svg>
+                    Confirmar Arqueo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(function(){
+'use strict';
+
+var HACE_CAJA          = @(Model.HaceCaja ? "true" : "false");
+var MEDIO_EFECTIVO_ID  = @Model.MedioEfectivoId;
+var GASTO_CONCEPTO_ID  = @Model.GastoConceptoId;
+var INGRESO_CONCEPTO_ID= @Model.IngresoConceptoId;
+var EGRESO_CONCEPTO_ID = @Model.EgresoConceptoId;
+var ARQUEO_INGRESO_ID   = @Model.ArqueoIngresoId;
+var ARQUEO_EGRESO_ID    = @Model.ArqueoEgresoId;
+var PAGO_PROV_CONCEPTO_ID = @Model.PagoProvConceptoId;
+if (!HACE_CAJA) return;
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function fmt(n){ return new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',minimumFractionDigits:2,maximumFractionDigits:2}).format(n||0); }
+function escHtml(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+window.abrirModal = function(id){
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (id === 'modalCerrar'){
+        // Sincronizar saldo y fecha apertura con los valores actuales del DOM
+        // (que refrescar() mantiene al día)
+        document.getElementById('cerSaldoFinalDisplay').textContent =
+            document.getElementById('lblEfectivo').textContent;
+        document.getElementById('cerFechaApertura').textContent =
+            document.getElementById('lblApertura').textContent;
+        document.getElementById('cerObservaciones').value = '';
+        document.getElementById('btnConfirmarCerrar').disabled = false;
+        document.getElementById('btnConfirmarCerrar').innerHTML =
+            '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="15" height="15" style="margin-right:.35rem;vertical-align:-.1em;"><path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2m3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2"/></svg> Cerrar Caja';
+    } else if (id === 'modalAbrir'){
+        // El saldo inicial y datos del último cierre vienen del servidor vía Razor;
+        // sólo limpiamos observaciones al abrir.
+        document.getElementById('abrObservaciones').value = '';
+        document.getElementById('btnConfirmarAbrir').disabled = false;
+    }
+    bootstrap.Modal.getOrCreateInstance(el).show();
+};
+
+// ── Refrescar estado / grilla / totales ───────────────────────────────────
+async function refrescar(){
+    try {
+        var resp = await fetch('?handler=EstadoJson');
+        var d = await resp.json();
+        // Estado UI
+        var lblEst = document.getElementById('lblEstadoCaja');
+        var abierta = d.estado && d.estado.abierta;
+        lblEst.textContent = abierta ? 'ABIERTA' : 'CERRADA';
+        lblEst.className = 'ck-state ' + (abierta ? 'abierta' : 'cerrada');
+
+        document.getElementById('lblApertura').textContent = (abierta && d.estado.fechaApertura)
+            ? new Date(d.estado.fechaApertura).toLocaleString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })
+            : '—';
+        document.getElementById('lblSaldoInicial').textContent = abierta ? fmt(d.estado.saldoInicial) : '—';
+        document.getElementById('lblTotalDebe').textContent    = fmt(d.totalDebe);
+        document.getElementById('lblTotalHaber').textContent   = fmt(d.totalHaber);
+        document.getElementById('lblEfectivo').textContent     = fmt(d.saldoEfectivo);
+
+        // Grilla
+        var tb = document.getElementById('tbodyResumen');
+        if (!abierta){
+            tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:1rem;font-size:.85rem;">La caja está cerrada.</td></tr>';
+        } else if (!d.resumen.length){
+            tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:1rem;font-size:.85rem;">Sin movimientos registrados aún.</td></tr>';
+        } else {
+            tb.innerHTML = d.resumen.map(r =>
+                '<tr>'+
+                  '<td>'+escHtml(r.debe||'')+'</td>'+
+                  '<td style="text-align:right;">'+(r.importeDebe!=null?fmt(r.importeDebe):'')+'</td>'+
+                  '<td>'+escHtml(r.haber||'')+'</td>'+
+                  '<td style="text-align:right;">'+(r.importeHaber!=null?fmt(r.importeHaber):'')+'</td>'+
+                '</tr>'
+            ).join('');
+        }
+
+        // Habilitar/deshabilitar botones según estado
+        document.getElementById('btnAbrirCaja').disabled     =  abierta;
+        document.getElementById('btnCerrarCaja').disabled    = !abierta;
+        document.getElementById('btnIngresoDinero').disabled = !abierta;
+        document.getElementById('btnEgresoDinero').disabled  = !abierta;
+        document.getElementById('btnGastos').disabled        = !abierta;
+        document.getElementById('btnArqueo').disabled        = !abierta;
+        document.getElementById('btnPagoProv').disabled      = !abierta;
+    } catch(e){ console.error('refrescar:', e); }
+}
+
+// ── Abrir caja ─────────────────────────────────────────────────────────────
+// El saldo inicial se toma automáticamente del saldo_cierre de la caja anterior
+// (lógica emulada en el servidor, igual que sp_Caja_Apertura).
+window.confirmarAbrir = async function(){
+    var btn = document.getElementById('btnConfirmarAbrir');
+    btn.disabled = true;
+    btn.textContent = 'Abriendo…';
+
+    var obs = document.getElementById('abrObservaciones').value.trim();
+    var dto = {
+        observaciones: obs || null
+    };
+
+    try {
+        var resp = await fetch('?handler=Abrir', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(dto) });
+        var r = await resp.json();
+        if (!r.ok){
+            alert(r.msg || 'Ha ocurrido un error durante el procesamiento.');
+            btn.disabled = false;
+            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="15" height="15" style="margin-right:.35rem;vertical-align:-.1em;"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg> Abrir Caja';
+            return;
+        }
+        bootstrap.Modal.getInstance(document.getElementById('modalAbrir'))?.hide();
+        await refrescar();
+    } catch(ex){
+        alert('Error de conexión: ' + ex.message);
+        btn.disabled = false;
+        btn.textContent = 'Abrir Caja';
+    }
+};
+
+// ── Cerrar caja ────────────────────────────────────────────────────────────
+// El saldo de cierre se toma del sistema (server-side, igual que traerSaldoCaja).
+// El cliente sólo envía observaciones.
+window.confirmarCerrar = async function(){
+    var btn = document.getElementById('btnConfirmarCerrar');
+    btn.disabled = true;
+    btn.textContent = 'Cerrando…';
+
+    var obs = document.getElementById('cerObservaciones').value.trim();
+    var dto = { observaciones: obs || null };
+
+    try {
+        var resp = await fetch('?handler=Cerrar', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(dto) });
+        var r = await resp.json();
+        if (!r.ok){
+            alert(r.msg || 'Ha ocurrido un error durante el procesamiento.');
+            btn.disabled = false;
+            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="15" height="15" style="margin-right:.35rem;vertical-align:-.1em;"><path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2m3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2"/></svg> Cerrar Caja';
+            return;
+        }
+        bootstrap.Modal.getInstance(document.getElementById('modalCerrar'))?.hide();
+        await refrescar();
+    } catch(ex){
+        alert('Error de conexión: ' + ex.message);
+        btn.disabled = false;
+        btn.textContent = 'Cerrar Caja';
+    }
+};
+
+// ── Movimiento (ingreso / egreso / pago proveedor) ────────────────────────
+var _movTipo = '';   // 'ingreso' | 'egreso' | 'pagoProv'
+var _movEfectivoForzado  = false;   // true para ingreso y egreso
+var _movConceptoForzado  = false;   // true para ingreso y egreso (concepto viene de parámetros)
+
+window.abrirMovimiento = async function(tipo){
+    _movTipo = tipo;
+    var titulo      = '';
+    var tipoMov     = '';    // I | E  (sólo usado para pagoProv, que sí carga conceptos)
+    var afectaEf    = null;
+    var mostrarProv = false;
+
+    switch(tipo){
+        case 'ingreso': titulo='Ingreso de Dinero';    break;
+        case 'egreso':  titulo='Extracción de Dinero'; break;
+    }
+
+    document.getElementById('lblTituloMov').textContent = titulo;
+    document.getElementById('movImporte').value  = '';
+    document.getElementById('movObservaciones').value = '';
+
+    // ── Efectivo forzado (ingreso / egreso) ──────────────────────────────────
+    _movEfectivoForzado = (tipo === 'ingreso' || tipo === 'egreso');
+    document.getElementById('movMedioPagoWrap').style.display = _movEfectivoForzado ? 'none' : '';
+    document.getElementById('movEfectivoWrap').style.display  = _movEfectivoForzado ? ''     : 'none';
+
+    // ── Concepto forzado (ingreso / egreso) ──────────────────────────────────
+    _movConceptoForzado = (tipo === 'ingreso' || tipo === 'egreso');
+    var cWrap  = document.getElementById('movConceptoWrap');
+    var cfWrap = document.getElementById('movConceptoFijoWrap');
+    if (_movConceptoForzado){
+        // Verificar que el parámetro esté configurado
+        var conceptoParamId = tipo === 'ingreso' ? INGRESO_CONCEPTO_ID : EGRESO_CONCEPTO_ID;
+        if (conceptoParamId <= 0){
+            var paramNombre = tipo === 'ingreso' ? 'caja/IngresoDinero' : 'caja/EgresoDinero';
+            alert('El parámetro ' + paramNombre + ' no está configurado. Configure este valor en Configuración → Parámetros antes de continuar.');
+            return;
+        }
+        // Mostrar el nombre del concepto obtenido del servidor al cargar la página
+        // (lo consultamos inline para no depender del valor cacheado)
+        cWrap.style.display  = 'none';
+        cfWrap.style.display = '';
+        // Nombre del concepto: recuperarlo del servidor con una consulta rápida
+        try {
+            var tipoFiltro = tipo === 'ingreso' ? 'I' : 'E';
+            var todos = await (await fetch('?handler=Conceptos&tipo='+tipoFiltro+'&afectaEfectivo=true')).json();
+            var concepto = todos.find(function(c){ return c.id === conceptoParamId; });
+            document.getElementById('movConceptoFijoNombre').textContent =
+                concepto ? concepto.nombre : ('Concepto #' + conceptoParamId);
+        } catch(e){
+            document.getElementById('movConceptoFijoNombre').textContent = 'Concepto #' + conceptoParamId;
+        }
+    } else {
+        cWrap.style.display  = '';
+        cfWrap.style.display = 'none';
+        // Cargar conceptos para el select (sólo pagoProv llega aquí)
+        var qs = '?handler=Conceptos&tipo='+encodeURIComponent(tipoMov);
+        if (afectaEf !== null) qs += '&afectaEfectivo=' + (afectaEf ? 'true':'false');
+        var conceptos = await (await fetch(qs)).json();
+        var sel = document.getElementById('movConcepto');
+        sel.innerHTML = conceptos.length
+            ? conceptos.map(c => '<option value="'+c.id+'">'+escHtml(c.nombre)+'</option>').join('')
+            : '<option value="0">— No hay conceptos disponibles —</option>';
+    }
+
+    // El combo de proveedor dentro de modalMovimiento ya no se usa (pagoProv tiene su propio modal)
+    document.getElementById('movProveedorWrap').style.display = 'none';
+
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalMovimiento')).show();
+};
+
+window.confirmarMovimiento = async function(){
+    var conceptoId = _movConceptoForzado ? 0 : (parseInt(document.getElementById('movConcepto').value)||0);
+    var medioId    = _movEfectivoForzado ? 0 : (parseInt(document.getElementById('movMedioPago').value)||0);
+    var importe    = parseFloat(document.getElementById('movImporte').value)||0;
+    var obs        = document.getElementById('movObservaciones').value.trim();
+
+    if (!_movConceptoForzado && conceptoId<=0){ alert('Seleccione un concepto.'); return; }
+    if (!_movEfectivoForzado && medioId<=0)   { alert('Seleccione un medio de pago.'); return; }
+    if (importe<=0){ alert('El importe debe ser mayor a cero.'); return; }
+
+    var dto = { tipo: _movTipo, conceptoCajaId:conceptoId, medioPagoId:medioId, importe:importe, observaciones: obs||null, proveedorId: null };
+
+    var resp = await fetch('?handler=Movimiento', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(dto) });
+    var r = await resp.json();
+    if (!r.ok){ alert(r.msg||'Error al registrar movimiento.'); return; }
+    bootstrap.Modal.getInstance(document.getElementById('modalMovimiento'))?.hide();
+    await refrescar();
+};
+
+// ── Pago a Proveedores ─────────────────────────────────────────────────────
+window.abrirPagoProv = async function(){
+    var alertEl  = document.getElementById('pagoProvParamAlert');
+    var formWrap = document.getElementById('pagoProvFormWrap');
+    var btn      = document.getElementById('btnConfirmarPagoProv');
+
+    // Validar parámetros
+    var paramError = '';
+    if (PAGO_PROV_CONCEPTO_ID <= 0) paramError = 'El parámetro <code>caja/ConceptosPagosProveedores</code> no está configurado.';
+    else if (MEDIO_EFECTIVO_ID <= 0) paramError = 'El parámetro <code>caja/MedioPagoEfectivo</code> no está configurado.';
+
+    if (paramError){
+        alertEl.style.removeProperty('display');
+        document.getElementById('pagoProvParamAlertMsg').innerHTML =
+            '<strong>Parámetro faltante.</strong> ' + paramError +
+            ' Configure este valor en <strong>Configuración → Parámetros</strong>.';
+        formWrap.style.display = 'none';
+        btn.disabled = true;
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalPagoProv')).show();
+        return;
+    }
+
+    // Parámetros OK — mostrar formulario
+    alertEl.style.display = 'none';
+    formWrap.style.display = '';
+    btn.disabled = false;
+    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="15" height="15" style="margin-right:.35rem;vertical-align:-.1em;"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg> Registrar Pago';
+
+    // Limpiar campos
+    document.getElementById('ppImporte').value       = '';
+    document.getElementById('ppObservaciones').value = '';
+
+    // Cargar proveedores
+    try {
+        var provs = await (await fetch('?handler=Proveedores')).json();
+        var sel   = document.getElementById('ppProveedor');
+        sel.innerHTML = '<option value="0">— Seleccione un proveedor —</option>';
+        if (provs.length){
+            sel.innerHTML += provs.map(p =>
+                '<option value="'+p.id+'">'+escHtml(p.nombre)+'</option>'
+            ).join('');
+        } else {
+            sel.innerHTML = '<option value="0">— No hay proveedores disponibles —</option>';
+        }
+    } catch(e){
+        document.getElementById('ppProveedor').innerHTML =
+            '<option value="0">— Error al cargar proveedores —</option>';
+    }
+
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalPagoProv')).show();
+    document.getElementById('modalPagoProv').addEventListener('shown.bs.modal', function foc(){
+        document.getElementById('ppProveedor').focus();
+        document.getElementById('modalPagoProv').removeEventListener('shown.bs.modal', foc);
+    });
+};
+
+window.confirmarPagoProv = async function(){
+    var provId  = parseInt(document.getElementById('ppProveedor').value)  || 0;
+    var importe = parseFloat(document.getElementById('ppImporte').value)  || 0;
+    var obs     = document.getElementById('ppObservaciones').value.trim();
+
+    if (provId  <= 0){ alert('Debe seleccionar un proveedor.');            document.getElementById('ppProveedor').focus(); return; }
+    if (importe <= 0){ alert('El importe debe ser mayor a cero.');         document.getElementById('ppImporte').focus();   return; }
+
+    var btn = document.getElementById('btnConfirmarPagoProv');
+    btn.disabled    = true;
+    btn.textContent = 'Registrando…';
+
+    try {
+        var dto  = { proveedorId: provId, importe: importe, observaciones: obs || null };
+        var resp = await fetch('?handler=PagoProv', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify(dto)
+        });
+        var r = await resp.json();
+        if (!r.ok){
+            alert(r.msg || 'Error al registrar el pago.');
+            btn.disabled    = false;
+            btn.innerHTML   = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="15" height="15" style="margin-right:.35rem;vertical-align:-.1em;"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg> Registrar Pago';
+            return;
+        }
+        bootstrap.Modal.getInstance(document.getElementById('modalPagoProv'))?.hide();
+        await refrescar();
+    } catch(ex){
+        alert('Error de conexión: ' + ex.message);
+        btn.disabled    = false;
+        btn.textContent = 'Registrar Pago';
+    }
+};
+
+// ── Gastos ─────────────────────────────────────────────────────────────────
+window.abrirGastos = async function(){
+    // Limpiar formulario
+    document.getElementById('gastoImporte').value = '';
+    document.getElementById('gastoObservaciones').value = '';
+
+    var alertEl  = document.getElementById('gastoParamAlert');
+    var formWrap = document.getElementById('gastoFormWrap');
+    var btnGuard = document.getElementById('btnConfirmarGasto');
+
+    // Verificar parámetros configurados
+    if (GASTO_CONCEPTO_ID <= 0 || MEDIO_EFECTIVO_ID <= 0){
+        alertEl.style.removeProperty('display');
+        alertEl.style.display = '';
+        document.getElementById('gastoParamAlertMsg').innerHTML =
+            '<strong>Parámetros no configurados.</strong> ' +
+            'Los parámetros <code>caja/Gastos</code> y/o <code>caja/MedioPagoEfectivo</code> ' +
+            'no están definidos. Configure estos valores en <strong>Configuración → Parámetros</strong>.';
+        formWrap.style.display = 'none';
+        btnGuard.disabled = true;
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalGastos')).show();
+        return;
+    }
+
+    // Parámetros OK — mostrar formulario y cargar tipos de gasto
+    alertEl.style.display = 'none';
+    formWrap.style.display = '';
+    btnGuard.disabled = false;
+    btnGuard.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="15" height="15" style="margin-right:.35rem;vertical-align:-.1em;"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg> Guardar Gasto';
+
+    try {
+        var tipos = await (await fetch('?handler=TiposGasto')).json();
+        var sel = document.getElementById('gastoTipo');
+        sel.innerHTML = '<option value="0">— Seleccione un tipo —</option>';
+        if (tipos.length){
+            sel.innerHTML += tipos.map(t => '<option value="'+t.id+'">'+escHtml(t.nombre)+'</option>').join('');
+        }
+    } catch(e){
+        sel.innerHTML = '<option value="0">— Error al cargar tipos —</option>';
+    }
+
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalGastos')).show();
+    // Enfocar importe al abrir
+    document.getElementById('modalGastos').addEventListener('shown.bs.modal', function foc(){
+        document.getElementById('gastoImporte').focus();
+        document.getElementById('modalGastos').removeEventListener('shown.bs.modal', foc);
+    });
+};
+
+window.confirmarGasto = async function(){
+    var importe = parseFloat(document.getElementById('gastoImporte').value)||0;
+    var tipoId  = parseInt(document.getElementById('gastoTipo').value)||0;
+    var obs     = document.getElementById('gastoObservaciones').value.trim();
+
+    if (importe <= 0)   { alert('El importe debe ser mayor a cero.');          document.getElementById('gastoImporte').focus(); return; }
+    if (tipoId  <= 0)   { alert('Seleccione un tipo de gasto.');               document.getElementById('gastoTipo').focus();    return; }
+    if (!obs)           { alert('Debe ingresar una observación (obligatorio).'); document.getElementById('gastoObservaciones').focus(); return; }
+
+    var btn = document.getElementById('btnConfirmarGasto');
+    btn.disabled = true;
+    btn.textContent = 'Guardando…';
+
+    try {
+        var dto = { importe: importe, tipoGastoId: tipoId, observaciones: obs };
+        var resp = await fetch('?handler=Gasto', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(dto) });
+        var r = await resp.json();
+        if (!r.ok){
+            alert(r.msg || 'Error al registrar el gasto.');
+            btn.disabled = false;
+            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="15" height="15" style="margin-right:.35rem;vertical-align:-.1em;"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg> Guardar Gasto';
+            return;
+        }
+        bootstrap.Modal.getInstance(document.getElementById('modalGastos'))?.hide();
+        await refrescar();
+    } catch(ex){
+        alert('Error de conexión: ' + ex.message);
+        btn.disabled = false;
+        btn.textContent = 'Guardar Gasto';
+    }
+};
+
+// ── Arqueo ─────────────────────────────────────────────────────────────────
+var _arqSaldoSistema = 0;   // cargado al abrir el modal
+
+window.abrirArqueo = function(){
+    // Validar parámetros configurados
+    if (ARQUEO_INGRESO_ID <= 0){
+        alert('El parámetro caja/ArqueoIngreso no está configurado. Configure este valor en Configuración → Parámetros.');
+        return;
+    }
+    if (ARQUEO_EGRESO_ID <= 0){
+        alert('El parámetro caja/ArqueoEgreso no está configurado. Configure este valor en Configuración → Parámetros.');
+        return;
+    }
+    if (MEDIO_EFECTIVO_ID <= 0){
+        alert('El parámetro caja/MedioPagoEfectivo no está configurado. Configure este valor en Configuración → Parámetros.');
+        return;
+    }
+
+    // Tomar el saldo efectivo actual del DOM (ya está calculado por el sistema)
+    _arqSaldoSistema = _parseFmtCurrency(document.getElementById('lblEfectivo').textContent);
+
+    // Inicializar campos
+    document.getElementById('arqSaldoSisDisplay').textContent = fmt(_arqSaldoSistema);
+    document.getElementById('arqSaldoFisico').value           = '';
+    document.getElementById('arqObservaciones').value         = '';
+    document.getElementById('arqDiffPanel').style.display     = 'none';
+    var btn = document.getElementById('btnConfirmarArqueo');
+    btn.disabled    = false;
+    btn.innerHTML   = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="15" height="15" style="margin-right:.35rem;vertical-align:-.1em;"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg> Confirmar Arqueo';
+
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalArqueo')).show();
+    document.getElementById('modalArqueo').addEventListener('shown.bs.modal', function foc(){
+        document.getElementById('arqSaldoFisico').focus();
+        document.getElementById('modalArqueo').removeEventListener('shown.bs.modal', foc);
+    });
+};
+
+// Actualiza el panel de diferencia mientras el usuario escribe
+window.arqActualizarDiff = function(){
+    var fisico = parseFloat(document.getElementById('arqSaldoFisico').value);
+    var panel  = document.getElementById('arqDiffPanel');
+    if (isNaN(fisico)){ panel.style.display = 'none'; return; }
+
+    panel.style.display = '';
+    var diff = fisico - _arqSaldoSistema;
+
+    if (Math.abs(diff) < 0.005){
+        panel.style.background = '#d4edda'; panel.style.border = '1px solid #c3e6cb';
+        document.getElementById('arqDiffLabel').style.color = '#155724';
+        document.getElementById('arqDiffLabel').textContent = '✔ Sin diferencias — cuadra exacto';
+        document.getElementById('arqDiffValor').style.color = '#155724';
+        document.getElementById('arqDiffValor').textContent = '';
+    } else if (diff > 0){
+        panel.style.background = '#fff3cd'; panel.style.border = '1px solid #ffeeba';
+        document.getElementById('arqDiffLabel').style.color = '#856404';
+        document.getElementById('arqDiffLabel').textContent = 'Sobrante (se registrará un ingreso)';
+        document.getElementById('arqDiffValor').style.color = '#856404';
+        document.getElementById('arqDiffValor').textContent = fmt(diff);
+    } else {
+        panel.style.background = '#f8d7da'; panel.style.border = '1px solid #f5c6cb';
+        document.getElementById('arqDiffLabel').style.color = '#721c24';
+        document.getElementById('arqDiffLabel').textContent = 'Faltante (se registrará un egreso)';
+        document.getElementById('arqDiffValor').style.color = '#721c24';
+        document.getElementById('arqDiffValor').textContent = fmt(Math.abs(diff));
+    }
+};
+
+window.confirmarArqueo = async function(){
+    var fisico = parseFloat(document.getElementById('arqSaldoFisico').value);
+    var obs    = document.getElementById('arqObservaciones').value.trim();
+
+    if (isNaN(fisico) || fisico < 0){ alert('Ingrese un importe válido para el dinero físico contado.'); document.getElementById('arqSaldoFisico').focus(); return; }
+    if (!obs){ alert('Las observaciones son obligatorias para el arqueo.'); document.getElementById('arqObservaciones').focus(); return; }
+
+    var btn = document.getElementById('btnConfirmarArqueo');
+    btn.disabled    = true;
+    btn.textContent = 'Procesando…';
+
+    try {
+        var dto  = { saldoFisico: fisico, observaciones: obs };
+        var resp = await fetch('?handler=Arqueo', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(dto) });
+        var r    = await resp.json();
+        if (!r.ok){
+            alert(r.msg || 'Error al procesar el arqueo.');
+            btn.disabled    = false;
+            btn.innerHTML   = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="15" height="15" style="margin-right:.35rem;vertical-align:-.1em;"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg> Confirmar Arqueo';
+            return;
+        }
+        bootstrap.Modal.getInstance(document.getElementById('modalArqueo'))?.hide();
+        await refrescar();
+    } catch(ex){
+        alert('Error de conexión: ' + ex.message);
+        btn.disabled    = false;
+        btn.textContent = 'Confirmar Arqueo';
+    }
+};
+
+// Helper: convierte texto formateado como "$1.234,56" a número
+function _parseFmtCurrency(s){
+    if (!s) return 0;
+    // Eliminar símbolo de moneda, puntos de miles y reemplazar coma decimal
+    var clean = s.replace(/[^0-9,.-]/g, '').replace(/\./g, '').replace(',', '.');
+    return parseFloat(clean) || 0;
+}
+
+// ── Init: aplicar habilitación inicial y limpieza defensiva ───────────────
+(function init(){
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    document.body.classList.remove('modal-open');
+    var abierta = @(Model.Estado.Abierta ? "true" : "false");
+    document.getElementById('btnAbrirCaja').disabled     =  abierta;
+    document.getElementById('btnCerrarCaja').disabled    = !abierta;
+    document.getElementById('btnIngresoDinero').disabled = !abierta;
+    document.getElementById('btnEgresoDinero').disabled  = !abierta;
+    document.getElementById('btnGastos').disabled        = !abierta;
+    document.getElementById('btnArqueo').disabled        = !abierta;
+    document.getElementById('btnPagoProv').disabled      = !abierta;
+})();
+
+})();
+</script>
+}

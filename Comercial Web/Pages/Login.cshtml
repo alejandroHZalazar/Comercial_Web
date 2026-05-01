@@ -1,75 +1,463 @@
-﻿@page
+@page
 @model LoginModel
-
-@* Enlazar Bootstrap *@
+@{
+    Layout = null;
+    ViewData["Title"] = "Iniciar Sesión — Gestión Comercial";
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>@ViewData["Title"]</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
-
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <style>
+    :root {
+        --brand-1: #1a3a5c;
+        --brand-2: #2e6da4;
+        --brand-3: #4a90c9;
+        --accent:  #5cb3ff;
+        --error:   #e74a3b;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; padding: 0; }
     body {
-        background-image: url('/images/login_background.jpg'); /* Pon aquí tu imagen de fondo */
-        background-size: cover;
-        background-position: center;
+        font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        background: #0d1b2a;
+        overflow: hidden;
+        color: #2c3e50;
+    }
+
+    .login-wrapper {
+        display: grid;
+        grid-template-columns: 1.1fr 1fr;
         height: 100vh;
-        font-family: Arial, sans-serif;
+        width: 100vw;
     }
 
-    .login-container {
-        max-width: 400px;
-        margin: auto;
-        padding: 30px;
-        background-color: rgba(255, 255, 255, 0.9);
-        border-radius: 10px;
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
-        margin-top: 10%;
+    /* ── PANEL IZQUIERDO (branding) ──────────────────────────────────────── */
+    .brand-panel {
+        position: relative;
+        background: linear-gradient(135deg, #0d1b2a 0%, #1a3a5c 45%, #2e6da4 100%);
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 3.5rem 3rem;
+        overflow: hidden;
     }
 
-        .login-container h2 {
-            text-align: center;
-            font-size: 2rem;
-            margin-bottom: 20px;
-        }
-
-    .form-label {
-        font-weight: bold;
-        font-size: 1.1rem;
+    /* círculos decorativos animados */
+    .brand-panel::before,
+    .brand-panel::after {
+        content: '';
+        position: absolute;
+        border-radius: 50%;
+        opacity: .15;
+        filter: blur(40px);
+        animation: floaty 14s ease-in-out infinite alternate;
+    }
+    .brand-panel::before {
+        width: 380px; height: 380px;
+        background: #5cb3ff;
+        top: -120px; right: -100px;
+    }
+    .brand-panel::after {
+        width: 320px; height: 320px;
+        background: #2e6da4;
+        bottom: -100px; left: -80px;
+        animation-delay: -7s;
+    }
+    @@keyframes floaty {
+        0%   { transform: translate(0,0)     scale(1);   }
+        100% { transform: translate(40px,30px) scale(1.1); }
     }
 
-    .form-control {
-        font-size: 1rem;
-        margin-bottom: 15px;
+    .brand-logo {
+        display: flex; align-items: center; gap: .75rem;
+        font-size: 1.05rem; font-weight: 700;
+        letter-spacing: .04em; text-transform: uppercase;
+        position: relative; z-index: 2;
+    }
+    .brand-logo svg {
+        width: 38px; height: 38px;
+        background: rgba(255,255,255,.12);
+        padding: 7px; border-radius: 10px;
+        backdrop-filter: blur(10px);
     }
 
-    .btn-primary {
+    .brand-hero {
+        position: relative; z-index: 2;
+    }
+    .brand-hero h1 {
+        font-size: 2.6rem; font-weight: 800;
+        line-height: 1.15; margin: 0 0 1rem 0;
+        letter-spacing: -.02em;
+    }
+    .brand-hero h1 span {
+        background: linear-gradient(90deg, #5cb3ff, #b8e0ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .brand-hero p {
+        font-size: 1.02rem;
+        color: rgba(255,255,255,.78);
+        max-width: 460px;
+        line-height: 1.6;
+    }
+
+    .brand-features {
+        display: grid; gap: .85rem;
+        margin-top: 2rem;
+        position: relative; z-index: 2;
+    }
+    .feat-item {
+        display: flex; align-items: center; gap: .8rem;
+        font-size: .92rem; color: rgba(255,255,255,.85);
+    }
+    .feat-icon {
+        width: 32px; height: 32px;
+        background: rgba(92,179,255,.18);
+        border: 1px solid rgba(92,179,255,.35);
+        border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+    .feat-icon svg { width: 16px; height: 16px; color: #b8e0ff; }
+
+    .brand-footer {
+        font-size: .78rem;
+        color: rgba(255,255,255,.55);
+        position: relative; z-index: 2;
+    }
+
+    /* ── PANEL DERECHO (formulario) ─────────────────────────────────────── */
+    .form-panel {
+        background: #f8fbff;
+        display: flex; align-items: center; justify-content: center;
+        padding: 2rem;
+        position: relative;
+    }
+    .form-card {
         width: 100%;
-        font-size: 1.1rem;
+        max-width: 420px;
+        animation: slideUp .55s cubic-bezier(.2,.7,.2,1);
+    }
+    @@keyframes slideUp {
+        from { opacity: 0; transform: translateY(18px); }
+        to   { opacity: 1; transform: translateY(0); }
     }
 
-    .error-text {
-        color: red;
-        text-align: center;
-        margin-top: 10px;
+    .form-card h2 {
+        font-size: 1.85rem; font-weight: 800;
+        color: #1a3a5c; margin: 0 0 .35rem 0;
+        letter-spacing: -.01em;
+    }
+    .form-card .subtitle {
+        color: #6c7a93; font-size: .92rem;
+        margin-bottom: 2.2rem;
+    }
+
+    .form-group { position: relative; margin-bottom: 1.2rem; }
+    .form-group label {
+        display: block;
+        font-size: .76rem; font-weight: 700;
+        color: #5a6b85; text-transform: uppercase;
+        letter-spacing: .06em; margin-bottom: .4rem;
+    }
+    .input-wrap { position: relative; }
+    .input-wrap svg.input-icon {
+        position: absolute; left: 14px; top: 50%;
+        transform: translateY(-50%);
+        width: 18px; height: 18px;
+        color: #9aa6bd; transition: color .2s;
+        pointer-events: none;
+    }
+    .form-group input.form-control {
+        padding: .85rem 2.8rem .85rem 2.6rem;
+        font-size: .95rem;
+        border: 1.5px solid #d6dfee;
+        border-radius: 10px;
+        background: #fff;
+        transition: all .2s;
+        height: auto;
+        font-family: inherit;
+    }
+    .form-group input.form-control:focus {
+        border-color: var(--brand-2);
+        box-shadow: 0 0 0 4px rgba(46,109,164,.12);
+        outline: none;
+    }
+    .input-wrap:focus-within svg.input-icon { color: var(--brand-2); }
+
+    .toggle-pw {
+        position: absolute; right: 12px; top: 50%;
+        transform: translateY(-50%);
+        background: transparent; border: 0;
+        color: #9aa6bd; cursor: pointer;
+        padding: 4px; display: flex;
+        transition: color .2s;
+    }
+    .toggle-pw:hover { color: var(--brand-2); }
+    .toggle-pw svg { width: 18px; height: 18px; }
+
+    .form-row-extra {
+        display: flex; align-items: center; justify-content: space-between;
+        margin: -.25rem 0 1.5rem 0;
+        font-size: .85rem;
+    }
+    .form-row-extra .form-check { margin: 0; padding-left: 1.6em; }
+    .form-row-extra .form-check-input {
+        width: 1.05em; height: 1.05em;
+        margin-left: -1.6em;
+        cursor: pointer;
+    }
+    .form-row-extra .form-check-input:checked {
+        background-color: var(--brand-2);
+        border-color: var(--brand-2);
+    }
+    .form-row-extra label { color: #5a6b85; cursor: pointer; }
+    .form-row-extra a {
+        color: var(--brand-2); text-decoration: none;
+        font-weight: 600;
+    }
+    .form-row-extra a:hover { text-decoration: underline; }
+
+    .btn-login {
+        width: 100%;
+        padding: .9rem 1rem;
+        font-size: 1rem; font-weight: 700;
+        color: #fff;
+        background: linear-gradient(135deg, var(--brand-1), var(--brand-2));
+        border: 0; border-radius: 10px;
+        cursor: pointer;
+        transition: all .25s;
+        box-shadow: 0 4px 14px rgba(26,58,92,.25);
+        display: flex; align-items: center; justify-content: center;
+        gap: .55rem;
+        letter-spacing: .02em;
+    }
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(26,58,92,.35);
+        background: linear-gradient(135deg, #15314f, #265a8a);
+    }
+    .btn-login:active { transform: translateY(0); }
+    .btn-login svg { width: 16px; height: 16px; transition: transform .2s; }
+    .btn-login:hover svg { transform: translateX(3px); }
+    .btn-login.loading { pointer-events: none; opacity: .85; }
+    .btn-login.loading .btn-text { display: none; }
+    .btn-login.loading::before {
+        content: ''; display: inline-block;
+        width: 18px; height: 18px;
+        border: 2.5px solid rgba(255,255,255,.4);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin .7s linear infinite;
+    }
+    @@keyframes spin { to { transform: rotate(360deg); } }
+
+    .alert-error {
+        background: #fff1ee;
+        border: 1px solid #f5b8b1;
+        color: #b13428;
+        border-radius: 10px;
+        padding: .75rem 1rem;
+        font-size: .87rem;
+        margin-bottom: 1.2rem;
+        display: flex; align-items: center; gap: .55rem;
+        animation: shake .4s;
+    }
+    .alert-error svg { width: 18px; height: 18px; flex-shrink: 0; }
+    @@keyframes shake {
+        0%,100% { transform: translateX(0); }
+        25% { transform: translateX(-6px); }
+        75% { transform: translateX(6px); }
+    }
+
+    .form-footer {
+        margin-top: 2rem; text-align: center;
+        font-size: .8rem; color: #8696b0;
+    }
+
+    /* ── Responsive ─────────────────────────────────────────────────────── */
+    @@media (max-width: 900px) {
+        .login-wrapper { grid-template-columns: 1fr; }
+        .brand-panel { display: none; }
+        body { background: linear-gradient(135deg, #0d1b2a 0%, #1a3a5c 45%, #2e6da4 100%); }
+        .form-panel { background: transparent; }
+        .form-card {
+            background: #fff; padding: 2.2rem 1.8rem;
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0,0,0,.3);
+        }
+    }
+    @@media (max-width: 480px) {
+        .form-panel { padding: 1rem; }
+        .form-card h2 { font-size: 1.55rem; }
     }
 </style>
+</head>
+<body>
 
-<div class="login-container">
-    <h2>Iniciar Sesión</h2>
+<div class="login-wrapper">
 
-    <form method="post">
-        <div class="mb-3">
-            <label asp-for="Usuario" class="form-label">Usuario</label>
-            <input asp-for="Usuario" class="form-control" />
+    @* ═══════════════ PANEL IZQUIERDO (branding) ═══════════════ *@
+    <aside class="brand-panel">
+
+        <div class="brand-logo">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8 1.5A6.5 6.5 0 1 0 14.5 8 6.51 6.51 0 0 0 8 1.5zM6.5 12V4l5 4z"/>
+            </svg>
+            <span>Gestión Comercial</span>
         </div>
 
-        <div class="mb-3">
-            <label asp-for="Password" class="form-label">Contraseña</label>
-            <input asp-for="Password" type="password" class="form-control" />
+        <div class="brand-hero">
+            <h1>Bienvenido<br/><span>de nuevo.</span></h1>
+            <p>Sistema integral para gestión de ventas, inventario, clientes, proveedores y facturación electrónica. Toda tu operación, en un solo lugar.</p>
+
+            <div class="brand-features">
+                <div class="feat-item">
+                    <span class="feat-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .485.621l-1.5 6A.5.5 0 0 1 13 10H4a.5.5 0 0 1-.485-.379L1.61 2H.5a.5.5 0 0 1-.5-.5zM3.14 4l1.25 5h8.22l1.25-5H3.14zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                        </svg>
+                    </span>
+                    Ventas y facturación electrónica AFIP
+                </div>
+                <div class="feat-item">
+                    <span class="feat-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M2.5 1A1.5 1.5 0 0 0 1 2.5v3A1.5 1.5 0 0 0 2.5 7h11A1.5 1.5 0 0 0 15 5.5v-3A1.5 1.5 0 0 0 13.5 1h-11zM2 2.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-3zM2.5 9A1.5 1.5 0 0 0 1 10.5v3A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-3A1.5 1.5 0 0 0 13.5 9h-11zm0 1h11a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-3a.5.5 0 0 1 .5-.5z"/>
+                        </svg>
+                    </span>
+                    Inventario en tiempo real
+                </div>
+                <div class="feat-item">
+                    <span class="feat-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M0 0h1v15h15v1H0V0zm14.817 3.113a.5.5 0 0 1 .07.704l-4.5 5.5a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61 4.15-5.073a.5.5 0 0 1 .704-.07z"/>
+                        </svg>
+                    </span>
+                    Estadísticas y reportes detallados
+                </div>
+                <div class="feat-item">
+                    <span class="feat-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                        </svg>
+                    </span>
+                    Acceso seguro con roles y permisos
+                </div>
+            </div>
         </div>
 
-        <button type="submit" class="btn btn-primary">Ingresar</button>
+        <div class="brand-footer">
+            © @DateTime.Now.Year Gestión Comercial · Todos los derechos reservados
+        </div>
+    </aside>
 
-        @if (!string.IsNullOrEmpty(Model.Error))
-        {
-            <p class="error-text">@Model.Error</p>
-        }
-    </form>
+    @* ═══════════════ PANEL DERECHO (formulario) ═══════════════ *@
+    <main class="form-panel">
+        <div class="form-card">
+
+            <h2>Iniciar sesión</h2>
+            <p class="subtitle">Ingresá tus credenciales para acceder al sistema</p>
+
+            @if (!string.IsNullOrEmpty(Model.Error))
+            {
+                <div class="alert-error" role="alert">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                    </svg>
+                    <span>@Model.Error</span>
+                </div>
+            }
+
+            <form method="post" id="loginForm" autocomplete="on">
+
+                <div class="form-group">
+                    <label asp-for="Usuario">Usuario</label>
+                    <div class="input-wrap">
+                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+                        </svg>
+                        <input asp-for="Usuario" class="form-control"
+                               placeholder="ej.: jperez"
+                               autocomplete="username"
+                               required autofocus />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Password">Contraseña</label>
+                    <div class="input-wrap">
+                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                        </svg>
+                        <input asp-for="Password" type="password"
+                               id="inputPassword"
+                               class="form-control"
+                               placeholder="••••••••"
+                               autocomplete="current-password"
+                               required />
+                        <button type="button" class="toggle-pw" id="togglePw" tabindex="-1" aria-label="Mostrar/Ocultar contraseña">
+                            <svg id="iconEye" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.13 13.13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.13 13.13 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.13 13.13 0 0 1 1.172 8z"/>
+                                <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-row-extra">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="recordarme" />
+                        <label class="form-check-label" for="recordarme">Recordarme</label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-login" id="btnLogin">
+                    <span class="btn-text">Ingresar</span>
+                    <svg class="btn-text" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/>
+                    </svg>
+                </button>
+            </form>
+
+            <div class="form-footer">
+                ¿Problemas para ingresar? Contactá al administrador del sistema.
+            </div>
+        </div>
+    </main>
+
 </div>
+
+<script>
+    // Toggle visibilidad de contraseña
+    (function () {
+        var btn = document.getElementById('togglePw');
+        var inp = document.getElementById('inputPassword');
+        if (!btn || !inp) return;
+        btn.addEventListener('click', function () {
+            inp.type = inp.type === 'password' ? 'text' : 'password';
+            btn.querySelector('svg').style.opacity = inp.type === 'text' ? '.55' : '1';
+        });
+    })();
+
+    // Estado de carga al enviar
+    (function () {
+        var form = document.getElementById('loginForm');
+        var btn  = document.getElementById('btnLogin');
+        if (!form || !btn) return;
+        form.addEventListener('submit', function () {
+            btn.classList.add('loading');
+        });
+    })();
+</script>
+
+</body>
+</html>

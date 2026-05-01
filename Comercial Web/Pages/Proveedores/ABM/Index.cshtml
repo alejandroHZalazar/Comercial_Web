@@ -1,87 +1,238 @@
-﻿@page
+@page
 @model Comercial_Web.Pages.Proveedores.ABM.IndexModel
 @{
     ViewData["Title"] = "Gestión de Proveedores";
 }
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
-<div class="row">
-    <!-- Grilla de proveedores -->
-    <div class="col-md-6">
-        <div class="card mb-4 rounded shadow-sm h-100">
-            <div class="card-header fw-semibold bg-light border-bottom">
-                Listado de Proveedores
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
-                    <table class="table table-bordered table-hover table-striped table-sm mb-0">
-                        <thead class="table-secondary sticky-top">
-                            <tr>
-                                <th>Cod</th>
-                                <th>Proveedor</th>
-                                <th>Dirección</th>
-                                <th style="width: 40px;"></th> <!-- columna para editar -->
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var p in Model.Proveedores)
-                            {
-                                <tr onclick="cargarDetalle(@p.Id)">
-                                    <td>@p.Id</td>
-                                    <td>@p.NombreComercial</td>
-                                    <td>@p.Direccion</td>
-                                    <td class="text-center">
-                                        <a href="javascript:void(0)" onclick="abrirModalEditar(@p.Id)" title="Editar" class="text-decoration-none">
-                                            <i class="bi bi-pencil-square"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="card-footer bg-light text-end">
-                <button class="btn btn-success" onclick="abrirModalAgregar()">
-                    <i class="bi bi-plus-circle"></i> Agregar
-                </button>
-            </div>
-        </div>
-    </div>
+<style>
+    /* ===== PAGE HEADER ===== */
+    .page-header {
+        background: linear-gradient(135deg, #1a2a4a 0%, #2d4a7a 100%);
+        border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; color: #fff;
+    }
+    .page-header h4 { margin: 0; font-weight: 700; letter-spacing: .3px; }
 
-    <!-- Panel detalle -->
-    <div class="col-md-6">
-        <div class="card mb-4 rounded shadow-sm h-100">
-            <div class="card-header fw-semibold bg-light border-bottom">
-                Detalle del Proveedor
-            </div>
-            <div class="card-body" id="panelDetalle">
-                <p class="text-muted">Seleccione un proveedor para ver sus datos.</p>
-            </div>
-        </div>
+    /* ===== SECTION CARDS ===== */
+    .section-card {
+        background: #fff; border: 1px solid #e3e6f0; border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,.06); overflow: hidden; margin-bottom: 1.25rem;
+    }
+    .section-card-header {
+        background: linear-gradient(90deg, #f0f4ff 0%, #f8f9fc 100%);
+        border-bottom: 1px solid #e3e6f0; padding: .65rem 1.1rem;
+        display: flex; align-items: center; gap: .5rem;
+    }
+    .section-card-header span { font-weight: 700; font-size: .75rem; text-transform: uppercase; letter-spacing: .5px; color: #4e73df; }
+    .form-label { font-size: .82rem; font-weight: 600; color: #4a5568; margin-bottom: 3px; }
+
+    /* ===== BUTTONS ===== */
+    .btn-prov {
+        border: none; border-radius: 8px; padding: .42rem 1rem; font-size: .83rem; font-weight: 600;
+        display: inline-flex; align-items: center; gap: .4rem;
+        cursor: pointer; transition: all .18s; white-space: nowrap;
+    }
+    .btn-prov svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .btn-prov-primary   { background: #4e73df; color: #fff; } .btn-prov-primary:hover   { background: #3a5bc7; }
+    .btn-prov-success   { background: #1cc88a; color: #fff; } .btn-prov-success:hover   { background: #17a673; }
+    .btn-prov-danger    { background: #e74a3b; color: #fff; } .btn-prov-danger:hover    { background: #c93627; }
+    .btn-prov-secondary { background: #858796; color: #fff; } .btn-prov-secondary:hover { background: #6a6b7a; }
+    .btn-prov-warning   { background: #f6c23e; color: #222; } .btn-prov-warning:hover   { background: #e0a800; }
+    .btn-prov:disabled  { opacity: .55; cursor: not-allowed; }
+
+    /* ===== TABLE ===== */
+    .prov-table { width: 100%; border-collapse: collapse; font-size: .81rem; }
+    .prov-table thead tr { background: linear-gradient(90deg, #1a2a4a 0%, #2d4a7a 100%); }
+    .prov-table th { padding: .5rem .75rem; color: #fff; font-size: .69rem; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; white-space: nowrap; }
+    .prov-table td { padding: .42rem .75rem; color: #2d3748; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+    .prov-table tbody tr { cursor: pointer; transition: background .12s; }
+    .prov-table tbody tr:hover { background: #f0f4ff; }
+    .prov-table tbody tr.selected { background: #eef2ff; }
+    .btn-edit-row {
+        background: none; border: none; padding: .2rem .35rem; border-radius: 5px;
+        cursor: pointer; color: #4e73df; transition: all .15s;
+    }
+    .btn-edit-row:hover { background: #eef2ff; }
+
+    /* ===== DETAIL PANEL ===== */
+    .det-field { display: flex; flex-direction: column; padding: .55rem .75rem; border-bottom: 1px solid #f0f0f0; }
+    .det-field:last-child { border-bottom: none; }
+    .det-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #4e73df; margin-bottom: 2px; }
+    .det-value { font-size: .83rem; color: #2d3748; }
+    .det-value.empty { color: #adb5bd; font-style: italic; }
+
+    .badge-activo   { background: #d1f5e8; color: #0d6e4e; border-radius: 6px; padding: .15rem .55rem; font-size: .72rem; font-weight: 700; }
+    .badge-inactivo { background: #fdecea; color: #c0392b; border-radius: 6px; padding: .15rem .55rem; font-size: .72rem; font-weight: 700; }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state { text-align: center; padding: 2.5rem 1rem; color: #bbb; }
+
+    /* ===== MODAL ===== */
+    .modal-header-custom {
+        background: linear-gradient(135deg, #1a2a4a 0%, #2d4a7a 100%);
+        padding: 1rem 1.25rem; border-radius: 12px 12px 0 0;
+        display: flex; align-items: center; gap: .75rem;
+    }
+    .modal-header-custom h5 { margin: 0; color: #fff; font-weight: 700; font-size: .95rem; }
+    .modal-header-custom .btn-close { filter: invert(1); opacity: .8; }
+    .modal-content { border: none; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,.18); }
+    .modal-field-label { font-size: .8rem; font-weight: 600; color: #4a5568; margin-bottom: 3px; }
+    .modal-section-title {
+        font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+        color: #4e73df; padding: .4rem 0 .25rem; border-bottom: 1px solid #e3e6f0; margin-bottom: .75rem;
+    }
+    .modal-footer-custom {
+        background: #f8f9fc; border-top: 1px solid #e3e6f0;
+        padding: .85rem 1.25rem; display: flex; justify-content: flex-end; gap: .5rem;
+        border-radius: 0 0 12px 12px;
+    }
+
+    /* ===== SEARCH ===== */
+    .search-box {
+        position: relative; margin-bottom: 0;
+    }
+    .search-box input {
+        padding-left: 2.1rem; border-radius: 8px; font-size: .83rem;
+        border: 1px solid #ced4da; width: 100%;
+    }
+    .search-box input:focus { border-color: #4e73df; box-shadow: 0 0 0 3px rgba(78,115,223,.12); outline: none; }
+    .search-box svg { position: absolute; left: .65rem; top: 50%; transform: translateY(-50%); color: #adb5bd; pointer-events: none; }
+
+    /* Spinner */
+    .spinner-sm {
+        display: inline-block; width: 14px; height: 14px;
+        border: 2px solid rgba(255,255,255,.35); border-top-color: #fff;
+        border-radius: 50%; animation: spin .7s linear infinite; flex-shrink: 0;
+    }
+    @@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+@* ===== PAGE HEADER ===== *@
+<div class="page-header d-flex align-items-center gap-3">
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+    </svg>
+    <div>
+        <h4>Gestión de Proveedores</h4>
+        <small class="opacity-75">Alta, baja y modificación de proveedores</small>
     </div>
 </div>
 
-<!-- Modal -->
+<div class="row g-3">
+
+    @* ===== GRILLA ===== *@
+    <div class="col-lg-7">
+        <div class="section-card" style="overflow:visible;">
+            <div class="section-card-header" style="justify-content:space-between; flex-wrap:wrap; gap:.5rem;">
+                <div style="display:flex;align-items:center;gap:.5rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#4e73df" viewBox="0 0 16 16"><path d="M3 2a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v13H3V2zm3 1v2h4V3H6zM5 3H4v1h1V3zm6 0h-1v1h1V3zM4 6v1h1V6H4zm2 0v1h4V6H6zm5 0h-1v1h1V6zM4 9v1h1V9H4zm2 0v1h4V9H6zm5 0h-1v1h1V9zm-7 3v1h1v-1H5zm2 0v1h2v-1H7zm3 0v1h1v-1h-1z"/></svg>
+                    <span>Listado de Proveedores</span>
+                    <span id="cntProveedores" style="background:#eef2ff;color:#4e73df;border-radius:12px;padding:.15rem .55rem;font-size:.72rem;font-weight:700;">
+                        @Model.Proveedores.Count(p => p.Baja != true)
+                    </span>
+                </div>
+                <div class="d-flex align-items-center gap-2" style="flex-wrap:wrap;">
+                    <div class="search-box" style="width:200px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
+                        <input type="text" id="txtFiltro" placeholder="Filtrar…" oninput="filtrarTabla(this.value)" style="padding:.35rem .75rem .35rem 2.1rem;"/>
+                    </div>
+                    <button class="btn-prov btn-prov-success" onclick="abrirModalAgregar()">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>
+                        Agregar
+                    </button>
+                </div>
+            </div>
+            <div style="max-height:calc(100vh - 280px); overflow-y:auto;">
+                <table class="prov-table" id="tablaProveedores">
+                    <thead>
+                        <tr>
+                            <th style="width:55px;">Cód.</th>
+                            <th>Nombre Comercial</th>
+                            <th>Dirección</th>
+                            <th style="width:44px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyProveedores">
+                        @foreach (var p in Model.Proveedores.Where(x => x.Baja != true).OrderBy(x => x.NombreComercial))
+                        {
+                            <tr onclick="cargarDetalle(@p.Id, this)" data-nombre="@p.NombreComercial?.ToUpper()" data-dir="@p.Direccion?.ToUpper()">
+                                <td><code style="font-size:.76rem;">@p.Id</code></td>
+                                <td style="font-weight:600;">@p.NombreComercial</td>
+                                <td style="font-size:.79rem;color:#6c757d;">@p.Direccion</td>
+                                <td class="text-center">
+                                    <button class="btn-edit-row" title="Editar" onclick="event.stopPropagation(); abrirModalEditar(@p.Id)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/></svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div id="emptyTabla" class="empty-state" style="display:none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#ddd" viewBox="0 0 16 16" class="mb-2"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4z"/></svg>
+                <div style="font-size:.85rem;">Sin resultados</div>
+            </div>
+        </div>
+    </div>
+
+    @* ===== DETALLE ===== *@
+    <div class="col-lg-5">
+        <div class="section-card" id="cardDetalle">
+            <div class="section-card-header">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#4e73df" viewBox="0 0 16 16"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4z"/></svg>
+                <span>Detalle del Proveedor</span>
+            </div>
+            <div id="panelDetalle" style="padding:.75rem 0;">
+                <div class="empty-state">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#ddd" viewBox="0 0 16 16" class="mb-2"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4z"/></svg>
+                    <div style="font-size:.85rem;">Seleccioná un proveedor para ver su detalle</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@* ===== MODAL ===== *@
 <div id="modalProveedor" class="modal fade" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content rounded shadow-sm" id="modalContent">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" id="modalContent">
             <!-- Se carga por AJAX -->
         </div>
     </div>
 </div>
 
 <script>
-    function cargarDetalle(id) {
-        fetch(`/Proveedores/ABM?handler=Detalle&id=${id}`)
-            .then(r => r.text())
-            .then(html => {
-                document.getElementById('panelDetalle').innerHTML = html;
-            });
+    // -------- FILTRO --------
+    function filtrarTabla(val) {
+        const q = val.trim().toUpperCase();
+        let vis = 0;
+        document.querySelectorAll('#tbodyProveedores tr').forEach(tr => {
+            const match = !q || (tr.dataset.nombre||'').includes(q) || (tr.dataset.dir||'').includes(q);
+            tr.style.display = match ? '' : 'none';
+            if (match) vis++;
+        });
+        document.getElementById('emptyTabla').style.display = vis === 0 ? 'block' : 'none';
+        document.getElementById('cntProveedores').textContent = vis;
     }
 
+    // -------- DETALLE --------
+    function cargarDetalle(id, tr) {
+        document.querySelectorAll('#tbodyProveedores tr').forEach(r => r.classList.remove('selected'));
+        if (tr) tr.classList.add('selected');
+
+        const panel = document.getElementById('panelDetalle');
+        panel.innerHTML = '<div class="empty-state"><div class="spinner-sm" style="border-top-color:#4e73df;border-color:rgba(78,115,223,.25);width:24px;height:24px;margin:auto;"></div></div>';
+
+        fetch('/Proveedores/ABM?handler=Detalle&id=' + id)
+            .then(r => r.text())
+            .then(html => { panel.innerHTML = html; })
+            .catch(() => { panel.innerHTML = '<p class="text-danger p-3">Error al cargar.</p>'; });
+    }
+
+    // -------- MODAL --------
     function abrirModalAgregar() {
-        fetch(`/Proveedores/ABM?handler=FormModal`)
+        fetch('/Proveedores/ABM?handler=FormModal')
             .then(r => r.text())
             .then(html => {
                 document.getElementById('modalContent').innerHTML = html;
@@ -90,7 +241,7 @@
     }
 
     function abrirModalEditar(id) {
-        fetch(`/Proveedores/ABM?handler=FormModal&id=${id}`)
+        fetch('/Proveedores/ABM?handler=FormModal&id=' + id)
             .then(r => r.text())
             .then(html => {
                 document.getElementById('modalContent').innerHTML = html;

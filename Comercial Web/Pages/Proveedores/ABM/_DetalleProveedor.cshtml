@@ -1,65 +1,101 @@
-﻿@model Domain.Entities.Proveedore
+@model Domain.Entities.Proveedore
 
-<div class="card mb-4 rounded shadow-sm">
-    <div class="card-header fw-semibold bg-light border-bottom">
-        <i class="bi bi-person-lines-fill"></i> Datos del Proveedor
+@if (Model == null)
+{
+    <div class="empty-state">
+        <p style="font-size:.85rem;">Proveedor no encontrado.</p>
+    </div>
+}
+else
+{
+    <div class="det-field">
+        <span class="det-label">Código</span>
+        <span class="det-value"><code>@Model.Id</code></span>
+    </div>
+    <div class="det-field">
+        <span class="det-label">Nombre Comercial</span>
+        <span class="det-value @(string.IsNullOrWhiteSpace(Model.NombreComercial) ? "empty" : "")">
+            @(string.IsNullOrWhiteSpace(Model.NombreComercial) ? "—" : Model.NombreComercial)
+        </span>
+    </div>
+    <div class="det-field">
+        <span class="det-label">CUIL</span>
+        <span class="det-value @(string.IsNullOrWhiteSpace(Model.Cuil) ? "empty" : "")">
+            @(string.IsNullOrWhiteSpace(Model.Cuil) ? "—" : Model.Cuil)
+        </span>
+    </div>
+    <div class="det-field">
+        <span class="det-label">Dirección</span>
+        <span class="det-value @(string.IsNullOrWhiteSpace(Model.Direccion) ? "empty" : "")">
+            @(string.IsNullOrWhiteSpace(Model.Direccion) ? "—" : Model.Direccion)
+        </span>
+    </div>
+    <div class="det-field">
+        <span class="det-label">Email</span>
+        <span class="det-value @(string.IsNullOrWhiteSpace(Model.Email) ? "empty" : "")">
+            @if (!string.IsNullOrWhiteSpace(Model.Email))
+            {
+                <a href="mailto:@Model.Email" style="color:#4e73df;text-decoration:none;">@Model.Email</a>
+            }
+            else
+            {
+                <span>—</span>
+            }
+        </span>
+    </div>
+    <div class="det-field" style="display:flex;flex-direction:row;gap:2rem;">
+        <div style="flex:1;">
+            <span class="det-label">Teléfono</span>
+            <span class="det-value @(string.IsNullOrWhiteSpace(Model.Telefono) ? "empty" : "")">
+                @(string.IsNullOrWhiteSpace(Model.Telefono) ? "—" : Model.Telefono)
+            </span>
+        </div>
+        <div style="flex:1;">
+            <span class="det-label">Celular</span>
+            <span class="det-value @(string.IsNullOrWhiteSpace(Model.Celular) ? "empty" : "")">
+                @(string.IsNullOrWhiteSpace(Model.Celular) ? "—" : Model.Celular)
+            </span>
+        </div>
+    </div>
+    <div class="det-field" style="display:flex;flex-direction:row;gap:2rem;">
+        <div style="flex:1;">
+            <span class="det-label">Ganancia (%)</span>
+            <span class="det-value" style="font-weight:700;color:#1cc88a;">
+                @((Model.Ganancia ?? 0m).ToString("N2")) %
+            </span>
+        </div>
+        <div style="flex:1;">
+            <span class="det-label">Descuento (%)</span>
+            <span class="det-value" style="font-weight:700;color:#e74a3b;">
+                @((Model.Descuento ?? 0m).ToString("N2")) %
+            </span>
+        </div>
+    </div>
+    <div class="det-field">
+        <span class="det-label">Estado</span>
+        <span>
+            @if (Model.Baja == true)
+            {
+                <span class="badge-inactivo">Inactivo</span>
+            }
+            else
+            {
+                <span class="badge-activo">Activo</span>
+            }
+        </span>
     </div>
 
-    <div class="card-body p-4">
-        @if (Model != null)
-        {
-            <dl class="row mb-0">
-                <div class="row mb-2">
-                    <div class="col-sm-4 fw-bold">Id</div>
-                    <div class="col-sm-8">@Model.Id</div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-sm-4 fw-bold">Nombre Comercial</div>
-                    <div class="col-sm-8">@Model.NombreComercial</div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-sm-4 fw-bold">CUIL</div>
-                    <div class="col-sm-8">@Model.Cuil</div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-sm-4 fw-bold">Dirección</div>
-                    <div class="col-sm-8">@Model.Direccion</div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-sm-4 fw-bold">Email</div>
-                    <div class="col-sm-8">@Model.Email</div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-sm-4 fw-bold">Teléfono</div>
-                    <div class="col-sm-8">@Model.Telefono</div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-sm-4 fw-bold">Celular</div>
-                    <div class="col-sm-8">@Model.Celular</div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-sm-4 fw-bold">Ganancia (%)</div>
-                    <div class="col-sm-8">@((Model.Ganancia ?? 0m).ToString("N2"))</div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-sm-4 fw-bold">Descuento (%)</div>
-                    <div class="col-sm-8">@((Model.Descuento ?? 0m).ToString("N2"))</div>
-                </div>
-            </dl>
-
-            <div class="d-flex justify-content-end mt-3">
-                <form method="post" asp-page-handler="Eliminar" asp-route-id="@Model.Id">
-                    <button type="submit" class="btn btn-danger">
-                        <i class="bi bi-trash"></i> Eliminar
-                    </button>
-                </form>
-            </div>
-        }
-        else
-        {
-            <p class="text-muted">
-                <i class="bi bi-info-circle"></i> Seleccione un proveedor para ver sus datos.
-            </p>
-        }
+    <div style="padding:.85rem .75rem; display:flex; gap:.5rem; justify-content:flex-end; border-top:1px solid #f0f0f0; margin-top:.25rem;">
+        <button class="btn-prov btn-prov-warning" onclick="abrirModalEditar(@Model.Id)">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/></svg>
+            Editar
+        </button>
+        <form method="post" asp-page="/Proveedores/ABM/Index" asp-page-handler="Eliminar" asp-route-id="@Model.Id"
+              onsubmit="return confirm('¿Eliminar a @Html.Raw(Model.NombreComercial?.Replace("'","\'") ?? "este proveedor")?')">
+            <button type="submit" class="btn-prov btn-prov-danger">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
+                Eliminar
+            </button>
+        </form>
     </div>
-</div>
+}

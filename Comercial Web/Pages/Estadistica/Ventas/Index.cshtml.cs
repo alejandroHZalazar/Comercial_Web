@@ -93,13 +93,13 @@ namespace Comercial_Web.Pages.Estadisticas.Ventas
             Proveedores.Insert(0, new SelectListItem { Value = "", Text = "(Todos)" });
         }
 
-        public async Task<PartialViewResult> OnGetDetalleAsync(long id)
+        public async Task<PartialViewResult> OnGetDetalleAsync(long id, bool esDev = false)
         {
-            var detalle = await _estadisticasService.GetDetalleVentaAsync(id);
-            var vm = new VentaDetalleViewModel { VentaId = id, Items = detalle };
+            var detalle = esDev
+                ? await _estadisticasService.GetDetalleDevolucionAsync(id)
+                : await _estadisticasService.GetDetalleVentaAsync(id);
+            var vm = new VentaDetalleViewModel { VentaId = id, EsDevolucion = esDev, Items = detalle };
             return Partial("_DetalleVenta", vm);
-
-
         }
         public async Task<IActionResult> OnGetImprimirAsync(string formato)
         {
@@ -115,7 +115,7 @@ namespace Comercial_Web.Pages.Estadisticas.Ventas
             var parameters = new[] { new ReportParameter("subtitulo", subtitulo) };
             localReport.SetParameters(parameters);
 
-            // Márgenes en 0 y vertical
+            // Mï¿½rgenes en 0 y vertical
             string deviceInfo = @"<DeviceInfo>
                                     <OutputFormat>PDF</OutputFormat>
                                     <PageWidth>21cm</PageWidth>
@@ -126,10 +126,10 @@ namespace Comercial_Web.Pages.Estadisticas.Ventas
                                     <MarginBottom>0cm</MarginBottom>
                                 </DeviceInfo>";
 
-            // Render según formato
+            // Render segï¿½n formato
             byte[] bytes = localReport.Render(formato, deviceInfo);
 
-            // Nombre dinámico
+            // Nombre dinï¿½mico
             string extension = formato.ToLower() switch
             {
                 "excel" => "xlsx",

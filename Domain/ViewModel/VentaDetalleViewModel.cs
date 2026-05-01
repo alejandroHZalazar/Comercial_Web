@@ -10,6 +10,7 @@ namespace Domain.ViewModel
     public class VentaDetalleViewModel
     {
         public long VentaId { get; set; }
+        public bool EsDevolucion { get; set; }
         public List<VentaDetalleDto> Items { get; set; } = new();
     }
 

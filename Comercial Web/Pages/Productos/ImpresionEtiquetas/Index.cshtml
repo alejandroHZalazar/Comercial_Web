@@ -1,0 +1,318 @@
+@page
+@model Comercial_Web.Pages.Productos.ImpresionEtiquetas.IndexModel
+@{
+    ViewData["Title"] = "Impresión de Etiquetas";
+}
+
+<style>
+    .page-header {
+        background:linear-gradient(135deg,#1a2a4a 0%,#2d4a7a 100%);
+        border-radius:12px; padding:1.25rem 1.5rem; margin-bottom:1.5rem; color:#fff;
+    }
+    .page-header h4 { margin:0; font-weight:700; letter-spacing:.3px; }
+
+    .section-card {
+        background:#fff; border:1px solid #e3e6f0; border-radius:12px;
+        box-shadow:0 2px 8px rgba(0,0,0,.06); overflow:visible; margin-bottom:1.25rem;
+    }
+    .section-card-header {
+        background:linear-gradient(90deg,#f0f4ff 0%,#f8f9fc 100%);
+        border-bottom:1px solid #e3e6f0; padding:.65rem 1.1rem;
+        display:flex; align-items:center; gap:.5rem; border-radius:11px 11px 0 0;
+    }
+    .section-card-header span { font-weight:700; font-size:.75rem; text-transform:uppercase; letter-spacing:.5px; color:#4e73df; }
+    .section-card-body { padding:1rem 1.1rem; }
+    .form-label { font-size:.82rem; font-weight:600; color:#4a5568; margin-bottom:3px; }
+
+    /* BUTTONS */
+    .btn-ie {
+        border:none; border-radius:8px; padding:.42rem 1rem; font-size:.83rem; font-weight:600;
+        display:inline-flex; align-items:center; gap:.4rem;
+        cursor:pointer; transition:all .18s; white-space:nowrap;
+    }
+    .btn-ie svg { width:15px; height:15px; flex-shrink:0; }
+    .btn-ie-primary   { background:#4e73df; color:#fff; } .btn-ie-primary:hover   { background:#3a5bc7; }
+    .btn-ie-success   { background:#1cc88a; color:#fff; } .btn-ie-success:hover   { background:#17a673; }
+    .btn-ie-danger    { background:#e74a3b; color:#fff; } .btn-ie-danger:hover    { background:#c93627; }
+    .btn-ie-secondary { background:#858796; color:#fff; } .btn-ie-secondary:hover { background:#6a6b7a; }
+    .btn-ie-warning   { background:#f6c23e; color:#fff; } .btn-ie-warning:hover   { background:#e0a800; }
+    .btn-ie:disabled  { opacity:.55; cursor:not-allowed; }
+
+    /* MULTI-SELECT */
+    .ms-wrap { position:relative; }
+    .ms-input {
+        display:flex; align-items:center; justify-content:space-between;
+        border:1px solid #ced4da; border-radius:8px; padding:.38rem .75rem;
+        font-size:.83rem; cursor:pointer; background:#fff; user-select:none;
+        min-height:36px; transition:border-color .15s,box-shadow .15s;
+    }
+    .ms-input:hover,.ms-input.open { border-color:#4e73df; }
+    .ms-input.open { box-shadow:0 0 0 3px rgba(78,115,223,.15); }
+    .ms-label { flex:1; color:#495057; font-size:.82rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .ms-label.placeholder { color:#adb5bd; }
+    .ms-chevron { color:#6c757d; flex-shrink:0; transition:transform .2s; }
+    .ms-input.open .ms-chevron { transform:rotate(180deg); }
+    .ms-panel {
+        display:none; position:absolute; top:calc(100% + 4px); left:0; right:0;
+        background:#fff; border:1px solid #d0d7e8; border-radius:8px;
+        box-shadow:0 4px 18px rgba(0,0,0,.12); z-index:1200; overflow:hidden;
+    }
+    .ms-panel.open { display:block; }
+    .ms-sel-ops { display:flex; gap:.35rem; align-items:center; padding:.3rem .7rem; border-bottom:1px solid #eee; background:#f8f9fc; }
+    .ms-sel-ops span { font-size:.73rem; font-weight:600; cursor:pointer; padding:.1rem .45rem; border-radius:4px; transition:background .12s; }
+    .ms-sel-ops .lnk-all  { color:#4e73df; } .ms-sel-ops .lnk-all:hover  { background:#eef2ff; }
+    .ms-sel-ops .lnk-none { color:#e74a3b; } .ms-sel-ops .lnk-none:hover { background:#fdecea; }
+    .ms-sel-ops .sep { color:#dee2e6; }
+    .ms-search-box { padding:.5rem .65rem; border-bottom:1px solid #eee; position:sticky; top:0; background:#fff; z-index:1; }
+    .ms-search-box input { width:100%; border:1px solid #ced4da; border-radius:6px; padding:.28rem .6rem; font-size:.8rem; outline:none; }
+    .ms-search-box input:focus { border-color:#4e73df; }
+    .ms-options { max-height:200px; overflow-y:auto; padding:.3rem 0; }
+    .ms-option { display:flex; align-items:center; gap:.5rem; padding:.32rem .75rem; font-size:.82rem; cursor:pointer; transition:background .12s; }
+    .ms-option:hover { background:#f0f4ff; }
+    .ms-option input[type=checkbox] { width:14px; height:14px; accent-color:#4e73df; flex-shrink:0; }
+    .ms-option.hidden { display:none; }
+
+    /* TOOLBAR */
+    .ie-toolbar {
+        padding:.65rem 1rem; border-bottom:1px solid #e3e6f0; background:#f8f9fc;
+        border-radius:11px 11px 0 0; display:flex; align-items:center;
+        justify-content:space-between; flex-wrap:wrap; gap:.5rem;
+    }
+    .cnt-badge { background:#eef2ff; color:#4e73df; border-radius:12px; padding:.18rem .65rem; font-size:.75rem; font-weight:700; }
+
+    /* GRILLA */
+    .ie-table { width:100%; border-collapse:collapse; font-size:.81rem; }
+    .ie-table thead tr { background:linear-gradient(90deg,#1a2a4a 0%,#2d4a7a 100%); }
+    .ie-table th { padding:.5rem .75rem; color:#fff; font-size:.69rem; font-weight:700; text-transform:uppercase; letter-spacing:.4px; white-space:nowrap; }
+    .ie-table td { padding:.42rem .75rem; color:#2d3748; border-bottom:1px solid #f0f0f0; vertical-align:middle; }
+    .ie-table tbody tr:hover { background:#f8f9ff; }
+    .btn-del-row { background:none; border:none; padding:.15rem .35rem; border-radius:5px; cursor:pointer; color:#e74a3b; transition:all .15s; }
+    .btn-del-row:hover { background:#fdecea; }
+
+    /* TIPO SELECTOR */
+    .tipo-panel {
+        background:linear-gradient(90deg,#f0f4ff 0%,#f8f9fc 100%);
+        border:1px solid #d0d7e8; border-radius:10px; padding:.85rem 1.1rem;
+        display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap;
+    }
+    .tipo-card {
+        border:2px solid #d0d7e8; border-radius:10px; padding:.75rem 1.1rem;
+        cursor:pointer; transition:all .2s; background:#fff; flex:1; min-width:200px;
+        display:flex; align-items:center; gap:.75rem;
+    }
+    .tipo-card:hover   { border-color:#4e73df; background:#f5f8ff; }
+    .tipo-card.active  { border-color:#4e73df; background:#eef2ff; }
+    .tipo-card input[type=radio] { width:16px; height:16px; accent-color:#4e73df; flex-shrink:0; }
+    .tipo-card-body h6 { font-size:.82rem; font-weight:700; color:#1a2a4a; margin:0 0 2px; }
+    .tipo-card-body p  { font-size:.74rem; color:#6c757d; margin:0; }
+    .tipo-icon { font-size:1.6rem; flex-shrink:0; }
+
+    /* PROGRESO */
+    .progress-wrap { height:18px; border-radius:9px; background:#e9ecef; overflow:hidden; }
+    .progress-bar-ie {
+        height:100%; border-radius:9px;
+        background:linear-gradient(90deg,#4e73df 0%,#1cc88a 100%);
+        transition:width .25s; display:flex; align-items:center; justify-content:center;
+        font-size:.68rem; font-weight:700; color:#fff; min-width:2rem;
+    }
+
+    /* EMPTY */
+    .empty-state { text-align:center; padding:2.5rem 1rem; color:#bbb; }
+
+    /* Spinner */
+    .spinner-sm {
+        display:inline-block; width:14px; height:14px;
+        border:2px solid rgba(255,255,255,.35); border-top-color:#fff;
+        border-radius:50%; animation:spin .7s linear infinite; flex-shrink:0;
+    }
+    @@keyframes spin { to { transform:rotate(360deg); } }
+</style>
+
+@* PAGE HEADER *@
+<div class="page-header d-flex align-items-center gap-3">
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M5 4v-2a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h3zm5-2H6v2h4V2zm1 10v-1H5v1a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1zM2 7a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>
+        <path d="M4 7v4h8V7H4z"/>
+    </svg>
+    <div>
+        <h4>Impresión de Etiquetas</h4>
+        <small class="opacity-75">Generá etiquetas gondola o etiquetas de código de barras en formato A4</small>
+    </div>
+</div>
+
+@* ===== FILTROS ===== *@
+<div class="section-card">
+    <div class="section-card-header">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#4e73df" viewBox="0 0 16 16"><path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2z"/></svg>
+        <span>Filtros de Búsqueda</span>
+    </div>
+    <div class="section-card-body">
+        <div class="row g-3 align-items-end">
+            @* Proveedores *@
+            <div class="col-md-4">
+                <label class="form-label">Proveedores</label>
+                <div class="ms-wrap" id="msWrapProv">
+                    <div class="ms-input" id="msInputProv" onclick="toggleMs('Prov')">
+                        <span class="ms-label placeholder" id="msLabelProv">Todos los proveedores</span>
+                        <svg class="ms-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/></svg>
+                    </div>
+                    <div class="ms-panel" id="msPanelProv">
+                        <div class="ms-sel-ops">
+                            <span class="lnk-all" onclick="selTodos('Prov')">Seleccionar todo</span>
+                            <span class="sep">|</span>
+                            <span class="lnk-none" onclick="selNinguno('Prov')">Ninguno</span>
+                        </div>
+                        <div class="ms-search-box"><input type="text" placeholder="Buscar…" oninput="filterMs('Prov',this.value)"/></div>
+                        <div class="ms-options" id="msOptionsProv">
+                            @foreach (var p in Model.Proveedores)
+                            {
+                                <label class="ms-option" data-label="@p.Text.ToUpper()">
+                                    <input type="checkbox" class="ms-chk-prov" value="@p.Value" onchange="updateMsLabel('Prov')"/> @p.Text
+                                </label>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @* Rubros *@
+            <div class="col-md-3">
+                <label class="form-label">Rubros</label>
+                <div class="ms-wrap" id="msWrapRub">
+                    <div class="ms-input" id="msInputRub" onclick="toggleMs('Rub')">
+                        <span class="ms-label placeholder" id="msLabelRub">Todos los rubros</span>
+                        <svg class="ms-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/></svg>
+                    </div>
+                    <div class="ms-panel" id="msPanelRub">
+                        <div class="ms-sel-ops">
+                            <span class="lnk-all" onclick="selTodos('Rub')">Seleccionar todo</span>
+                            <span class="sep">|</span>
+                            <span class="lnk-none" onclick="selNinguno('Rub')">Ninguno</span>
+                        </div>
+                        <div class="ms-search-box"><input type="text" placeholder="Buscar…" oninput="filterMs('Rub',this.value)"/></div>
+                        <div class="ms-options" id="msOptionsRub">
+                            @foreach (var r in Model.Rubros)
+                            {
+                                <label class="ms-option" data-label="@r.Text.ToUpper()">
+                                    <input type="checkbox" class="ms-chk-rub" value="@r.Value" onchange="updateMsLabel('Rub')"/> @r.Text
+                                </label>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @* Texto *@
+            <div class="col-md-3">
+                <label class="form-label">Búsqueda libre</label>
+                <input type="text" id="txtBusqueda" class="form-control form-control-sm"
+                       placeholder="Cód. prov., barras o descripción…"
+                       style="border-radius:8px;font-size:.83rem;"
+                       onkeydown="if(event.key==='Enter') buscar()"/>
+            </div>
+            <div class="col-md-2">
+                <button class="btn-ie btn-ie-primary w-100" id="btnBuscar" onclick="buscar()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
+                    Buscar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ===== GRILLA ===== *@
+<div class="section-card" id="cardGrilla" style="display:none;">
+    <div class="ie-toolbar">
+        <div class="d-flex align-items-center gap-2">
+            <span style="font-weight:700;font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;color:#4e73df;">Productos seleccionados</span>
+            <span class="cnt-badge" id="cntFilas">0</span>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn-ie btn-ie-secondary" onclick="limpiarGrilla()">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854z"/></svg>
+                Limpiar
+            </button>
+        </div>
+    </div>
+    <div style="max-height:380px;overflow-y:auto;">
+        <table class="ie-table">
+            <thead>
+                <tr>
+                    <th>Cód. Prov.</th>
+                    <th>Cód. Barras</th>
+                    <th>Descripción</th>
+                    <th>Proveedor</th>
+                    <th>Rubro</th>
+                    <th style="width:40px;"></th>
+                </tr>
+            </thead>
+            <tbody id="tbodyGrilla"></tbody>
+        </table>
+    </div>
+    <div id="emptyGrilla" class="empty-state" style="display:none;">
+        <div style="font-size:.85rem;">La lista está vacía</div>
+    </div>
+</div>
+
+@* ===== TIPO DE IMPRESIÓN + PROGRESO ===== *@
+<div class="section-card" id="cardImprimir" style="display:none;">
+    <div class="section-card-header">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#4e73df" viewBox="0 0 16 16"><path d="M5 4v-2a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h3zm5-2H6v2h4V2zm1 10v-1H5v1a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1zM2 7a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/></svg>
+        <span>Tipo de Etiqueta y Generación</span>
+    </div>
+    <div class="section-card-body">
+
+        @* Selector tipo *@
+        <div class="tipo-panel mb-3">
+            <label class="tipo-card active" id="cardTipoEtiqueta" onclick="setTipo('etiqueta')">
+                <input type="radio" name="tipoImp" value="etiqueta" checked/>
+                <span class="tipo-icon">🏷️</span>
+                <div class="tipo-card-body">
+                    <h6>Etiqueta de Góndola</h6>
+                    <p>Descripción · Código · Precio · Código de barras · Fecha<br/>
+                    <strong>5 cm × 3 cm</strong> — 4 por fila</p>
+                </div>
+            </label>
+            <label class="tipo-card" id="cardTipoCodigo" onclick="setTipo('codigo')">
+                <input type="radio" name="tipoImp" value="codigo"/>
+                <span class="tipo-icon">📊</span>
+                <div class="tipo-card-body">
+                    <h6>Código de Barras</h6>
+                    <p>Solo código de barras gráfico + número<br/>
+                    <strong>3 cm × 2 cm</strong> — 6 por fila</p>
+                </div>
+            </label>
+        </div>
+
+        @* Botón generar *@
+        <div class="d-flex align-items-center gap-3 mb-3">
+            <button class="btn-ie btn-ie-danger" id="btnGenerar" onclick="generarPdf()">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                    <path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.697 19.697 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.65-.823.192-.077.4-.12.602-.077a.7.7 0 0 1 .477.365c.088.164.12.356.127.538.007.188-.012.396-.047.614-.084.51-.27 1.134-.52 1.794a10.954 10.954 0 0 0 .98 1.686 5.753 5.753 0 0 1 1.334.05c.364.066.734.195.96.465.12.144.193.32.2.518.007.192-.047.382-.138.563a1.04 1.04 0 0 1-.354.416.856.856 0 0 1-.51.138c-.331-.014-.654-.196-.933-.417a5.712 5.712 0 0 1-.911-.95 11.651 11.651 0 0 0-1.997.406 11.307 11.307 0 0 1-1.02 1.51c-.292.35-.609.656-.927.787a.793.793 0 0 1-.58.029z"/>
+                </svg>
+                Generar e Imprimir PDF
+            </button>
+            <span style="font-size:.79rem;color:#6c757d;">Se abrirá una ventana para imprimir. El progreso se muestra abajo.</span>
+        </div>
+
+        @* Barra de progreso *@
+        <div id="panelProgreso" style="display:none;">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <span style="font-size:.75rem;font-weight:600;color:#6c757d;text-transform:uppercase;letter-spacing:.4px;" id="lblProgresoTexto">Preparando…</span>
+                <span style="font-size:.75rem;font-weight:700;color:#4e73df;" id="lblPct">0%</span>
+            </div>
+            <div class="progress-wrap mb-2">
+                <div class="progress-bar-ie" id="progressBar" style="width:0%">0%</div>
+            </div>
+            <div class="d-flex justify-content-between" style="font-size:.76rem;color:#6c757d;">
+                <span id="lblDetalle">0 / 0 etiquetas generadas</span>
+                <span id="lblEstado" style="font-weight:600;"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.IMP_DEC = @Model.Decimales;
+    window.IMP_NOMBRE_EMPRESA = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.NombreEmpresa));
+</script>
+<script src="~/js/impresion-etiquetas.js" asp-append-version="true"></script>

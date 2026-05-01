@@ -24,4 +24,6 @@ public partial class Producto
     public bool? Fraccionado { get; set; }
 
     public bool? Dolarizado { get; set; }
+
+    public bool? EsPromocion { get; set; }
 }
