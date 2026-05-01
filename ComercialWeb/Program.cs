@@ -110,12 +110,16 @@ app.UseRequestLocalization(localizationOptions);
 app.UseForwardedHeaders();
 
 // Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
 {
+    // En local usamos HTTPS directo
+    app.UseHttpsRedirection();
+}
+else
+{
+    // En Railway el SSL lo termina el proxy — no redirigir acá
     app.UseExceptionHandler("/Error");
     app.UseHsts();
-    // UseHttpsRedirection solo en producción; Railway termina SSL en su proxy
-    app.UseHttpsRedirection();
 }
 app.UseStaticFiles();
 
