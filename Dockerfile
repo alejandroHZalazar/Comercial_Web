@@ -20,6 +20,9 @@ WORKDIR /app
 
 COPY --from=build /app/publish .
 
+# Directorio para Data Protection keys (cookies de auth)
+RUN mkdir -p /app/keys
+
 ENV ASPNETCORE_ENVIRONMENT=Production
 
 # Railway inyecta PORT en runtime; shell form permite expandir la variable

@@ -11,6 +11,7 @@ using Infrastructure.Services;
 using Application.Interfaces;
 using Application.Services;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.DataProtection;
 using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -31,6 +32,12 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
+// Persistir Data Protection keys en disco — sin esto, en cada redeploy de Railway
+// las cookies emitidas por el contenedor anterior se vuelven inválidas
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo("/app/keys"))
+    .SetApplicationName("ComercialWeb");
+
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -38,6 +45,10 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.LogoutPath = "/Logout";
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
         options.SlidingExpiration = true;
+        // Detrás de proxy con HTTPS terminado, esto asegura comportamiento consistente
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.HttpOnly = true;
     });
 
 builder.Services.AddScoped<IPasswordService, PasswordService>();
@@ -94,25 +105,13 @@ var app = builder.Build();
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 app.Urls.Add($"http://*:{port}");
 
-// Configurar cultura por defecto
-var defaultCulture = new CultureInfo("es-AR"); // o "es-ES"
-var localizationOptions = new RequestLocalizationOptions
-{
-    DefaultRequestCulture = new RequestCulture(defaultCulture),
-    SupportedCultures = new List<CultureInfo> { defaultCulture },
-    SupportedUICultures = new List<CultureInfo> { defaultCulture }
-};
-
-app.UseRequestLocalization(localizationOptions);
-
-
-// Leer cabeceras X-Forwarded-* antes que cualquier otro middleware
+// Leer cabeceras X-Forwarded-* PRIMERO — antes de cualquier otro middleware
+// para que Request.Scheme refleje el protocolo original (https) detrás del proxy
 app.UseForwardedHeaders();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    // En local usamos HTTPS directo
     app.UseHttpsRedirection();
 }
 else
@@ -121,6 +120,16 @@ else
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
+
+// Configurar cultura por defecto
+var defaultCulture = new CultureInfo("es-AR");
+var localizationOptions = new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new RequestCulture(defaultCulture),
+    SupportedCultures = new List<CultureInfo> { defaultCulture },
+    SupportedUICultures = new List<CultureInfo> { defaultCulture }
+};
+app.UseRequestLocalization(localizationOptions);
 app.UseStaticFiles();
 
 app.UseRouting();

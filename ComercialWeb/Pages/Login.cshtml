@@ -378,6 +378,7 @@
             }
 
             <form method="post" id="loginForm" autocomplete="on">
+                @Html.AntiForgeryToken()
 
                 <div class="form-group">
                     <label asp-for="Usuario">Usuario</label>
