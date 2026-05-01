@@ -91,6 +91,9 @@ builder.Services.AddRazorPages();
 
 var app = builder.Build();
 
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+app.Urls.Add($"http://*:{port}");
+
 // Configurar cultura por defecto
 var defaultCulture = new CultureInfo("es-AR"); // o "es-ES"
 var localizationOptions = new RequestLocalizationOptions
