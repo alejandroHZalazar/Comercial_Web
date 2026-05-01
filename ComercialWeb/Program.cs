@@ -102,9 +102,6 @@ builder.Services.AddRazorPages();
 
 var app = builder.Build();
 
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-app.Urls.Add($"http://*:{port}");
-
 // Leer cabeceras X-Forwarded-* PRIMERO — antes de cualquier otro middleware
 // para que Request.Scheme refleje el protocolo original (https) detrás del proxy
 app.UseForwardedHeaders();
