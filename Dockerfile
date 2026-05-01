@@ -24,4 +24,4 @@ ENV ASPNETCORE_ENVIRONMENT=Production
 
 # Railway inyecta la variable PORT en runtime.
 # Usar shell form para que el shell expanda ${PORT} al arrancar.
-CMD dotnet ComercialWeb.dll --urls "http://0.0.0.0:${PORT:-8080}"
+CMD dotnet "Comercial Web.dll" --urls "http://0.0.0.0:${PORT:-8080}"
