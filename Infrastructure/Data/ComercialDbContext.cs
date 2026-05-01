@@ -112,8 +112,16 @@ public partial class ComercialDbContext : DbContext
     public virtual DbSet<VentaPromoComponente>   VentaPromoComponentes    { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseMySql("server=72.61.47.240;database=ale;user=remoto;password=0315061", ServerVersion.Parse("5.5.62-mysql"));
+    {
+        // Solo se usa si DI no inyectó opciones (ej: CLI de migraciones en local)
+        // En producción/Railway, Program.cs configura el DbContext vía DI y este bloque se omite
+        if (!optionsBuilder.IsConfigured)
+        {
+            optionsBuilder.UseMySql(
+                "server=72.61.47.240;database=ale;user=remoto;password=0315061",
+                new MySqlServerVersion(new Version(5, 5, 62)));
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

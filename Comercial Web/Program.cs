@@ -5,6 +5,7 @@ using Infrastructure.Data;
 using Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.HttpOverrides;
 using Domain.Contracts;
 using Infrastructure.Services;
 using Application.Interfaces;
@@ -15,13 +16,20 @@ using System.Globalization;
 var builder = WebApplication.CreateBuilder(args);
 
 
+// Usar versión fija en lugar de AutoDetect (AutoDetect abre una conexión TCP en el arranque)
 builder.Services.AddDbContext<ComercialDbContext>(options =>
     options.UseMySql(
-        builder.Configuration.GetConnectionString("Default"),
-        ServerVersion.AutoDetect(
-            builder.Configuration.GetConnectionString("Default")
-        )
+        builder.Configuration.GetConnectionString("Default")!,
+        new MySqlServerVersion(new Version(5, 5, 62))
     ));
+
+// Railway (y cualquier reverse proxy) pasa tráfico HTTP interno aunque el cliente use HTTPS
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();   // confiar en todos los proxies (Railway)
+    options.KnownProxies.Clear();
+});
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -95,16 +103,17 @@ var localizationOptions = new RequestLocalizationOptions
 app.UseRequestLocalization(localizationOptions);
 
 
+// Leer cabeceras X-Forwarded-* antes que cualquier otro middleware
+app.UseForwardedHeaders();
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
+    // UseHttpsRedirection solo en producción; Railway termina SSL en su proxy
+    app.UseHttpsRedirection();
 }
-
-app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
