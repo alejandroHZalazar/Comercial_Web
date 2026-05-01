@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.13.35919.96
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Comercial Web", "Comercial Web\Comercial Web.csproj", "{B1BA2B7A-B2F8-4CD1-9BAB-2800A3D1A7F8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ComercialWeb", "ComercialWeb\ComercialWeb.csproj", "{B1BA2B7A-B2F8-4CD1-9BAB-2800A3D1A7F8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain", "Domain\Domain.csproj", "{E32C9BE2-5740-42E5-9E62-193CFB527DB5}"
 EndProject
