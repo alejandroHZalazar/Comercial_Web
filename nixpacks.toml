@@ -1,7 +1,0 @@
-[phases.build]
-cmds = [
-  "dotnet publish 'Comercial Web/Comercial Web.csproj' -c Release -o /app/publish"
-]
-
-[start]
-cmd = "dotnet /app/publish/ComercialWeb.dll"
