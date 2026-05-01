@@ -17,10 +17,14 @@ using System.Globalization;
 var builder = WebApplication.CreateBuilder(args);
 
 
+// Connection string con fallback por si la variable de entorno no está configurada
+var connectionString = builder.Configuration.GetConnectionString("Default")
+    ?? "server=72.61.47.240;database=ale;user=remoto;password=0315061;SslMode=None";
+
 // Usar versión fija en lugar de AutoDetect (AutoDetect abre una conexión TCP en el arranque)
 builder.Services.AddDbContext<ComercialDbContext>(options =>
     options.UseMySql(
-        builder.Configuration.GetConnectionString("Default")!,
+        connectionString,
         new MySqlServerVersion(new Version(5, 5, 62))
     ));
 
@@ -45,11 +49,20 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.LogoutPath = "/Logout";
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
         options.SlidingExpiration = true;
-        // Detrás de proxy con HTTPS terminado, esto asegura comportamiento consistente
+        options.Cookie.Name = "CW-AUTH";   // Nombre fijo — evita conflicto con cookies de deploys anteriores
         options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.Cookie.HttpOnly = true;
     });
+
+// Antiforgery: nombre de cookie fijo para que cookies viejas (de deploys previos
+// con keys diferentes) se ignoren automáticamente
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.Name = "XSRF-TOKEN";
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+});
 
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<ILoginService, LoginService>();
