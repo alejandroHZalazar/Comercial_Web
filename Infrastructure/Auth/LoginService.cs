@@ -37,13 +37,6 @@ public class LoginService : ILoginService
         if (!ok)
             return new(false, "Usuario o contraseña incorrectos", null);
 
-        // 🔄 Migración automática a hash
-        if (!_passwordService.IsHash(user.Password))
-        {
-            user.Password = _passwordService.Hash(password);
-            await _context.SaveChangesAsync();
-        }
-
         // 🔍 Buscar nombre del tipo
         var tipoNombre = await _context.TipoUsuarios
             .Where(t => t.Id == user.Tipo)
