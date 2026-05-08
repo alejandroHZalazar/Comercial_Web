@@ -167,7 +167,14 @@
             <option value="0">-- Seleccione --</option>
             @foreach (var v in Model.ListaVendedores)
             {
-              <option value="@v.Value">@v.Text</option>
+              if (v.Value == Model.VendedorLogueadoId.ToString())
+              {
+                <option value="@v.Value" selected>@v.Text</option>
+              }
+              else
+              {
+                <option value="@v.Value">@v.Text</option>
+              }
             }
           </select>
         </div>
@@ -549,9 +556,17 @@
 // ======================================================================
 // PARÁMETROS DEL SISTEMA
 // ======================================================================
-const BONIF_POR_LINEA = @Model.BonificacionPorLinea;
+const BONIF_POR_LINEA  = @Model.BonificacionPorLinea;
 const PROD_DOLARIZADOS = @Model.ProductosDolarizados;
-const COTIZ_DOLAR = @Model.CotizDolar.ToString(System.Globalization.CultureInfo.InvariantCulture);
+const COTIZ_DOLAR      = @Model.CotizDolar.ToString(System.Globalization.CultureInfo.InvariantCulture);
+const TIENE_LECTORA_CB        = @Model.TieneLectoraCB;
+const TIENE_CONSUMIDOR_FINAL  = @Model.TieneConsumidorFinal;
+const CLIENTE_CONSUMIDOR_FINAL= @Model.ClienteConsumidorFinal;
+const TIENE_PRODUCTOS_BALANZA = @Model.TieneProductosBalanza;
+const PREFIJO_BALANZA         = '@Html.Raw(Model.PrefijoBalanza.Replace("'", "\\'"))';
+const POSICION_PRODUCTO       = '@Html.Raw(Model.PosicionProducto.Replace("'", "\\'"))';
+const POSICION_PRECIO         = '@Html.Raw(Model.PosicionPrecio.Replace("'", "\\'"))';
+const DIVISOR_PRECIO          = @(decimal.TryParse(Model.DivisorPrecio, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var dp) && dp > 0 ? dp.ToString(System.Globalization.CultureInfo.InvariantCulture) : "1");
 
 // ======================================================================
 // ESTADO GLOBAL
@@ -570,6 +585,24 @@ let _cliSelIdx  = -1;
     document.getElementById('descRecMsg').textContent = 'Se aplicará a todos los productos.';
   } else {
     document.getElementById('descRecMsg').textContent = 'Se aplicará solo a filas seleccionadas (Sel ✓).';
+  }
+})();
+
+// Auto-cargar consumidor final si el parámetro está activo
+(async function initConsumidorFinal() {
+  if (TIENE_CONSUMIDOR_FINAL !== 1 || CLIENTE_CONSUMIDOR_FINAL <= 0) return;
+  try {
+    var r = await fetch('/Ventas/Pedidos?handler=ClientePorId&id=' + CLIENTE_CONSUMIDOR_FINAL);
+    var data = await r.json();
+    if (data.ok && data.cliente) {
+      seleccionarCliente(data.cliente);
+    }
+  } catch(e) {
+    console.warn('No se pudo cargar el consumidor final:', e);
+  }
+  // Con lectora activa, el foco siempre va al campo de código de barras
+  if (TIENE_LECTORA_CB === 1) {
+    setTimeout(function() { document.getElementById('txtCodBarras').focus(); }, 100);
   }
 })();
 
@@ -647,6 +680,26 @@ function cerrarDropCli() {
 let _prodTimer = null;
 let _prodSelIdxBarras=-1, _prodSelIdxCodProv=-1, _prodSelIdxDesc=-1;
 
+// ── Balanza: helpers ────────────────────────────────────────────────────────
+// Devuelve true si el código es de balanza (13 dígitos y empieza con el prefijo).
+function esCodigoBalanza(codigo, prefijo) {
+  if (!codigo || !prefijo) return false;
+  return codigo.length === 13 && codigo.startsWith(prefijo);
+}
+
+// Extrae una subcadena usando posición en formato "inicio,fin" (1-based, ambos inclusive).
+// Ejemplo: posicion="3,7" sobre "1234567890123" → chars 3-7 → "34567"
+function extraerPorPosicion(codigo, posicion) {
+  if (!posicion) return '';
+  var partes = posicion.split(',');
+  if (partes.length < 2) return '';
+  var ini = parseInt(partes[0].trim(), 10) - 1;   // convertir a 0-based
+  var fin = parseInt(partes[1].trim(), 10);        // slice(ini, fin) es exclusivo por eso no -1
+  if (isNaN(ini) || isNaN(fin) || ini < 0 || fin <= ini) return '';
+  return codigo.substring(ini, fin);
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 async function onProdExactoKeydown(e, tipo) {
   var inputId = tipo === 'codBarras' ? 'txtCodBarras' : 'txtCodProv';
   var dropId  = tipo === 'codBarras' ? 'dropBarras'   : 'dropCodProv';
@@ -669,11 +722,93 @@ async function onProdExactoKeydown(e, tipo) {
     e.preventDefault();
     var idxSel = tipo==='codBarras'?_prodSelIdxBarras:_prodSelIdxCodProv;
     if (items.length > 0 && items[idxSel]) { items[idxSel].click(); return; }
-    var val = document.getElementById(inputId).value.trim();
+    var rawVal = document.getElementById(inputId).value.trim();
+    if (!rawVal) return;
+
+    // ── Balanza: detectar código de balanza antes de cualquier otro parseo ──
+    if (tipo === 'codBarras' && TIENE_LECTORA_CB === 1 && TIENE_PRODUCTOS_BALANZA === 1) {
+      if (esCodigoBalanza(rawVal, PREFIJO_BALANZA)) {
+        // Validar que todos los parámetros de balanza estén configurados
+        if (!PREFIJO_BALANZA || !POSICION_PRODUCTO || !POSICION_PRECIO || DIVISOR_PRECIO <= 0) {
+          alert('Parámetros de balanza incompletos. Verifique prefijoBalanza, posicionProducto, posicionPrecio y divisorPrecio.');
+          return;
+        }
+        var codProductoBalanza = extraerPorPosicion(rawVal, POSICION_PRODUCTO);
+        var precioStrBalanza   = extraerPorPosicion(rawVal, POSICION_PRECIO);
+        var precioBalanza      = parseFloat(precioStrBalanza) / DIVISOR_PRECIO;
+        if (!codProductoBalanza) {
+          alert('No se pudo extraer el código de producto del código de balanza.');
+          return;
+        }
+        _lastProdInput = tipo;
+        var dataBalanza = await fetchProductos(codProductoBalanza, 'codBarras');
+        if (dataBalanza.length === 1) {
+          var prodBal   = dataBalanza[0];
+          var cantBal   = 1;
+          if (precioBalanza > 0) {
+            // El precio extraído es el importe: calcular cantidad = importe / precioConIva
+            var ivaBal       = getIva();
+            var precioConIvaBal = (prodBal.precioSinIva || 0) * (1 + ivaBal / 100);
+            cantBal = precioConIvaBal > 0 ? precioBalanza / precioConIvaBal : 1;
+          }
+          cerrarTodosDropsProd();
+          agregarOSumarProducto(prodBal, cantBal);
+          document.getElementById('txtCodBarras').value = '';
+          setTimeout(function() { document.getElementById('txtCodBarras').focus(); }, 50);
+        } else if (dataBalanza.length > 1) {
+          mostrarDropProd(dataBalanza, dropId, tipo);
+        }
+        return;   // no continuar con la lógica estándar
+      }
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
+    // Parsear cantidad/importe * codigoBarras (ej: "3*7791234567890" o "250.50*7791234567890")
+    var valorAnterior = null;   // número antes del * (cantidad o importe según fraccionado)
+    var usaAsterisco  = false;
+    var val = rawVal;
+    if (tipo === 'codBarras' && rawVal.includes('*')) {
+      var partes = rawVal.split('*');
+      var parsed = parseFloat(partes[0].trim());
+      valorAnterior = (!isNaN(parsed) && parsed > 0) ? parsed : null;
+      val = partes.slice(1).join('*').trim();
+      usaAsterisco = true;
+    }
     if (!val) return;
+
     _lastProdInput = tipo;
     var data = await fetchProductos(val, tipo);
-    if (data.length === 1) { seleccionarProducto(data[0]); }
+    if (data.length === 1) {
+      var prod = data[0];
+
+      // Resolver cantidad efectiva según fraccionado
+      var cantEfectiva = 1;
+      if (usaAsterisco && valorAnterior !== null) {
+        if (prod.fraccionado) {
+          // El valor antes del * es el IMPORTE: calcular cantidad = importe / precioConIva
+          var iva = getIva();
+          var precioConIva = (prod.precioSinIva || 0) * (1 + iva / 100);
+          cantEfectiva = precioConIva > 0 ? valorAnterior / precioConIva : 1;
+        } else {
+          // El valor antes del * es la CANTIDAD directa
+          cantEfectiva = valorAnterior;
+        }
+      }
+
+      // Modo lectora: agregar directo a la grilla
+      if (TIENE_LECTORA_CB === 1 && tipo === 'codBarras') {
+        cerrarTodosDropsProd();
+        agregarOSumarProducto(prod, cantEfectiva);
+        document.getElementById('txtCodBarras').value = '';
+        setTimeout(function() { document.getElementById('txtCodBarras').focus(); }, 50);
+      } else {
+        seleccionarProducto(prod);
+        // Pre-cargar el campo cantidad si se usó *
+        if (usaAsterisco && cantEfectiva !== 1) {
+          document.getElementById('txtCantidad').value = cantEfectiva;
+        }
+      }
+    }
     else if (data.length > 1) { mostrarDropProd(data, dropId, tipo); }
   }
 }
@@ -682,9 +817,14 @@ function onProdInput(val, tipo) {
   var dropId = tipo === 'codBarras' ? 'dropBarras' : 'dropCodProv';
   clearTimeout(_prodTimer);
   _lastProdInput = tipo;
-  if (!val) { cerrarDropProd(dropId); return; }
+  // Si hay * en código de barras, buscar solo con lo que está después del *
+  var searchVal = val;
+  if (tipo === 'codBarras' && val.includes('*')) {
+    searchVal = val.split('*').slice(1).join('*').trim();
+  }
+  if (!searchVal) { cerrarDropProd(dropId); return; }
   _prodTimer = setTimeout(async function() {
-    var data = await fetchProductos(val, tipo);
+    var data = await fetchProductos(searchVal, tipo);
     mostrarDropProd(data, dropId, tipo);
   }, 300);
 }
@@ -828,6 +968,19 @@ function agregarProducto(p, cant) {
   renderGrilla();
   recalcularTotales();
   return idx;
+}
+
+// Modo lectora: agrega con cant=1 o suma 1 si el producto ya está en la grilla
+function agregarOSumarProducto(p, cant) {
+  var existente = _rows.findIndex(function(r) { return r.fkProducto === p.productoId; });
+  if (existente >= 0) {
+    _rows[existente].cantidad += cant;
+    calcRow(_rows[existente]);
+    renderGrilla();
+    recalcularTotales();
+  } else {
+    agregarProducto(p, cant);
+  }
 }
 
 function eliminarFila(idx) {
@@ -1045,7 +1198,8 @@ async function guardarPedido() {
         observ:        r.observ,
         descuento:     r.descRec < 0 ? Math.abs(r.descRec) : 0,
         recargo:       r.descRec > 0 ? r.descRec : 0,
-        subtotalSinIva: r.subtotalSinIva
+        subtotalSinIva: r.subtotalSinIva,
+        subtotal:      r.subtotal
       };
     })
   };
@@ -1113,6 +1267,21 @@ function limpiarTodo() {
   _prodPendiente = null;
   renderGrilla();
   recalcularTotales();
+
+  // Si está activo el consumidor final + lectora, recargar cliente y poner foco en txtCodBarras
+  if (TIENE_CONSUMIDOR_FINAL === 1 && CLIENTE_CONSUMIDOR_FINAL > 0) {
+    fetch('/Ventas/Pedidos?handler=ClientePorId&id=' + CLIENTE_CONSUMIDOR_FINAL)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.ok && data.cliente) seleccionarCliente(data.cliente);
+        if (TIENE_LECTORA_CB === 1) {
+          setTimeout(function() { document.getElementById('txtCodBarras').focus(); }, 80);
+        }
+      })
+      .catch(function(e) { console.warn('No se pudo recargar el consumidor final:', e); });
+  } else if (TIENE_LECTORA_CB === 1) {
+    setTimeout(function() { document.getElementById('txtCodBarras').focus(); }, 80);
+  }
 }
 
 // ======================================================================
@@ -1368,12 +1537,18 @@ async function cargarPedido(pedidoId, fkCliente) {
       precioConIva:  0,
       cantidad:      d.cantidad,
       subtotal:      0,
+      fraccionado:   d.fraccionado || false,
       dolarizado:    d.dolarizado,
       costo:         d.costo,
       precioOrig:    d.precioOrig,
       selected:      false
     };
     calcRow(row);
+    // Para productos fraccionados, restaurar el subtotal exacto almacenado en BD.
+    // Evita la pérdida de precisión que ocurre al recalcular cantidad/importe.
+    if (row.fraccionado && d.subtotal > 0) {
+      row.subtotal = d.subtotal;
+    }
     return row;
   });
 

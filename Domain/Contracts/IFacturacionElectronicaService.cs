@@ -14,5 +14,5 @@ public interface IFacturacionElectronicaService
     /// Emite nota de crédito electrónica manual (sin devolución asociada).
     /// Corresponde a la rama "else" del escritorio (unaDevolucion == 0).
     /// </summary>
-    Task<(bool ok, string? error)> EmitirNotaCreditoManualAsync(NotaCreditoRequestDto dto, int puntoVenta);
+    Task<(bool ok, string? error, string? pdfUrl)> EmitirNotaCreditoManualAsync(NotaCreditoRequestDto dto, int puntoVenta);
 }

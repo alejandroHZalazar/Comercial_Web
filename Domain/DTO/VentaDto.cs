@@ -26,6 +26,13 @@ public class VentaParametrosDto
     public int     DecimalesCant          { get; set; }
     public int     IndiceBusqueda         { get; set; }
     public int     IdPlanEfectivo         { get; set; }
+
+    // Balanza
+    public int     TieneProductosBalanza  { get; set; }
+    public string  PrefijoBalanza         { get; set; } = "";
+    public string  PosicionProducto       { get; set; } = "";
+    public string  PosicionPrecio         { get; set; } = "";
+    public string  DivisorPrecio          { get; set; } = "1";
 }
 
 // ── Datos del cliente para la venta ─────────────────────────────────────────
@@ -110,7 +117,10 @@ public class VentaImpresionDto
     public string?   RazonSocial      { get; set; }
     public string?   Cuil             { get; set; }
     public string?   DireccionCliente { get; set; }
+    public string?   Provincia        { get; set; }
+    public string?   Email              { get; set; }
     public string?   CondIvaAbrev       { get; set; }
+    public string?   CondIvaAbrevFE     { get; set; }
     public string?   CondIvaLetra       { get; set; }
     public string?   CondIvaDescripcion { get; set; }
     public decimal   Iva               { get; set; }

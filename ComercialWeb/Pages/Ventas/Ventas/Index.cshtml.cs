@@ -241,7 +241,8 @@ public class IndexModel : PageModel
                 descuento     = d.Descuento,
                 recargo       = d.Recargo,
                 costo         = d.Costo,
-                fraccionado   = d.Fraccionado
+                fraccionado   = d.Fraccionado,
+                subtotal      = d.Subtotal
             })
         });
     }

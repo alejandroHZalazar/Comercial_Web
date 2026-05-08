@@ -1371,11 +1371,16 @@
         alert('Devolución N° ' + res.devolucionId + ' registrada correctamente.');
       }
 
-      // Abrir comprobante
-      var printUrl = HACE_TK===1
-        ? '/Ventas/Devolucion/TicketX/' + res.devolucionId
-        : '/Ventas/Devolucion/ComprobanteX/' + res.devolucionId;
-      window.open(printUrl, '_blank');
+      // Si se generó comprobante fiscal (NC electrónica), abrir el PDF fiscal.
+      // Si no, abrir el comprobante interno (X).
+      if (res.pdfUrl){
+        window.open(res.pdfUrl, '_blank');
+      } else {
+        var printUrl = HACE_TK===1
+          ? '/Ventas/Devolucion/TicketX/' + res.devolucionId
+          : '/Ventas/Devolucion/ComprobanteX/' + res.devolucionId;
+        window.open(printUrl, '_blank');
+      }
 
       // Reiniciar formulario
       _rows=[]; _clienteId=@(p.TieneConsumidorFinal==1?p.ClienteConsumidorFinal:0);

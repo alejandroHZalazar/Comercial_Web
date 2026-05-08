@@ -58,7 +58,14 @@ public class VentaService : IVentaService
             Decimales              = pi(Get("productos",  "decimales")),
             DecimalesCant          = pi(Get("productos",  "decimalesCant")),
             IndiceBusqueda         = pi(Get("notaPedido", "indiceBusqueda")),
-            IdPlanEfectivo         = pi(Get("Cobros",     "idPlanEfectivo"))
+            IdPlanEfectivo         = pi(Get("Cobros",     "idPlanEfectivo")),
+
+            // Balanza
+            TieneProductosBalanza  = pi(Get("productos",  "tieneProductosBalanza")),
+            PrefijoBalanza         = Get("productos",  "prefijoBalanza")   ?? "",
+            PosicionProducto       = Get("productos",  "posicionProducto") ?? "",
+            PosicionPrecio         = Get("productos",  "posicionPrecio")   ?? "",
+            DivisorPrecio          = Get("productos",  "divisorPrecio") is { Length: > 0 } dv ? dv : "1"
         };
     }
 

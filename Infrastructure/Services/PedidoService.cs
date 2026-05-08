@@ -46,6 +46,37 @@ public class PedidoService : IPedidoService
         }).ToList();
     }
 
+    public async Task<PedidoClienteItem?> GetClientePorIdAsync(int clienteId)
+    {
+        var row = await (
+            from c    in _db.Clientes
+            where c.Id == clienteId && c.Baja != true
+            join l    in _db.Localidades on c.FkLocalidad equals l.Id   into lj
+            from l    in lj.DefaultIfEmpty()
+            join prov in _db.Provincias  on (int?)l.FkProvincia equals prov.Id into pj
+            from prov in pj.DefaultIfEmpty()
+            select new
+            {
+                c.Id, c.NombreComercial, c.Telefono, c.Contacto, c.Direccion,
+                LocalidadNombre = l    != null ? l.Nombre    : null,
+                ProvinciaNombre = prov != null ? prov.Nombre : null
+            }
+        ).FirstOrDefaultAsync();
+
+        if (row == null) return null;
+
+        return new PedidoClienteItem
+        {
+            ClienteId       = row.Id,
+            NombreComercial = row.NombreComercial,
+            Telefono        = row.Telefono,
+            Contacto        = row.Contacto,
+            DireccionFull   = string.Join(", ",
+                new[] { row.Direccion, row.LocalidadNombre, row.ProvinciaNombre }
+                    .Where(s => !string.IsNullOrWhiteSpace(s)))
+        };
+    }
+
     // ── Buscar pedidos (emula sp_pedidosTraerParaEditar) ─────────────────
     public async Task<List<PedidoBuscarItem>> BuscarPedidosAsync(
         DateTime? desde, DateTime? hasta,
@@ -163,6 +194,7 @@ public class PedidoService : IPedidoService
                 Descuento      = pd.Descuento     ?? 0m,
                 Recargo        = pd.Recargo       ?? 0m,
                 SubtotalSinIva = pd.SubtotalSinIva ?? 0m,
+                Subtotal       = pd.Subtotal       ?? 0m,
                 Fraccionado    = prod != null && (prod.Fraccionado ?? false),
                 Dolarizado     = prod != null && (prod.Dolarizado  ?? false)
             }
@@ -184,6 +216,7 @@ public class PedidoService : IPedidoService
             Descuento      = r.Descuento,
             Recargo        = r.Recargo,
             SubtotalSinIva = r.SubtotalSinIva,
+            Subtotal       = r.Subtotal,
             Fraccionado    = r.Fraccionado,
             Dolarizado     = r.Dolarizado
         }).ToList();
@@ -301,7 +334,7 @@ public class PedidoService : IPedidoService
                     Descripcion    = item.Descripcion,
                     PrecioSinIva   = item.PrecioSinIva,
                     Cantidad       = item.Cantidad,
-                    Subtotal       = 0,
+                    Subtotal       = item.Subtotal,   // preserva importe fraccionado exacto
                     Procesado      = false,
                     CantEntregada  = 0,
                     PrecioOrig     = item.PrecioOrig,

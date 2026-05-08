@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Application.Interfaces;
 using Domain.Contracts;
 using Domain.DTO;
@@ -51,6 +52,17 @@ public class IndexModel : PageModel
     public int     BonificacionPorLinea  { get; private set; }
     public int     ProductosDolarizados  { get; private set; }
     public decimal CotizDolar            { get; private set; }
+    public int     TieneLectoraCB        { get; private set; }
+    public int     TieneConsumidorFinal  { get; private set; }
+    public int     ClienteConsumidorFinal{ get; private set; }
+    public int     VendedorLogueadoId    { get; private set; }
+
+    // Balanza
+    public int     TieneProductosBalanza { get; private set; }
+    public string  PrefijoBalanza        { get; private set; } = "";
+    public string  PosicionProducto      { get; private set; } = "";
+    public string  PosicionPrecio        { get; private set; } = "";
+    public string  DivisorPrecio         { get; private set; } = "1";
 
     public async Task OnGetAsync()
     {
@@ -69,6 +81,13 @@ public class IndexModel : PageModel
             .OrderBy(u => u.Nombre)
             .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Nombre ?? "" })
             .ToList();
+
+        // Pre-seleccionar el vendedor logueado
+        var nombreLogueado = User.FindFirstValue(ClaimTypes.Name) ?? "";
+        var vendedorLogueado = vendedores.FirstOrDefault(u =>
+            u.Baja != true &&
+            string.Equals(u.Nombre, nombreLogueado, StringComparison.OrdinalIgnoreCase));
+        VendedorLogueadoId = vendedorLogueado?.Id ?? 0;
 
         var condIvas = await _condIvaService.GetAllAsync();
         ListaCondIvas = condIvas
@@ -90,13 +109,32 @@ public class IndexModel : PageModel
             .Select(z => new SelectListItem { Value = z.Id.ToString(), Text = z.Nombre ?? "" })
             .ToList();
 
-        var bonStr    = await _parametroService.ObtenerValorAsync("ventas",    "bonificacionesPorDetalle");
-        var dolStr    = await _parametroService.ObtenerValorAsync("productos", "dolarizaProductos");
-        var cotizStr  = await _parametroService.ObtenerValorAsync("productos", "cotizacionDolar");
+        var bonStr      = await _parametroService.ObtenerValorAsync("ventas",    "bonificacionesPorDetalle");
+        var dolStr      = await _parametroService.ObtenerValorAsync("productos", "dolarizaProductos");
+        var cotizStr    = await _parametroService.ObtenerValorAsync("productos", "cotizacionDolar");
+        var lectoraStr  = await _parametroService.ObtenerValorAsync("productos", "MecanismoLectora");
 
-        BonificacionPorLinea = string.IsNullOrWhiteSpace(bonStr)   ? 0 : (int.TryParse(bonStr,   out var b) ? b : 0);
-        ProductosDolarizados = string.IsNullOrWhiteSpace(dolStr)    ? 0 : (int.TryParse(dolStr,   out var d) ? d : 0);
-        CotizDolar           = string.IsNullOrWhiteSpace(cotizStr)  ? 0m: (decimal.TryParse(cotizStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var c) ? c : 0m);
+        BonificacionPorLinea = string.IsNullOrWhiteSpace(bonStr)     ? 0  : (int.TryParse(bonStr,    out var b) ? b : 0);
+        ProductosDolarizados = string.IsNullOrWhiteSpace(dolStr)      ? 0  : (int.TryParse(dolStr,    out var d) ? d : 0);
+        CotizDolar           = string.IsNullOrWhiteSpace(cotizStr)    ? 0m : (decimal.TryParse(cotizStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var c) ? c : 0m);
+        TieneLectoraCB        = string.IsNullOrWhiteSpace(lectoraStr)   ? 0 : (int.TryParse(lectoraStr,   out var l)  ? l  : 0);
+
+        var cfStr  = await _parametroService.ObtenerValorAsync("ventas", "tieneConsumidorFinal");
+        var cliStr = await _parametroService.ObtenerValorAsync("ventas", "clienteConsumidorFinal");
+        TieneConsumidorFinal   = string.IsNullOrWhiteSpace(cfStr)  ? 0 : (int.TryParse(cfStr,  out var cf)  ? cf  : 0);
+        ClienteConsumidorFinal = string.IsNullOrWhiteSpace(cliStr) ? 0 : (int.TryParse(cliStr, out var cli) ? cli : 0);
+
+        // Balanza
+        var balanzaStr   = await _parametroService.ObtenerValorAsync("productos", "tieneProductosBalanza");
+        var prefijoStr   = await _parametroService.ObtenerValorAsync("productos", "prefijoBalanza");
+        var posProStr    = await _parametroService.ObtenerValorAsync("productos", "posicionProducto");
+        var posPrecStr   = await _parametroService.ObtenerValorAsync("productos", "posicionPrecio");
+        var divisorStr   = await _parametroService.ObtenerValorAsync("productos", "divisorPrecio");
+        TieneProductosBalanza = string.IsNullOrWhiteSpace(balanzaStr) ? 0 : (int.TryParse(balanzaStr, out var bal) ? bal : 0);
+        PrefijoBalanza        = prefijoStr  ?? "";
+        PosicionProducto      = posProStr   ?? "";
+        PosicionPrecio        = posPrecStr  ?? "";
+        DivisorPrecio         = string.IsNullOrWhiteSpace(divisorStr) ? "1" : divisorStr;
     }
 
     // ── Lista de clientes para multi-select ────────────────────────────────
@@ -108,6 +146,14 @@ public class IndexModel : PageModel
             .OrderBy(c => c.NombreComercial)
             .Select(c => new SelectListItem { Value = c.Id.ToString(), Text = c.NombreComercial ?? "" })
             .ToList();
+    }
+
+    // ── AJAX: obtener cliente por ID (consumidor final automático) ───────
+    public async Task<IActionResult> OnGetClientePorIdAsync(int id)
+    {
+        var cliente = await _pedidoService.GetClientePorIdAsync(id);
+        if (cliente == null) return new JsonResult(new { ok = false });
+        return new JsonResult(new { ok = true, cliente });
     }
 
     // ── AJAX: autocomplete clientes ──────────────────────────────────────

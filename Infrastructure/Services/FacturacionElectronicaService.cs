@@ -152,26 +152,32 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
                     documento_nro  = nroCuenta,
                     razon_social   = ventaData.RazonSocial ?? ventaData.NombreCliente ?? "",
                     domicilio      = ventaData.DireccionCliente ?? "",
+                    provincia      = MapProvincia(ventaData.Provincia ?? ""),
                     codigo         = $"Clie{nroCuenta}",
-                    envia_por_mail = prm.EnviarMail ? "S" : "N",
-                    email          = prm.EnviarMail ? ventaData.NombreCliente : null,
-                    condicion_pago = "214",
-                    condicion_iva  = ventaData.CondIvaAbrev ?? "CF",
-                    rg5329         = "N"
+                    envia_por_mail      = prm.EnviarMail ? "S" : "N",
+                    email               = prm.EnviarMail ? ventaData.Email : null,
+                    condicion_pago      = "214",
+                    condicion_pago_otra = ventaData.FormaPago,
+                    condicion_iva       = ventaData.CondIvaAbrevFE ?? ventaData.CondIvaAbrev ?? "CF",
+                    rg5329              = "N"
                 },
                 comprobante = new TfComprobante
                 {
-                    fecha       = fecha,
-                    tipo        = $"FACTURA {letra}",
-                    operacion   = "V",
-                    idioma      = "1",
-                    punto_venta = prm.PuntoVenta.ToString(),
-                    moneda      = "PES",
-                    cotizacion  = "1",
-                    rubro       = prm.RubroFE,
-                    total       = totalFinal,
-                    detalle     = detalleFE,
-                    tributos    = tributos
+                    fecha                   = fecha,
+                    tipo                    = $"FACTURA {letra}",
+                    operacion               = "V",
+                    idioma                  = "1",
+                    punto_venta             = prm.PuntoVenta.ToString(),
+                    moneda                  = "PES",
+                    cotizacion              = "1",
+                    vencimiento             = fecha,
+                    periodo_facturado_desde = fecha,
+                    periodo_facturado_hasta = fecha,
+                    rubro                   = prm.RubroFE,
+                    rubro_grupo_contable    = $"{DateTime.Now.Month}/{DateTime.Now.Year}",
+                    total                   = totalFinal,
+                    detalle                 = detalleFE,
+                    tributos                = tributos
                 }
             };
 
@@ -227,14 +233,14 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
     // ═══════════════════════════════════════════════════════════════════════════
     //  EMITIR NOTA DE CRÉDITO MANUAL (unaDevolucion == 0 en escritorio)
     // ═══════════════════════════════════════════════════════════════════════════
-    public async Task<(bool ok, string? error)> EmitirNotaCreditoManualAsync(
+    public async Task<(bool ok, string? error, string? pdfUrl)> EmitirNotaCreditoManualAsync(
         NotaCreditoRequestDto dto, int puntoVenta)
     {
         try
         {
             var prm = await CargarParametrosFEAsync();
             if (string.IsNullOrEmpty(prm.UserToken) || string.IsNullOrEmpty(prm.ApiKey) || string.IsNullOrEmpty(prm.ApiToken))
-                return (false, "Parámetros de facturación electrónica incompletos.");
+                return (false, "Parámetros de facturación electrónica incompletos.", null);
 
             // ── Datos fiscales del cliente ────────────────────────────────────
             var datosCliente = await (
@@ -255,7 +261,7 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
             ).FirstOrDefaultAsync();
 
             if (datosCliente == null)
-                return (false, "No se encontraron datos fiscales del cliente.");
+                return (false, "No se encontraron datos fiscales del cliente.", null);
 
             bool esCF = datosCliente.ClienteId == prm.ClienteCFId;
 
@@ -297,15 +303,19 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
                 },
                 comprobante = new TfComprobante
                 {
-                    fecha       = fecha,
-                    tipo        = tipoNC,
-                    operacion   = "V",
-                    idioma      = "1",
-                    punto_venta = puntoVenta.ToString("D4"),
-                    moneda      = "PES",
-                    cotizacion  = "1",
-                    rubro       = prm.RubroFE,
-                    total       = dto.Importe,
+                    fecha                   = fecha,
+                    tipo                    = tipoNC,
+                    operacion               = "V",
+                    idioma                  = "1",
+                    punto_venta             = puntoVenta.ToString("D4"),
+                    moneda                  = "PES",
+                    cotizacion              = "1",
+                    vencimiento             = fecha,
+                    periodo_facturado_desde = fecha,
+                    periodo_facturado_hasta = fecha,
+                    rubro                   = prm.RubroFE,
+                    rubro_grupo_contable    = $"{DateTime.Now.Month}/{DateTime.Now.Year}",
+                    total                   = dto.Importe,
                     comprobantes_asociados = new List<TfComprobanteAsociado>
                     {
                         new()
@@ -388,17 +398,17 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
                     CreatedAt           = DateTime.Now
                 });
                 await _db.SaveChangesAsync();
-                return (true, null);
+                return (true, null, respuesta.comprobante_pdf_url);
             }
             else
             {
                 await GuardarErrorFEAsync(0, erroresStr ?? "Error desconocido.");
-                return (false, $"Error FE: {erroresStr}");
+                return (false, $"Error FE: {erroresStr}", null);
             }
         }
         catch (Exception ex)
         {
-            return (false, $"Error inesperado: {ex.Message}");
+            return (false, $"Error inesperado: {ex.Message}", null);
         }
     }
 
@@ -464,15 +474,15 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
 
         return new ParametrosFE
         {
-            UserToken     = Get("ventas", "fe_userToken")      ?? "",
-            ApiKey        = Get("ventas", "fe_apiKey")         ?? "",
-            ApiToken      = Get("ventas", "fe_apiToken")       ?? "",
+            UserToken     = Get("facturacionElectronica", "userToken")             ?? "",
+            ApiKey        = Get("facturacionElectronica", "apiKey")                ?? "",
+            ApiToken      = Get("facturacionElectronica", "apiToken")              ?? "",
             PuntoVenta    = int.TryParse(Get("PuntoVenta", Environment.MachineName), out var pv) ? pv : 0,
-            RubroFE       = Get("ventas", "fe_rubro")          ?? "",
-            RegimenIIBB   = Get("ventas", "fe_regimenIIBB")    ?? "",
-            TributoIIBB   = Get("ventas", "fe_tributoIIBB")    ?? "",
-            EnviarMail    = Get("ventas", "fe_enviarMail") == "S",
-            CodigoDetalle = Get("ventas", "fe_codigoDetalle")  ?? "Descripcion",
+            RubroFE       = Get("facturacionElectronica", "rubro")                 ?? "",
+            RegimenIIBB   = Get("facturacionElectronica", "regimenIIBB")           ?? "",
+            TributoIIBB   = Get("facturacionElectronica", "tributoIIBB")           ?? "",
+            EnviarMail    = Get("facturacionElectronica", "enviarFacturaPorMail") == "S",
+            CodigoDetalle = Get("facturacionElectronica", "CodigoDetalle")         ?? "Descripcion",
             ClienteCFId   = int.TryParse(Get("ventas", "clienteConsumidorFinal"), out var cf) ? cf : 0
         };
     }
@@ -590,13 +600,26 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
                 Direccion       = c    != null ? c.Direccion       : null,
                 LocalidadNombre = l    != null ? l.Nombre          : null,
                 ProvinciaNombre = prov != null ? prov.Nombre       : null,
+                Email              = c  != null ? c.Email        : null,
                 CondIvaAbrev       = ci != null ? ci.Abrev       : null,
+                CondIvaAbrevFE     = ci != null ? ci.AbrevFE     : null,
                 CondIvaLetra       = ci != null ? ci.Letra       : null,
                 CondIvaDescripcion = ci != null ? ci.Descripcion : null
             }
         ).FirstOrDefaultAsync();
 
         if (vRow == null) return null;
+
+        // ── Formas de pago (equivale a fn_Ventas_FormasPagoFactura) ─────────
+        var formasPagoNombres = await (
+            from vfp in _db.VentasFormasPago
+            join mp  in _db.MediosPago on vfp.FkMedioPago equals mp.Id
+            where vfp.FkVenta == (int)ventaId
+            select mp.Nombre
+        ).ToListAsync();
+        string formaPagoStr = formasPagoNombres.Count > 0
+            ? string.Join(" | ", formasPagoNombres)
+            : "Otra Condición de Pago";
 
         var detalle = await (
             from vd in _db.VentasDetalles
@@ -624,10 +647,13 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
             NombreCliente    = vRow.NombreCliente,
             RazonSocial      = vRow.RazonSocial,
             Cuil             = vRow.Cuil,
+            Email            = vRow.Email,
             DireccionCliente = string.Join(", ",
                 new[] { vRow.Direccion, vRow.LocalidadNombre, vRow.ProvinciaNombre }
                     .Where(s => !string.IsNullOrWhiteSpace(s))),
+            Provincia          = vRow.ProvinciaNombre,
             CondIvaAbrev       = vRow.CondIvaAbrev,
+            CondIvaAbrevFE     = vRow.CondIvaAbrevFE,
             CondIvaLetra       = vRow.CondIvaLetra,
             CondIvaDescripcion = vRow.CondIvaDescripcion,
             Iva              = vRow.Iva       ?? 0m,
@@ -635,7 +661,7 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
             Recargo          = vRow.Recargo,
             Impuesto         = vRow.Impuesto  ?? 0m,
             TotalVenta       = vRow.TotalVenta ?? 0m,
-            FormaPago        = "",
+            FormaPago        = formaPagoStr,
             Detalle          = detalle
         };
     }

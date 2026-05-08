@@ -208,6 +208,7 @@ public class IndexModel : PageModel
 
             // Facturación electrónica: emitir NC si se indicó comprobante asociado
             string? warningFE = null;
+            string? pdfUrlFE  = null;
             if (prm.FacturaElectronica == 1
                 && request.NroFacturaAsociada.HasValue
                 && request.NroFacturaAsociada.Value > 0)
@@ -223,12 +224,14 @@ public class IndexModel : PageModel
                     Observaciones    = $"Devolución N° {devolucionId}"
                 };
 
-                var (okFe, errorFe) = await _feService.EmitirNotaCreditoManualAsync(ncDto, prm.PuntoVenta);
-                if (!okFe)
+                var (okFe, errorFe, pdfFe) = await _feService.EmitirNotaCreditoManualAsync(ncDto, prm.PuntoVenta);
+                if (okFe)
+                    pdfUrlFE = pdfFe;
+                else
                     warningFE = $"Devolución guardada, pero ocurrió un error al emitir la Nota de Crédito fiscal: {errorFe}";
             }
 
-            return new JsonResult(new { ok = true, devolucionId, warning = warningFE });
+            return new JsonResult(new { ok = true, devolucionId, warning = warningFE, pdfUrl = pdfUrlFE });
         }
         catch (Exception ex)
         {

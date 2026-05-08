@@ -20,6 +20,7 @@ public class TfCliente
     public string? codigo               { get; set; }
     public string? envia_por_mail       { get; set; }
     public string? condicion_pago       { get; set; }
+    public string? condicion_pago_otra  { get; set; }
     public string? condicion_iva        { get; set; }
     public string? rg5329               { get; set; }
 }
@@ -34,6 +35,10 @@ public class TfComprobante
     public string? moneda                         { get; set; }
     public string? cotizacion                     { get; set; }
     public string? rubro                          { get; set; }
+    public string? rubro_grupo_contable           { get; set; }
+    public string? vencimiento                    { get; set; }
+    public string? periodo_facturado_desde        { get; set; }
+    public string? periodo_facturado_hasta        { get; set; }
     public decimal total                          { get; set; }
     public List<TfDetalle>?            detalle                  { get; set; }
     public List<TfTributo>?            tributos                 { get; set; }

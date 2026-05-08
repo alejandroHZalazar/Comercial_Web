@@ -625,6 +625,11 @@ var FACTURA_FISCAL     = @p.FacturaFiscal;
 var COMISIONA          = @p.Comisiona;
 var DEC                = @p.Decimales;
 var DEC_CANT           = @p.DecimalesCant;
+var TIENE_PRODUCTOS_BALANZA = @p.TieneProductosBalanza;
+var PREFIJO_BALANZA         = '@Html.Raw(p.PrefijoBalanza.Replace("'", "\\'"))';
+var POSICION_PRODUCTO       = '@Html.Raw(p.PosicionProducto.Replace("'", "\\'"))';
+var POSICION_PRECIO         = '@Html.Raw(p.PosicionPrecio.Replace("'", "\\'"))';
+var DIVISOR_PRECIO          = @(decimal.TryParse(p.DivisorPrecio, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var dpv) && dpv > 0 ? dpv.ToString(System.Globalization.CultureInfo.InvariantCulture) : "1");
 
 // ── Formateadores ──────────────────────────────────────────────────────────
 function fmt(n){ return new Intl.NumberFormat('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n??0); }
@@ -831,6 +836,26 @@ function _limpiarPendiente(){
   if (lbl){ lbl.textContent=''; lbl.style.display='none'; }
 }
 
+// ── Balanza: helpers ────────────────────────────────────────────────────────
+// Devuelve true si el código es de balanza (13 dígitos y empieza con el prefijo).
+function esCodigoBalanza(codigo, prefijo){
+  if (!codigo || !prefijo) return false;
+  return codigo.length === 13 && codigo.startsWith(prefijo);
+}
+
+// Extrae una subcadena usando posición "inicio,fin" (1-based, ambos inclusive).
+// Ejemplo: posicion="3,7" sobre "1234567890123" → chars 3-7 → "34567"
+function extraerPorPosicion(codigo, posicion){
+  if (!posicion) return '';
+  var partes = posicion.split(',');
+  if (partes.length < 2) return '';
+  var ini = parseInt(partes[0].trim(), 10) - 1;   // 0-based
+  var fin = parseInt(partes[1].trim(), 10);        // substring(ini, fin) excluye fin → correcto
+  if (isNaN(ini) || isNaN(fin) || ini < 0 || fin <= ini) return '';
+  return codigo.substring(ini, fin);
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 // ── Cód. Barras ────────────────────────────────────────────────────────────
 window.onBusqCBKeydown = async function(e){
   if (e.key === 'Escape'){ e.target.value=''; return; }
@@ -840,11 +865,43 @@ window.onBusqCBKeydown = async function(e){
   var raw = inp.value.trim();
   if (!raw) return;
 
-  // ── Soporte "<cantidad>*<codigo>" ────────────────────────────────────────
-  // Si el usuario ingresa algo como "10*7791234567890", la parte previa al
-  // primer '*' se interpreta como cantidad (1 si no es numérica) y la parte
-  // posterior es el código de barras a buscar. Si no hay '*', se mantiene la
-  // lógica original.
+  // ── Balanza: detectar código de balanza antes de cualquier otro parseo ──────
+  // Tiene prioridad sobre la lógica de * y sobre la lógica estándar de CB.
+  if (TIENE_CB === 1 && TIENE_PRODUCTOS_BALANZA === 1 && esCodigoBalanza(raw, PREFIJO_BALANZA)){
+    if (!PREFIJO_BALANZA || !POSICION_PRODUCTO || !POSICION_PRECIO || DIVISOR_PRECIO <= 0){
+      showAlert('Para operar con productos de balanza debe parametrizar: Prefijo, Posición de Producto, Posición de Importe y Divisor de Importe.');
+      return;
+    }
+    var codProdBal = extraerPorPosicion(raw, POSICION_PRODUCTO);
+    if (!codProdBal){ showAlert('No se pudo extraer el código de producto del código de balanza.'); return; }
+
+    var listaBal = await _buscarProducto(codProdBal.trim(), 'codBarras');
+    if (!listaBal.length){ showAlert('Producto de balanza no encontrado: ' + codProdBal.trim()); inp.select(); return; }
+    var prodBal = listaBal[0];
+
+    var precioStrBal  = extraerPorPosicion(raw, POSICION_PRECIO);
+    var precioBalanza = precioStrBal ? parseFloat(precioStrBal) / DIVISOR_PRECIO : 0;
+
+    var cantBal;
+    if (precioBalanza > 0){
+      // El precio extraído es el importe: calcular cantidad = importe / precioConIva
+      var ivaBalanza      = parseFloat(document.getElementById('txtIva').value) || 0;
+      var precioConIvaBal = (prodBal.precioSinIva || 0) * (1 + ivaBalanza / 100);
+      cantBal = precioConIvaBal > 0 ? precioBalanza / precioConIvaBal : 1;
+    } else {
+      cantBal = 1;
+    }
+
+    _agregarOSumar(prodBal, cantBal);
+    inp.value = '';
+    inp.focus();
+    return;   // no continuar con la lógica estándar
+  }
+  // ────────────────────────────────────────────────────────────────────────────
+
+  // ── Soporte "<cantidad|importe>*<codigo>" ────────────────────────────────
+  // "10*7791234567890" → cantidad=10, código=7791234567890 (no fraccionado).
+  // "250.50*7791234567890" → importe=250.50, fraccionado → cantidad=importe/precioConIva.
   var q = raw;
   var cantPrefijo = null;        // null → no se usó prefijo
   var idxAst = raw.indexOf('*');
@@ -862,9 +919,19 @@ window.onBusqCBKeydown = async function(e){
   var prod = lista[0];
 
   if (cantPrefijo !== null){
-    // Con prefijo cantidad*código: agregar/sumar directamente con esa cantidad,
-    // independientemente de TIENE_CB (el usuario ya indicó la cantidad).
-    _agregarOSumar(prod, cantPrefijo);
+    // Con prefijo importe/cantidad * código:
+    //   • Fraccionado: el valor es el IMPORTE → calcular cantidad = importe / precioConIva.
+    //     recalcularFila producirá subtotal = precioConIva * cantidad = importe (exacto).
+    //   • No fraccionado: el valor es la CANTIDAD directa.
+    var cantEfectiva;
+    if (prod.fraccionado){
+      var ivaActual     = parseFloat(document.getElementById('txtIva').value) || 0;
+      var precioConIvaBal = (prod.precioSinIva || 0) * (1 + ivaActual / 100);
+      cantEfectiva = precioConIvaBal > 0 ? cantPrefijo / precioConIvaBal : 1;
+    } else {
+      cantEfectiva = cantPrefijo;
+    }
+    _agregarOSumar(prod, cantEfectiva);
     inp.value = '';
     inp.focus();
   } else if (TIENE_CB === 1){
@@ -1253,11 +1320,15 @@ window.cargarPedido = async function(pedidoId){
       descRec     : dr,
       cantidad    : d.cantidad,
       stock       : 0,
-      fraccionado : false,
+      fraccionado : d.fraccionado || false,
       costo       : d.costo||0,
       sel         : false
     };
     recalcularFila(row);
+    // Para productos fraccionados restaurar el subtotal exacto almacenado en BD.
+    if (row.fraccionado && d.subtotal > 0) {
+      row.subtotal = d.subtotal;
+    }
     _rows.push(row);
   });
   renderGrilla();
@@ -1567,8 +1638,10 @@ async function grabarVenta(){
 
   // Pre-abrir popup del comprobante para NO perder el contexto del click (evita popup blocker).
   // Cuando tengamos el ventaId, le cambiamos la URL. Si se bloquea, queda null y usamos fallback.
+  // F6 = vender + facturar (no abre comprobante X, irá directo a la factura)
+  // F5 / botón = solo vender (abre comprobante X)
   var popupComprobante = null;
-  var abreComprobante  = !(_ordenFacturar && FACTURA_EN_VENTA===1);
+  var abreComprobante  = !(_ordenFacturar && FACTURA_ELEC===1);
   if (abreComprobante){
     try { popupComprobante = window.open('about:blank', '_blank'); } catch(e){ popupComprobante = null; }
   }
@@ -1606,38 +1679,36 @@ async function grabarVenta(){
     // ── Disparar evento para guardar componentes de promos ─────────────────
     document.dispatchEvent(new CustomEvent('ventaGrabada', { detail: { ventaId: ventaId } }));
 
-    // Post-venta: facturación / impresión
-    if (_ordenFacturar && FACTURA_EN_VENTA===1){
-      if (FACTURA_FISCAL===1){
-        progCerrar();
-        showAlert('La facturación fiscal (controlador fiscal) no está disponible en la versión web. La venta fue registrada correctamente. Use el sistema de escritorio para facturar.');
-        toggleBtns(false);
-        limpiarFormulario();
-        return;
+    // Post-venta: F6 = grabar + facturar electrónica / F5 o botón = solo grabar + comprobante X
+    if (_ordenFacturar && FACTURA_ELEC===1){
+      // ── Facturación electrónica (F6) ──────────────────────────────────────
+      progActualizar('Emitiendo factura electrónica...', 80, 'Comunicando con AFIP...');
+      progAutoAvanzar(92, 200);
+      var fResp = await fetch('?handler=Facturar',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ventaId:ventaId})
+      });
+      progAutoDetener();
+      var fR = await fResp.json();
+      progCerrar();
+      if (fR.ok){
+        if (fR.pdfUrl) window.open(fR.pdfUrl,'_blank');
+        showInfo('Factura electrónica emitida. CAE: '+(fR.cae||'')
+          +(fR.pdfUrl?' — <a href="'+fR.pdfUrl+'" target="_blank">Ver PDF</a>':''));
+      } else {
+        showAlert('Error en factura electrónica: '+((fR.errores||[]).join(', ')||fR.msg||'Error'));
       }
-      if (FACTURA_ELEC===1){
-        progActualizar('Emitiendo factura electrónica...', 80, 'Comunicando con AFIP...');
-        progAutoAvanzar(92, 200);
-        var fResp = await fetch('?handler=Facturar',{
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ventaId:ventaId})
-        });
-        progAutoDetener();
-        var fR = await fResp.json();
-        progActualizar('Factura electrónica procesada.', 100, '');
-        if (fR.ok){
-          var msgFE = 'Factura electrónica emitida. CAE: '+(fR.cae||'');
-          if (fR.pdfUrl){
-            msgFE += ' — <a href="'+fR.pdfUrl+'" target="_blank">Ver PDF</a>';
-            window.open(fR.pdfUrl,'_blank');
-          }
-          showInfo(msgFE);
-        } else {
-          showAlert('Error en factura electrónica: '+((fR.errores||[]).join(', ')||fR.msg||'Error'));
-        }
-        progCerrar();
-      }
+      limpiarFormulario();
+      toggleBtns(false);
+      return;
+    } else if (_ordenFacturar && FACTURA_ELEC!==1){
+      // ── F6 sin factura electrónica configurada ────────────────────────────
+      progCerrar();
+      showAlert('La facturación electrónica no está habilitada en los parámetros del sistema. La venta fue registrada correctamente.');
+      toggleBtns(false);
+      limpiarFormulario();
+      return;
     } else {
       // Navegamos el popup previamente abierto al comprobante
       // Si el parámetro ventas/notaVentaTK==1, usa ticket X (térmico) con auto-print.

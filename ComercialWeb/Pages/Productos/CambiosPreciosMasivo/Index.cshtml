@@ -354,7 +354,7 @@
         <table class="prev-table" id="tablaNuevos">
             <thead>
                 <tr>
-                    <th>Código</th>
+                    <th>Cód. Proveedor</th>
                     <th>Cód. Barras</th>
                     <th>Descripción</th>
                     <th class="num">Precio Prov.</th>
@@ -647,7 +647,7 @@ function construirGrillaNuevos() {
         const tr = document.createElement('tr');
         tr.id = `nuevo-${i}`;
         tr.innerHTML = `
-            <td><code style="font-size:.77rem;">${esc(f.codigo)}</code></td>
+            <td><input type="text" class="inp-nuevo-text" id="codprov-${i}" value="${esc(f.codigo)}" placeholder="Cód. proveedor" style="width:110px;" /></td>
             <td><input type="text" class="inp-nuevo-text" id="codbarras-${i}" value="${esc(f.codBarras)}" placeholder="Cód. barras" /></td>
             <td><input type="text" class="inp-nuevo-text" id="desc-${i}" value="${esc(f.descripcion)}" placeholder="Descripción" /></td>
             <td class="num">${fmt(f.precio)}</td>
@@ -669,12 +669,13 @@ function construirGrillaNuevos() {
 }
 
 async function insertarNuevo(idx) {
-    const f        = filasNuevas[idx];
-    const codBarras = (document.getElementById(`codbarras-${idx}`)?.value ?? f.codBarras).trim();
-    const desc      = (document.getElementById(`desc-${idx}`)?.value      ?? f.descripcion).trim();
-    const stock     = parseFloat(document.getElementById(`stock-${idx}`)?.value)   || 0;
-    const cantMin   = parseFloat(document.getElementById(`cantmin-${idx}`)?.value) || 5;
-    const est       = document.getElementById(`estnuevo-${idx}`);
+    const f          = filasNuevas[idx];
+    const codProv    = (document.getElementById(`codprov-${idx}`)?.value    ?? f.codigo).trim();
+    const codBarras  = (document.getElementById(`codbarras-${idx}`)?.value  ?? f.codBarras).trim();
+    const desc       = (document.getElementById(`desc-${idx}`)?.value       ?? f.descripcion).trim();
+    const stock      = parseFloat(document.getElementById(`stock-${idx}`)?.value)    || 0;
+    const cantMin    = parseFloat(document.getElementById(`cantmin-${idx}`)?.value)  || 5;
+    const est        = document.getElementById(`estnuevo-${idx}`);
 
     if (!desc) { mostrarToast('La descripción no puede estar vacía.', false); return; }
 
@@ -685,7 +686,7 @@ async function insertarNuevo(idx) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                codProveedor: f.codigo,
+                codProveedor: codProv,
                 codBarras:    codBarras,
                 descripcion:  desc,
                 idProveedor:  f.idProveedor,
@@ -727,18 +728,19 @@ async function insertarTodosNuevos() {
                              est?.querySelector('.badge-error') === null;
         if (!esSolicitado) { setProgresoNuevos(idx + 1, filasNuevas.length); continue; }
 
-        const f        = filasNuevas[idx];
-        const codBarras = (document.getElementById(`codbarras-${idx}`)?.value ?? f.codBarras).trim();
-        const desc      = (document.getElementById(`desc-${idx}`)?.value      ?? f.descripcion).trim();
-        const stock     = parseFloat(document.getElementById(`stock-${idx}`)?.value)   || 0;
-        const cantMin   = parseFloat(document.getElementById(`cantmin-${idx}`)?.value) || 5;
+        const f         = filasNuevas[idx];
+        const codProv   = (document.getElementById(`codprov-${idx}`)?.value    ?? f.codigo).trim();
+        const codBarras = (document.getElementById(`codbarras-${idx}`)?.value  ?? f.codBarras).trim();
+        const desc      = (document.getElementById(`desc-${idx}`)?.value       ?? f.descripcion).trim();
+        const stock     = parseFloat(document.getElementById(`stock-${idx}`)?.value)    || 0;
+        const cantMin   = parseFloat(document.getElementById(`cantmin-${idx}`)?.value)  || 5;
 
         if (est) est.innerHTML = '<span class="badge-pend">Insertando…</span>';
         try {
             const resp = await fetch('/Productos/CambiosPreciosMasivo?handler=InsertarNuevo', {
                 method:'POST', headers:{'Content-Type':'application/json'},
                 body: JSON.stringify({
-                    codProveedor: f.codigo, codBarras: codBarras,
+                    codProveedor: codProv, codBarras: codBarras,
                     descripcion:  desc, idProveedor: f.idProveedor,
                     precioProv:   f.precio, stockInicial: stock, cantMinima: cantMin
                 })

@@ -53,7 +53,7 @@ public class NotaCreditoService : INotaCreditoService
         // 2. Si FE activa y hay factura asociada → emitir NC electrónica (rama manual)
         if (fe && dto.FacturaAsociada > 0 && pv > 0)
         {
-            var (feOk, feError) = await _feService.EmitirNotaCreditoManualAsync(dto, pv);
+            var (feOk, feError, _) = await _feService.EmitirNotaCreditoManualAsync(dto, pv);
             if (!feOk)
                 return (0, feError ?? "Error al emitir la Nota de Crédito electrónica.");
         }

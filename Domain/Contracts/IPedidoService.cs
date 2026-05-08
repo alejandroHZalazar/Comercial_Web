@@ -7,6 +7,9 @@ public interface IPedidoService
     /// <summary>Autocomplete de clientes por nombre comercial.</summary>
     Task<List<PedidoClienteItem>> BuscarClientesAsync(string q);
 
+    /// <summary>Obtiene un cliente por ID (para cargar consumidor final automático).</summary>
+    Task<PedidoClienteItem?> GetClientePorIdAsync(int clienteId);
+
     /// <summary>Busca pedidos con filtros (emula sp_pedidosTraerParaEditar).</summary>
     Task<List<PedidoBuscarItem>> BuscarPedidosAsync(
         DateTime? desde, DateTime? hasta,
