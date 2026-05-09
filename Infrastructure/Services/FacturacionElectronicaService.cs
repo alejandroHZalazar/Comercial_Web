@@ -477,7 +477,9 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
             UserToken     = Get("facturacionElectronica", "userToken")             ?? "",
             ApiKey        = Get("facturacionElectronica", "apiKey")                ?? "",
             ApiToken      = Get("facturacionElectronica", "apiToken")              ?? "",
-            PuntoVenta    = int.TryParse(Get("PuntoVenta", Environment.MachineName), out var pv) ? pv : 0,
+            PuntoVenta    = int.TryParse(
+                            parametros.FirstOrDefault(x => x.Modulo == "PuntoVenta")?.Valor,
+                            out var pv) ? pv : 0,
             RubroFE       = Get("facturacionElectronica", "rubro")                 ?? "",
             RegimenIIBB   = Get("facturacionElectronica", "regimenIIBB")           ?? "",
             TributoIIBB   = Get("facturacionElectronica", "tributoIIBB")           ?? "",
