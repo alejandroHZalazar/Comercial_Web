@@ -1,0 +1,632 @@
+@page
+@model Comercial_Web.Pages.Ventas.ReporteDevoluciones.IndexModel
+@{
+    ViewData["Title"] = "Reporte de Devoluciones";
+}
+
+<style>
+/* ── Layout ──────────────────────────────────────────────────────────────── */
+.rd-header {
+  background: linear-gradient(135deg, #6a1a5c 0%, #a4366e 100%);
+  border-radius: 12px; padding: 1.1rem 1.5rem; margin-bottom: 1.2rem;
+  color: #fff; display: flex; align-items: center; gap: .8rem;
+}
+.rd-header h4 { margin: 0; font-weight: 700; font-size: 1.1rem; }
+.rd-header small { opacity: .75; font-size: .78rem; }
+.rd-card {
+  background: #fff; border: 1px solid #e3e6f0;
+  border-radius: 10px; padding: 1rem 1.2rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05); margin-bottom: 1rem;
+}
+
+/* ── Multiselect clientes ────────────────────────────────────────────────── */
+.ms-wrap {
+  border: 1px solid #ced4da; border-radius: .375rem;
+  padding: .25rem .4rem; min-height: 34px; cursor: text;
+  display: flex; flex-wrap: wrap; gap: .25rem; align-items: center;
+  background: #fff;
+}
+.ms-wrap:focus-within { border-color: #86b7fe; box-shadow: 0 0 0 .15rem rgba(13,110,253,.25); }
+.ms-tag {
+  background: #6a1a5c; color: #fff; border-radius: 4px;
+  padding: .15rem .45rem; font-size: .75rem; display: flex; align-items: center; gap: .25rem;
+}
+.ms-tag button {
+  background: none; border: none; color: #fff; padding: 0; line-height: 1;
+  font-size: .78rem; cursor: pointer; opacity: .75;
+}
+.ms-tag button:hover { opacity: 1; }
+.ms-input {
+  border: none; outline: none; font-size: .82rem; flex: 1; min-width: 120px;
+  background: transparent; padding: .1rem .2rem;
+}
+.ms-dropdown {
+  position: absolute; background: #fff; border: 1px solid #ced4da;
+  border-radius: .375rem; z-index: 1050; max-height: 200px; overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,.12); min-width: 280px;
+}
+.ms-dropdown .ms-opt {
+  padding: .4rem .75rem; cursor: pointer; font-size: .82rem;
+}
+.ms-dropdown .ms-opt:hover { background: #f0ecf8; }
+.ms-dropdown .ms-no-res { padding: .4rem .75rem; color: #6c757d; font-size: .78rem; }
+
+/* ── Tabla ───────────────────────────────────────────────────────────────── */
+#tblDev { font-size: .80rem; width: 100%; }
+#tblDev thead tr { background: #6a1a5c; color: #fff; }
+#tblDev thead th { padding: .45rem .55rem; white-space: nowrap; font-weight: 600; }
+#tblDev tbody tr:nth-child(even) td { background: #fdf8fc; }
+#tblDev tbody td { padding: .35rem .5rem; vertical-align: middle; }
+#tblDev tbody tr:hover td { background: #f5eefa !important; }
+#tblDev tfoot tr { background: #6a1a5c; color: #fff; font-weight: 700; font-size: .82rem; }
+#tblDev tfoot td { padding: .45rem .55rem; }
+.nc-badge {
+  display: inline-block; background: #1a5c3a; color: #fff;
+  font-size: .69rem; padding: .15rem .4rem; border-radius: 4px;
+  font-weight: 700; white-space: nowrap;
+}
+
+/* ── Modal detalle ───────────────────────────────────────────────────────── */
+.rd-modal-hdr {
+  background: linear-gradient(135deg, #6a1a5c, #a4366e);
+  padding: .75rem 1rem; display: flex; align-items: center; gap: .6rem; color: #fff;
+}
+.rd-modal-hdr h5 { margin: 0; font-size: .92rem; font-weight: 700; }
+#tblDetModal { font-size: .78rem; width: 100%; }
+#tblDetModal thead tr { background: #6a1a5c; color: #fff; }
+#tblDetModal thead th { padding: .4rem .5rem; white-space: nowrap; font-weight: 600; }
+#tblDetModal tbody tr:nth-child(even) { background: #fdf8fc; }
+#tblDetModal tbody td { padding: .3rem .45rem; vertical-align: middle; }
+.rd-tot-box {
+  background: #fdf8fc; border: 1px solid #e8d5e4; border-radius: 8px;
+  padding: .75rem 1rem; font-size: .82rem; margin-top: .75rem;
+}
+.rd-tot-row { display: flex; justify-content: space-between; padding: .14rem 0; }
+.rd-tot-row.total {
+  font-weight: 700; font-size: .95rem; color: #6a1a5c;
+  border-top: 1px solid #dee2e6; margin-top: .3rem; padding-top: .4rem;
+}
+
+/* ── Spinner loader tabla ────────────────────────────────────────────────── */
+#tblLoader { display: none; text-align: center; padding: 2rem; color: #6c757d; }
+</style>
+
+@* ══════════════════════════════════════════════════════════ HEADER ══ *@
+<div class="rd-header">
+  <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="28" height="28">
+    <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5zM2.5 2a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5zm6.5.5A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5zM1 10.5A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5zm6.5.5A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5z"/>
+  </svg>
+  <div>
+    <h4>Reporte de Devoluciones</h4>
+    <small>Consulta de devoluciones por período y cliente</small>
+  </div>
+</div>
+
+@* ══════════════════════════════════════════════════════════ FILTROS ══ *@
+<div class="rd-card">
+  <div class="row g-2 align-items-end">
+
+    <div class="col-md-2 col-sm-6">
+      <label class="form-label" style="font-size:.78rem;font-weight:600;color:#5a5c69;margin-bottom:.2rem;">Fecha desde</label>
+      <input type="date" id="filtDesde" class="form-control form-control-sm" />
+    </div>
+    <div class="col-md-2 col-sm-6">
+      <label class="form-label" style="font-size:.78rem;font-weight:600;color:#5a5c69;margin-bottom:.2rem;">Fecha hasta</label>
+      <input type="date" id="filtHasta" class="form-control form-control-sm" />
+    </div>
+
+    <div class="col-md-5">
+      <label class="form-label" style="font-size:.78rem;font-weight:600;color:#5a5c69;margin-bottom:.2rem;">
+        Clientes <small class="text-muted fw-normal">(dejar vacío = todos)</small>
+      </label>
+      <div style="position:relative;">
+        <div class="ms-wrap" id="msWrap" onclick="document.getElementById('msInput').focus()">
+          <input type="text" id="msInput" class="ms-input" placeholder="Buscar cliente..."
+                 autocomplete="off" />
+        </div>
+        <div class="ms-dropdown" id="msDropdown" style="display:none;"></div>
+      </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6 d-flex gap-2">
+      <button type="button" class="btn btn-primary btn-sm flex-fill" style="font-size:.82rem;" onclick="buscar()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" style="margin-right:.25rem;vertical-align:-.1em;">
+          <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85-.017.016zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+        </svg>Buscar
+      </button>
+      <button type="button" class="btn btn-outline-secondary btn-sm" style="font-size:.78rem;" onclick="limpiarFiltros()">✕ Limpiar</button>
+    </div>
+
+  </div>
+</div>
+
+@* ══════════════════════════════════════════════════════════ RESULTADOS ══ *@
+<div class="rd-card" id="secResultados" style="display:none;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
+    <span style="font-size:.75rem;font-weight:700;color:#6c757d;text-transform:uppercase;letter-spacing:.06em;">
+      Devoluciones encontradas
+    </span>
+    <span id="lblResumen" style="font-size:.75rem;color:#6c757d;"></span>
+  </div>
+
+  <div id="tblLoader">
+    <div class="spinner-border spinner-border-sm me-2"></div>Buscando devoluciones...
+  </div>
+
+  <div id="tblWrap" style="display:none;">
+    <div class="table-responsive" style="max-height:55vh;overflow-y:auto;">
+      <table id="tblDev" class="table table-bordered mb-0">
+        <thead>
+          <tr>
+            <th style="width:70px;text-align:center;">#Dev</th>
+            <th style="width:100px;">Fecha</th>
+            <th>Cliente</th>
+            <th style="text-align:right;width:70px;">IVA %</th>
+            <th style="text-align:right;width:75px;">Desc %</th>
+            <th style="text-align:right;width:75px;">Rec %</th>
+            <th style="text-align:right;width:75px;">IIBB %</th>
+            <th style="text-align:right;width:110px;">Total Dev.</th>
+            <th style="width:120px;text-align:center;">Nota Crédito</th>
+            <th style="text-align:center;width:115px;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyDev"></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="7" style="text-align:right;">TOTAL (<span id="tfCant">0</span>)</td>
+            <td style="text-align:right;" id="tfTotal">$0,00</td>
+            <td colspan="2"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <div id="sinResultados" style="display:none;">
+    <div class="alert alert-info d-flex align-items-center mb-0" role="alert">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="me-2 flex-shrink-0" viewBox="0 0 16 16">
+        <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2"/>
+      </svg>
+      No se encontraron devoluciones en el período y filtros seleccionados.
+    </div>
+  </div>
+</div>
+
+@* ══════════════════════════════════════════════════════════ MODAL ══ *@
+<div class="modal fade" id="modalDetalle" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content" style="border-radius:12px;overflow:hidden;">
+
+      <div class="rd-modal-hdr">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="18" height="18">
+          <path d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/>
+          <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3z"/>
+        </svg>
+        <h5 id="modalTitulo">Detalle de Devolución</h5>
+        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body" style="padding:1rem 1.25rem;">
+
+        <div id="detLoading" style="text-align:center;padding:2rem;color:#6c757d;">
+          <div class="spinner-border spinner-border-sm me-2"></div>Cargando...
+        </div>
+
+        <div id="detContenido" style="display:none;">
+          <!-- Cabecera -->
+          <div class="row g-2 mb-3" style="font-size:.82rem;">
+            <div class="col-sm-5">
+              <span style="color:#6c757d;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Cliente</span>
+              <div id="det-cliente" style="font-weight:700;color:#2c3e50;font-size:.9rem;"></div>
+              <div id="det-cuit" style="font-size:.75rem;color:#6c757d;font-family:monospace;"></div>
+            </div>
+            <div class="col-sm-3">
+              <span style="color:#6c757d;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Fecha</span>
+              <div id="det-fecha"></div>
+            </div>
+            <div class="col-sm-2">
+              <span style="color:#6c757d;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Cond. IVA</span>
+              <div id="det-condiva" style="font-size:.78rem;"></div>
+            </div>
+            <div class="col-sm-2">
+              <span style="color:#6c757d;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Total</span>
+              <div id="det-total-hdr" style="font-weight:800;color:#6a1a5c;font-size:1rem;"></div>
+            </div>
+          </div>
+
+          <!-- Tabla de productos -->
+          <div class="table-responsive">
+            <table id="tblDetModal" class="table table-bordered mb-0">
+              <thead>
+                <tr>
+                  <th>Descripción</th>
+                  <th style="text-align:right;width:90px;">P.S/IVA</th>
+                  <th style="text-align:right;width:75px;">Desc/Rec%</th>
+                  <th style="text-align:right;width:95px;">SubT.S/IVA</th>
+                  <th style="text-align:right;width:85px;">P.C/IVA</th>
+                  <th style="text-align:right;width:65px;">Cant.</th>
+                  <th style="text-align:right;width:100px;">Total</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyDetModal"></tbody>
+            </table>
+          </div>
+
+          <!-- Totales -->
+          <div class="row g-2 mt-1">
+            <div class="col-md-5 offset-md-7">
+              <div class="rd-tot-box">
+                <div class="rd-tot-row"><span>Subtotal s/IVA</span><span id="det-subtSIva"></span></div>
+                <div class="rd-tot-row" id="rowDR" style="display:none;">
+                  <span id="det-lbl-dr">Desc/Rec</span><span id="det-drAmt"></span>
+                </div>
+                <div class="rd-tot-row"><span id="det-lbl-iva">IVA</span><span id="det-ivaAmt"></span></div>
+                <div class="rd-tot-row" id="rowIIBB" style="display:none;">
+                  <span id="det-lbl-iibb">IIBB</span><span id="det-iibbAmt"></span>
+                </div>
+                <div class="rd-tot-row total"><span>TOTAL DEV.</span><span id="det-totalBox"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="background:#f8f9fc;border-top:1px solid #e3e6f0;gap:.5rem;">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-sm btn-primary" id="btnImprimirDev" onclick="imprimirDevolucion()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="13" height="13" style="margin-right:.3rem;vertical-align:-.1em;">
+            <path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/>
+            <path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7zm2.5 1a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+          </svg>Imprimir comprobante
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+  'use strict';
+
+  // ── Constante de parametrización ───────────────────────────────────────────
+  const HACE_TK = @Model.HaceNotaVentaTK;
+
+  // ── Estado ─────────────────────────────────────────────────────────────────
+  let _clientesSel = [];   // [{id, nombre}]
+  let _devActualId  = 0;
+
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+  function fmt(n) {
+    return new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 2, maximumFractionDigits: 2
+    }).format(n ?? 0);
+  }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function fmtFecha(iso) {
+    if (!iso) return '—';
+    try {
+      const d = new Date(iso);
+      return d.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    } catch { return iso; }
+  }
+  function fmtFechaCorta(iso) {
+    if (!iso) return '—';
+    try {
+      const d = new Date(iso);
+      return d.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric' });
+    } catch { return iso; }
+  }
+
+  // ── Inicializar fechas ─────────────────────────────────────────────────────
+  (function initFechas() {
+    const hoy  = new Date();
+    const anio = hoy.getFullYear();
+    const mes  = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dia  = String(hoy.getDate()).padStart(2, '0');
+    document.getElementById('filtDesde').value = anio + '-' + mes + '-01';
+    document.getElementById('filtHasta').value = anio + '-' + mes + '-' + dia;
+  })();
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  MULTISELECT CLIENTES
+  // ══════════════════════════════════════════════════════════════════════════
+  const msInput    = document.getElementById('msInput');
+  const msWrap     = document.getElementById('msWrap');
+  const msDrop     = document.getElementById('msDropdown');
+  let   _msTimer   = null;
+
+  function renderTags() {
+    // Limpiar tags existentes
+    msWrap.querySelectorAll('.ms-tag').forEach(t => t.remove());
+    // Renderizar
+    _clientesSel.forEach(c => {
+      const tag = document.createElement('span');
+      tag.className = 'ms-tag';
+      tag.innerHTML = esc(c.nombre) +
+        '<button type="button" onclick="removeCliente(' + c.id + ')" title="Quitar">×</button>';
+      msWrap.insertBefore(tag, msInput);
+    });
+  }
+
+  window.removeCliente = function (id) {
+    _clientesSel = _clientesSel.filter(c => c.id !== id);
+    renderTags();
+  };
+
+  function addCliente(id, nombre) {
+    if (_clientesSel.some(c => c.id === id)) return;
+    _clientesSel.push({ id, nombre });
+    renderTags();
+    msInput.value = '';
+    msDrop.style.display = 'none';
+    msInput.focus();
+  }
+
+  msInput.addEventListener('input', function () {
+    clearTimeout(_msTimer);
+    const q = msInput.value.trim();
+    if (q.length < 2) { msDrop.style.display = 'none'; return; }
+    _msTimer = setTimeout(async function () {
+      try {
+        const resp = await fetch('?handler=BuscarClientes&q=' + encodeURIComponent(q));
+        const lista = await resp.json();
+        msDrop.innerHTML = '';
+        if (!lista || lista.length === 0) {
+          msDrop.innerHTML = '<div class="ms-no-res">Sin resultados</div>';
+        } else {
+          lista.slice(0, 10).forEach(function (c) {
+            const div = document.createElement('div');
+            div.className = 'ms-opt';
+            div.textContent = c.nombreComercial || c.nombre || '';
+            div.addEventListener('click', function () {
+              addCliente(c.id, c.nombreComercial || c.nombre || '');
+            });
+            msDrop.appendChild(div);
+          });
+        }
+        msDrop.style.display = '';
+      } catch { msDrop.style.display = 'none'; }
+    }, 250);
+  });
+
+  msInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { msDrop.style.display = 'none'; }
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!msWrap.contains(e.target)) msDrop.style.display = 'none';
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  BUSCAR
+  // ══════════════════════════════════════════════════════════════════════════
+  window.buscar = async function () {
+    const desde    = document.getElementById('filtDesde').value;
+    const hasta    = document.getElementById('filtHasta').value;
+    const clientes = _clientesSel.map(c => c.id).join(',');
+
+    document.getElementById('secResultados').style.display = '';
+    document.getElementById('tblLoader').style.display     = '';
+    document.getElementById('tblWrap').style.display       = 'none';
+    document.getElementById('sinResultados').style.display = 'none';
+
+    try {
+      const url = '?handler=Buscar&desde=' + encodeURIComponent(desde) +
+                  '&hasta=' + encodeURIComponent(hasta) +
+                  '&clientes=' + encodeURIComponent(clientes);
+      const resp = await fetch(url);
+      const lista = await resp.json();
+
+      document.getElementById('tblLoader').style.display = 'none';
+
+      if (!lista || lista.length === 0) {
+        document.getElementById('sinResultados').style.display = '';
+        document.getElementById('lblResumen').textContent = 'Sin resultados';
+        return;
+      }
+
+      renderTabla(lista, desde, hasta);
+    } catch (ex) {
+      document.getElementById('tblLoader').style.display = 'none';
+      alert('Error al buscar: ' + ex.message);
+    }
+  };
+
+  function renderTabla(lista, desde, hasta) {
+    const tbody = document.getElementById('tbodyDev');
+    tbody.innerHTML = '';
+    let totalDev = 0;
+
+    lista.forEach(function (d) {
+      totalDev += d.totalDevolucion;
+      const tr = document.createElement('tr');
+
+      // NC badge + links
+      let ncCell = '—';
+      if (d.tieneNC) {
+        ncCell = '<span class="nc-badge">' + esc(d.numeroNC || 'NC') + '</span>';
+        if (d.linkPdfNC) {
+          ncCell += '&nbsp;<a href="' + esc(d.linkPdfNC) + '" target="_blank" title="Reimprimir Nota de Crédito" class="btn btn-outline-secondary btn-sm" style="font-size:.67rem;padding:.15rem .35rem;">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="10" height="10"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/></svg>' +
+            '</a>';
+        }
+      }
+
+      // Botones de acción
+      const btnDetalle =
+        '<button type="button" class="btn btn-outline-primary btn-sm me-1" ' +
+        'style="font-size:.69rem;padding:.18rem .4rem;" ' +
+        'onclick="verDetalle(' + d.id + ')" title="Ver detalle">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="11" height="11">' +
+        '<path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>' +
+        '<path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>' +
+        '</svg></button>';
+
+      const btnImprimir =
+        '<button type="button" class="btn btn-outline-success btn-sm" ' +
+        'style="font-size:.69rem;padding:.18rem .4rem;" ' +
+        'onclick="imprimirDesdeTabla(' + d.id + ')" title="Imprimir comprobante">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="11" height="11">' +
+        '<path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/>' +
+        '<path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7zm2.5 1a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>' +
+        '</svg></button>';
+
+      tr.innerHTML =
+        '<td style="text-align:center;font-weight:700;color:#6a1a5c;">#' + d.id + '</td>' +
+        '<td>' + fmtFecha(d.fecha) + '</td>' +
+        '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(d.nombreCliente || '') + '">' +
+          esc(d.nombreCliente || '—') + '</td>' +
+        '<td style="text-align:right;">' + fmt(d.iva) + '%</td>' +
+        '<td style="text-align:right;color:#e74a3b;">' + (d.descuento ? fmt(d.descuento) + '%' : '—') + '</td>' +
+        '<td style="text-align:right;color:#1cc88a;">' + (d.recargo ? fmt(d.recargo) + '%' : '—') + '</td>' +
+        '<td style="text-align:right;">' + (d.impuesto > 0 ? fmt(d.impuesto) + '%' : '—') + '</td>' +
+        '<td style="text-align:right;font-weight:700;color:#6a1a5c;">$' + fmt(d.totalDevolucion) + '</td>' +
+        '<td style="text-align:center;">' + ncCell + '</td>' +
+        '<td style="text-align:center;white-space:nowrap;">' + btnDetalle + btnImprimir + '</td>';
+
+      tbody.appendChild(tr);
+    });
+
+    // Tfoot
+    document.getElementById('tfCant').textContent  = lista.length;
+    document.getElementById('tfTotal').textContent = '$' + fmt(totalDev);
+    document.getElementById('lblResumen').textContent =
+      lista.length + ' resultado' + (lista.length !== 1 ? 's' : '') +
+      ' · ' + fmtFechaCorta(desde + 'T00:00:00') + ' — ' + fmtFechaCorta(hasta + 'T00:00:00');
+
+    document.getElementById('tblWrap').style.display = '';
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  VER DETALLE
+  // ══════════════════════════════════════════════════════════════════════════
+  window.verDetalle = function (devId) {
+    _devActualId = devId;
+    document.getElementById('modalTitulo').textContent     = 'Devolución #' + devId;
+    document.getElementById('detLoading').style.display   = '';
+    document.getElementById('detContenido').style.display = 'none';
+    new bootstrap.Modal(document.getElementById('modalDetalle')).show();
+
+    fetch('?handler=Detalle&id=' + devId)
+      .then(r => r.json())
+      .then(res => {
+        document.getElementById('detLoading').style.display = 'none';
+        if (!res.ok) { alert(res.msg || 'Error al cargar el detalle.'); return; }
+        renderDetalle(res.detalle);
+      })
+      .catch(() => {
+        document.getElementById('detLoading').style.display = 'none';
+        alert('Error de conexión.');
+      });
+  };
+
+  function renderDetalle(d) {
+    document.getElementById('det-cliente').textContent  = d.nombreCliente || d.razonSocial || '—';
+    document.getElementById('det-cuit').textContent     = d.cuil || '';
+    document.getElementById('det-fecha').textContent    = fmtFecha(d.fecha);
+    document.getElementById('det-condiva').textContent  = d.condIvaDescripcion || d.condIvaAbrev || '—';
+    document.getElementById('det-total-hdr').textContent = '$' + fmt(d.totalDevolucion);
+
+    const iva        = d.iva      ?? 0;
+    const imp        = d.impuesto ?? 0;
+    const descGlobal = d.descuento != null
+      ? (d.descuento * -1 + (d.recargo ?? 0)) : null;
+
+    const tbody = document.getElementById('tbodyDetModal');
+    tbody.innerHTML = '';
+    let subtSIva = 0;
+
+    (d.detalle || []).forEach(function (item) {
+      const dr      = descGlobal !== null
+        ? descGlobal : ((item.descuento ?? 0) * -1 + (item.recargo ?? 0));
+      const pSIva   = item.precioSinIva ?? 0;
+      const subSIva = item.subtotalSinIva > 0 ? item.subtotalSinIva : pSIva * item.cantidad * (1 + dr / 100);
+      const pConIva = item.precioConIva ?? pSIva * (1 + iva / 100);
+      const cant    = item.cantidad ?? 0;
+      const totLin  = pConIva * cant;
+      subtSIva += subSIva;
+      const drColor = dr < 0 ? 'color:#e74a3b;' : dr > 0 ? 'color:#1cc88a;' : '';
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + esc(item.descripcion || '') + '</td>' +
+        '<td style="text-align:right;">$' + fmt(pSIva) + '</td>' +
+        '<td style="text-align:right;' + drColor + '">' + fmt(dr) + '%</td>' +
+        '<td style="text-align:right;">$' + fmt(subSIva) + '</td>' +
+        '<td style="text-align:right;">$' + fmt(pConIva) + '</td>' +
+        '<td style="text-align:right;">' + fmt(cant) + '</td>' +
+        '<td style="text-align:right;font-weight:600;">$' + fmt(totLin) + '</td>';
+      tbody.appendChild(tr);
+    });
+
+    const ivaAmt  = subtSIva * iva / 100;
+    const iibbAmt = subtSIva * imp / 100;
+
+    document.getElementById('det-subtSIva').textContent = '$' + fmt(subtSIva);
+    document.getElementById('det-lbl-iva').textContent  = 'IVA ' + fmt(iva) + '%';
+    document.getElementById('det-ivaAmt').textContent   = '$' + fmt(ivaAmt);
+
+    const rowIIBB = document.getElementById('rowIIBB');
+    if (imp > 0) {
+      document.getElementById('det-lbl-iibb').textContent = 'IIBB ' + fmt(imp) + '%';
+      document.getElementById('det-iibbAmt').textContent  = '$' + fmt(iibbAmt);
+      rowIIBB.style.display = '';
+    } else {
+      rowIIBB.style.display = 'none';
+    }
+
+    document.getElementById('det-totalBox').textContent = '$' + fmt(d.totalDevolucion);
+
+    const rowDR = document.getElementById('rowDR');
+    if (descGlobal !== null && Math.abs(descGlobal) > 0.001) {
+      document.getElementById('det-lbl-dr').textContent = descGlobal < 0 ? 'Descuento' : 'Recargo';
+      document.getElementById('det-drAmt').textContent  = fmt(Math.abs(descGlobal)) + '%';
+      rowDR.style.display = '';
+    } else {
+      rowDR.style.display = 'none';
+    }
+
+    document.getElementById('detContenido').style.display = '';
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  IMPRIMIR
+  // ══════════════════════════════════════════════════════════════════════════
+  window.imprimirDevolucion = function () {
+    if (!_devActualId) return;
+    abrirComprobante(_devActualId);
+  };
+
+  window.imprimirDesdeTabla = function (devId) {
+    abrirComprobante(devId);
+  };
+
+  function abrirComprobante(devId) {
+    const url = HACE_TK === 1
+      ? '/Ventas/Devolucion/TicketX/'      + devId
+      : '/Ventas/Devolucion/ComprobanteX/' + devId;
+    window.open(url, '_blank');
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  LIMPIAR
+  // ══════════════════════════════════════════════════════════════════════════
+  window.limpiarFiltros = function () {
+    const hoy  = new Date();
+    const anio = hoy.getFullYear();
+    const mes  = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dia  = String(hoy.getDate()).padStart(2, '0');
+    document.getElementById('filtDesde').value = anio + '-' + mes + '-01';
+    document.getElementById('filtHasta').value = anio + '-' + mes + '-' + dia;
+    _clientesSel = [];
+    renderTags();
+    msInput.value = '';
+    document.getElementById('secResultados').style.display = 'none';
+  };
+
+})();
+</script>
+}

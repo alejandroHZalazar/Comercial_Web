@@ -26,4 +26,8 @@ public partial class Producto
     public bool? Dolarizado { get; set; }
 
     public bool? EsPromocion { get; set; }
+
+    public string? DescripcionLarga { get; set; }
+
+    public string? Imagen { get; set; }
 }

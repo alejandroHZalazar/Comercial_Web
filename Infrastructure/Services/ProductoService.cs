@@ -72,13 +72,15 @@ namespace Infrastructure.Services
 
             var producto = new Producto
             {
-                CodProveedor = vm.CodProveedor,
-                CodBarras = vm.CodBarras,
-                Descripcion = vm.Descripcion,
-                FkRubro = vm.FkRubro,
-                FkProveedor = vm.FkProveedor,
-                Iva = vm.FkIva ?? 1,
-                Baja = false
+                CodProveedor      = vm.CodProveedor,
+                CodBarras         = vm.CodBarras,
+                Descripcion       = vm.Descripcion,
+                FkRubro           = vm.FkRubro,
+                FkProveedor       = vm.FkProveedor,
+                Iva               = vm.FkIva ?? 1,
+                Baja              = false,
+                DescripcionLarga  = vm.DescripcionLarga?.Trim(),
+                Imagen            = vm.Imagen?.Trim()
             };
 
             _context.Productos.Add(producto);
@@ -122,11 +124,13 @@ namespace Infrastructure.Services
             if (existente == null)
                 throw new InvalidOperationException($"No se encontró el producto Id={producto.Id}");
 
-            existente.CodProveedor = producto.CodProveedor?.Trim();
-            existente.CodBarras = producto.CodBarras?.Trim();
-            existente.FkRubro = producto.FkRubro;            
-            existente.Descripcion = producto.Descripcion?.Trim();
-            existente.FkProveedor = producto.FkProveedor;
+            existente.CodProveedor     = producto.CodProveedor?.Trim();
+            existente.CodBarras        = producto.CodBarras?.Trim();
+            existente.FkRubro          = producto.FkRubro;
+            existente.Descripcion      = producto.Descripcion?.Trim();
+            existente.FkProveedor      = producto.FkProveedor;
+            existente.DescripcionLarga = producto.DescripcionLarga?.Trim();
+            existente.Imagen           = producto.Imagen?.Trim();
 
             var precioProducto = await _context.PreciosProductos.FirstOrDefaultAsync(pp => pp.FkProducto == producto.Id);
             if (precioProducto == null)
@@ -189,19 +193,21 @@ namespace Infrastructure.Services
             where p.Id == id
             select new ProductoDetallesDTO
             {
-                Id = p.Id,
-                CodBarras = p.CodBarras,
-                CodProveedor = p.CodProveedor,
-                Descripcion = p.Descripcion,
-                Cantidad = s.Cantidad,
-                CantidadMinima = s.CantidadMinima,
-                Precio = pp.Precio,
-                Costo = cp.Costo,
-                Rubro = r.Descripcion,
-                Proveedor = prov.NombreComercial,
-                PrecioProveedor = prpr.Precio,
-                FkRubro = p.FkRubro,
-                FkProveedor = p.FkProveedor
+                Id               = p.Id,
+                CodBarras        = p.CodBarras,
+                CodProveedor     = p.CodProveedor,
+                Descripcion      = p.Descripcion,
+                Cantidad         = s.Cantidad,
+                CantidadMinima   = s.CantidadMinima,
+                Precio           = pp.Precio,
+                Costo            = cp.Costo,
+                Rubro            = r.Descripcion,
+                Proveedor        = prov.NombreComercial,
+                PrecioProveedor  = prpr.Precio,
+                FkRubro          = p.FkRubro,
+                FkProveedor      = p.FkProveedor,
+                DescripcionLarga = p.DescripcionLarga,
+                Imagen           = p.Imagen
             }).FirstOrDefaultAsync();
 
 

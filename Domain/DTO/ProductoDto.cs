@@ -34,6 +34,8 @@ namespace Domain.DTO
         public decimal? PrecioProveedor { get; set; }
         public int? FkRubro { get; set; }
         public int? FkProveedor { get; set; }
+        public string? DescripcionLarga { get; set; }
+        public string? Imagen { get; set; }
     }
 
 

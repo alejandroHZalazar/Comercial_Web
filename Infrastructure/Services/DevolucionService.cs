@@ -161,6 +161,64 @@ public class DevolucionService : IDevolucionService
         }
     }
 
+    public async Task<List<DevolucionReporteItemDto>> BuscarDevolucionesAsync(
+        DateTime desde, DateTime hasta, List<int> clienteIds)
+    {
+        var hastaFin = hasta.Date.AddDays(1).AddTicks(-1);
+
+        var q = from d in _db.Devoluciones
+                join c in _db.Clientes on d.FkCliente equals (int?)c.Id into cj
+                from c in cj.DefaultIfEmpty()
+                where d.Fecha >= desde.Date && d.Fecha <= hastaFin
+                select new
+                {
+                    d.Id, d.Fecha, d.FkCliente, d.Iva, d.Descuento,
+                    d.Recargo, d.Impuesto, d.TotalDevolucion,
+                    NombreCliente = c != null ? c.NombreComercial : null
+                };
+
+        if (clienteIds.Count > 0)
+            q = q.Where(x => x.FkCliente != null && clienteIds.Contains(x.FkCliente.Value));
+
+        var rows = await q.OrderByDescending(x => x.Fecha).ToListAsync();
+
+        if (rows.Count == 0) return new List<DevolucionReporteItemDto>();
+
+        // Buscar NC asociadas en comprobantes_fiscales
+        var devIds = rows.Select(r => r.Id).ToList();
+        var ncMap  = await _db.ComprobantesFiscales
+            .Where(cf => cf.TipoComprobante == "Nota de Crédito"
+                      && cf.NroReferencia != null
+                      && devIds.Contains(cf.NroReferencia.Value))
+            .Select(cf => new
+            {
+                NroRef  = cf.NroReferencia!.Value,
+                Numero  = $"{cf.PuntoVenta:D4}-{cf.Numero:D8}",
+                cf.LinkPdf
+            })
+            .ToDictionaryAsync(x => x.NroRef);
+
+        return rows.Select(r =>
+        {
+            ncMap.TryGetValue(r.Id, out var nc);
+            return new DevolucionReporteItemDto
+            {
+                Id              = r.Id,
+                Fecha           = r.Fecha,
+                FkCliente       = r.FkCliente,
+                NombreCliente   = r.NombreCliente,
+                Iva             = r.Iva             ?? 0m,
+                Descuento       = r.Descuento,
+                Recargo         = r.Recargo,
+                Impuesto        = r.Impuesto        ?? 0m,
+                TotalDevolucion = r.TotalDevolucion ?? 0m,
+                TieneNC         = nc != null,
+                NumeroNC        = nc?.Numero,
+                LinkPdfNC       = nc?.LinkPdf
+            };
+        }).ToList();
+    }
+
     public async Task<DevolucionImpresionDto?> GetDevolucionParaImpresionAsync(long devolucionId)
     {
         var dRow = await (

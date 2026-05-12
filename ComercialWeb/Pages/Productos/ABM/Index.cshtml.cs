@@ -11,6 +11,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using Microsoft.AspNetCore.Http;
 
 namespace Comercial_Web.Pages.Productos.ABM
 {
@@ -125,6 +126,23 @@ namespace Comercial_Web.Pages.Productos.ABM
                 ? $"<span class='badge-stock-bajo'>Stock bajo ({producto.Cantidad})</span>"
                 : $"<span class='badge-stock-ok'>En stock ({producto.Cantidad})</span>";
 
+            // Imagen
+            var imagenHtml = string.IsNullOrWhiteSpace(producto.Imagen)
+                ? ""
+                : $@"<div class='detail-section text-center'>
+                        <img src='{System.Net.WebUtility.HtmlEncode(producto.Imagen)}'
+                             alt='Imagen producto'
+                             style='max-width:100%;max-height:180px;border-radius:8px;object-fit:contain;border:1px solid #e3e6f0;padding:4px;' />
+                     </div>";
+
+            // Descripción larga
+            var descLargaHtml = string.IsNullOrWhiteSpace(producto.DescripcionLarga)
+                ? ""
+                : $@"<div class='detail-section'>
+                        <div class='detail-section-title'>Descripción detallada</div>
+                        <p style='font-size:.83rem;color:#4a5568;margin:0;white-space:pre-wrap;'>{H(producto.DescripcionLarga)}</p>
+                     </div>";
+
             var html = $@"
 <div class='detail-card shadow-sm border' style='border-color:#e3e6f0!important;'>
 
@@ -132,6 +150,8 @@ namespace Comercial_Web.Pages.Productos.ABM
         <strong>{H(producto.Descripcion)}</strong>
         {stockBadge}
     </div>
+
+    {imagenHtml}
 
     <div class='detail-section'>
         <div class='detail-section-title'>
@@ -171,9 +191,43 @@ namespace Comercial_Web.Pages.Productos.ABM
         <div class='detail-item'><label>Proveedor</label><span>{H(producto.Proveedor)}</span></div>
     </div>
 
+    {descLargaHtml}
+
 </div>";
 
             return Content(html, "text/html");
+        }
+
+        // ── Subir imagen de producto ──────────────────────────────────────────────
+        public async Task<IActionResult> OnPostSubirImagenAsync(IFormFile archivo)
+        {
+            if (archivo == null || archivo.Length == 0)
+                return new JsonResult(new { ok = false, msg = "No se recibió archivo." });
+
+            // Validar extensión
+            var ext = Path.GetExtension(archivo.FileName).ToLowerInvariant();
+            var extPermitidas = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+            if (!extPermitidas.Contains(ext))
+                return new JsonResult(new { ok = false, msg = "Extensión no permitida. Use JPG, PNG, GIF o WEBP." });
+
+            // Validar tamaño (máx 2 MB)
+            if (archivo.Length > 2 * 1024 * 1024)
+                return new JsonResult(new { ok = false, msg = "El archivo supera el límite de 2 MB." });
+
+            // Directorio destino
+            var carpeta = Path.Combine(
+                Directory.GetCurrentDirectory(), "wwwroot", "images", "productos");
+            Directory.CreateDirectory(carpeta);
+
+            // Nombre único para evitar colisiones
+            var nombreArchivo = $"{Guid.NewGuid():N}{ext}";
+            var rutaFisica    = Path.Combine(carpeta, nombreArchivo);
+
+            using (var stream = new FileStream(rutaFisica, FileMode.Create))
+                await archivo.CopyToAsync(stream);
+
+            var urlRelativa = $"/images/productos/{nombreArchivo}";
+            return new JsonResult(new { ok = true, url = urlRelativa });
         }
 
         public async Task<IActionResult> OnPostGuardarAsync()

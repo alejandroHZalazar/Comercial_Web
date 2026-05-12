@@ -63,6 +63,24 @@ public class DevolucionImpresionDto
     public List<DevolucionDetalleImpresionItemDto> Detalle { get; set; } = new();
 }
 
+// ── Reporte de devoluciones ──────────────────────────────────────────────────
+public class DevolucionReporteItemDto
+{
+    public int       Id              { get; set; }
+    public DateTime? Fecha           { get; set; }
+    public int?      FkCliente       { get; set; }
+    public string?   NombreCliente   { get; set; }
+    public decimal   Iva             { get; set; }
+    public decimal?  Descuento       { get; set; }
+    public decimal?  Recargo         { get; set; }
+    public decimal   Impuesto        { get; set; }
+    public decimal   TotalDevolucion { get; set; }
+    // Nota de Crédito asociada (si existe)
+    public bool      TieneNC         { get; set; }
+    public string?   NumeroNC        { get; set; }  // "PPPP-NNNNNNNN"
+    public string?   LinkPdfNC       { get; set; }
+}
+
 public class DevolucionDetalleImpresionItemDto
 {
     public int      FkProducto     { get; set; }

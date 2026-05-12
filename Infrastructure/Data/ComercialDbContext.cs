@@ -691,6 +691,12 @@ public partial class ComercialDbContext : DbContext
             entity.Property(e => e.EsPromocion)
                 .HasDefaultValueSql("'0'")
                 .HasColumnName("esPromocion");
+            entity.Property(e => e.DescripcionLarga)
+                .HasColumnType("text")
+                .HasColumnName("descripcionLarga");
+            entity.Property(e => e.Imagen)
+                .HasMaxLength(255)
+                .HasColumnName("imagen");
         });
 
         modelBuilder.Entity<ProductosAcrear>(entity =>

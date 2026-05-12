@@ -86,6 +86,7 @@ public class IndexModel : PageModel
                 ventaId = id,
                 cae     = result.Cae,
                 numero  = result.NumeroComprobante,
+                pdfUrl  = result.PdfUrl,
                 errores = result.Errores
             });
         }

@@ -109,6 +109,7 @@ builder.Services.AddScoped<IReporteVentasService, ReporteVentasService>();
 builder.Services.AddScoped<IDevolucionService, DevolucionService>();
 builder.Services.AddScoped<IPromocionService, PromocionService>();
 builder.Services.AddScoped<IFacturacionLotesService, FacturacionLotesService>();
+builder.Services.AddScoped<IComprobantesFiscalesService, ComprobantesFiscalesService>();
 
 // Add services to the container.
 builder.Services.AddRazorPages();

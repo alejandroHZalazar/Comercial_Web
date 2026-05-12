@@ -568,10 +568,16 @@
 
         if (data.ok) {
           ok++;
-          let msg = '✅ Venta #' + ventaId + ' facturada correctamente';
-          if (data.cae)    msg += ' — CAE: ' + data.cae;
-          if (data.numero) msg += ' — N°: ' + data.numero;
-          logAddLine(logEl, 'ok', msg);
+          let msgTxt = '✅ Venta #' + ventaId + ' facturada correctamente';
+          if (data.cae)    msgTxt += ' — CAE: ' + data.cae;
+          if (data.numero) msgTxt += ' — N°: ' + data.numero;
+          if (data.pdfUrl) {
+            const pdfLink = ' — <a href="' + esc(data.pdfUrl) + '" target="_blank" style="color:#79c0ff;text-decoration:underline;">Ver PDF</a>';
+            logAddLine(logEl, 'ok', msgTxt, esc(msgTxt) + pdfLink);
+            window.open(data.pdfUrl, '_blank');
+          } else {
+            logAddLine(logEl, 'ok', msgTxt);
+          }
 
           // Tachar fila en la tabla
           const fila = document.querySelector('#tbodyVentas tr[data-id="' + ventaId + '"]');
@@ -616,10 +622,14 @@
   // Mantener compatibilidad por si se llama desde fuera
   window.facturarSeleccionadas = facturarSeleccionadasImpl;
 
-  function logAddLine(el, tipo, texto) {
+  function logAddLine(el, tipo, texto, html) {
     const span = document.createElement('span');
     span.className = tipo === 'ok' ? 'log-ok' : tipo === 'err' ? 'log-err' : 'log-inf';
-    span.textContent = texto;
+    if (html) {
+      span.innerHTML = html;
+    } else {
+      span.textContent = texto;
+    }
     el.appendChild(span);
     el.appendChild(document.createElement('br'));
     el.scrollTop = el.scrollHeight;

@@ -161,6 +161,29 @@
 
     /* ---- TOAST ---- */
     .toast-container { z-index: 1090; }
+
+    /* ---- IMAGEN UPLOAD ---- */
+    .img-drop-zone {
+        border: 2px dashed #d0d7e8;
+        border-radius: 8px;
+        padding: .75rem;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color .2s, background .2s;
+        font-size: .8rem;
+        color: #6c757d;
+    }
+    .img-drop-zone:hover { border-color: #4e73df; background: #f0f4ff; }
+    .img-drop-zone.drag-over { border-color: #4e73df; background: #eef2ff; }
+    #imgPreviewContainer { display:none; position:relative; }
+    #imgPreviewContainer img { max-height:120px; border-radius:6px; object-fit:contain; border:1px solid #e3e6f0; }
+    .btn-quitar-img {
+        position:absolute; top:-6px; right:-6px;
+        background:#e74a3b; color:#fff; border:none;
+        border-radius:50%; width:20px; height:20px;
+        font-size:11px; line-height:1; cursor:pointer;
+        display:flex; align-items:center; justify-content:center;
+    }
 </style>
 
 @* ---- HEADER ---- *@
@@ -438,6 +461,55 @@
                             </small>
                         </div>
                     </div>
+
+                    @* -- Descripción Larga -- *@
+                    <div class="modal-section-label mt-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" class="me-1">
+                            <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>
+                            <path d="M3 3.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 6a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 6zm0 2.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/>
+                        </svg>
+                        Descripción Detallada
+                    </div>
+                    <div class="mb-3">
+                        <textarea class="form-control form-control-sm"
+                                  name="Producto.DescripcionLarga"
+                                  id="DescripcionLarga"
+                                  rows="3"
+                                  placeholder="Descripción extendida del producto (opcional)…"
+                                  style="resize:vertical;font-size:.83rem;"></textarea>
+                    </div>
+
+                    @* -- Imagen -- *@
+                    <div class="modal-section-label">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" class="me-1">
+                            <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
+                            <path d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-12zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1h12z"/>
+                        </svg>
+                        Imagen
+                    </div>
+
+                    <input type="hidden" name="Producto.Imagen" id="ImagenUrl" />
+
+                    <div class="mb-2">
+                        <div class="img-drop-zone" id="imgDropZone" onclick="document.getElementById('inputImagenFile').click()">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#9aabcb" viewBox="0 0 16 16" class="mb-1">
+                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                                <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
+                            </svg>
+                            <div>Hacé clic o arrastrá una imagen</div>
+                            <div class="text-muted" style="font-size:.73rem;">JPG, PNG, GIF, WEBP · máx 2 MB</div>
+                        </div>
+                        <input type="file" id="inputImagenFile" accept=".jpg,.jpeg,.png,.gif,.webp" style="display:none;" />
+                    </div>
+
+                    {{! preview de imagen actual / subida }}
+                    <div id="imgPreviewContainer" class="mb-2 d-flex justify-content-center">
+                        <div style="position:relative;display:inline-block;">
+                            <img id="imgPreview" src="" alt="Preview" />
+                            <button type="button" class="btn-quitar-img" onclick="quitarImagen()" title="Quitar imagen">✕</button>
+                        </div>
+                    </div>
+                    <div id="imgUploadStatus" class="small text-muted mb-1" style="display:none;"></div>
                 </form>
             </div>
 
@@ -585,6 +657,7 @@ function abrirModalNuevoProducto() {
     document.getElementById('productoModalLabel').textContent = 'Nuevo Producto';
     document.getElementById('inputCantidad').disabled = false;
     document.getElementById('stockEditNote').style.display = 'none';
+    _resetImagen();
     _modalProd.show();
 }
 
@@ -608,6 +681,11 @@ async function abrirModalEditar(id) {
         document.getElementById('PrecioLista').value     = prod.precio           ?? '';
         document.querySelector("input[name='Producto.Cantidad']").value       = prod.cantidad      ?? '';
         document.querySelector("input[name='Producto.CantidadMinima']").value = prod.cantidadMinima ?? '';
+        document.getElementById('DescripcionLarga').value = prod.descripcionLarga ?? '';
+
+        // Imagen
+        _resetImagen();
+        if (prod.imagen) _cargarImagenExistente(prod.imagen);
 
         document.getElementById('inputCantidad').disabled         = true;
         document.getElementById('stockEditNote').style.display    = '';
@@ -690,6 +768,83 @@ function mostrarToastProd(msg, isError = false) {
     el.className = `toast align-items-center border-0 ${isError ? 'text-bg-danger' : 'text-bg-success'}`;
     document.getElementById('toastProdMsg').textContent = msg;
     new bootstrap.Toast(el, { delay: 3000 }).show();
+}
+
+// ================================================================
+//  IMAGEN — upload, preview, drag & drop
+// ================================================================
+document.addEventListener('DOMContentLoaded', () => {
+    const fileInput = document.getElementById('inputImagenFile');
+    const dropZone  = document.getElementById('imgDropZone');
+
+    // Selección por clic en input
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) _subirImagen(fileInput.files[0]);
+    });
+
+    // Drag & drop
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        if (e.dataTransfer.files.length > 0) _subirImagen(e.dataTransfer.files[0]);
+    });
+});
+
+function _resetImagen() {
+    document.getElementById('ImagenUrl').value = '';
+    document.getElementById('inputImagenFile').value = '';
+    document.getElementById('imgPreviewContainer').style.display = 'none';
+    document.getElementById('imgPreview').src = '';
+    document.getElementById('imgDropZone').style.display = '';
+    const st = document.getElementById('imgUploadStatus');
+    st.style.display = 'none'; st.textContent = '';
+}
+
+function _cargarImagenExistente(url) {
+    document.getElementById('ImagenUrl').value = url;
+    document.getElementById('imgPreview').src  = url;
+    document.getElementById('imgPreviewContainer').style.display = '';
+    document.getElementById('imgDropZone').style.display = 'none';
+}
+
+function quitarImagen() {
+    _resetImagen();
+}
+
+async function _subirImagen(file) {
+    const st = document.getElementById('imgUploadStatus');
+    st.style.display = ''; st.textContent = 'Subiendo imagen…';
+    st.className = 'small text-muted mb-1';
+
+    const token = document.getElementById('antiForgeryToken').value;
+    const form  = new FormData();
+    form.append('archivo', file);
+
+    try {
+        const resp = await fetch('/Productos/ABM?handler=SubirImagen', {
+            method : 'POST',
+            headers: { 'RequestVerificationToken': token },
+            body   : form
+        });
+        const data = await resp.json();
+
+        if (data.ok) {
+            document.getElementById('ImagenUrl').value = data.url;
+            document.getElementById('imgPreview').src  = data.url;
+            document.getElementById('imgPreviewContainer').style.display = '';
+            document.getElementById('imgDropZone').style.display = 'none';
+            st.textContent = 'Imagen cargada correctamente.';
+            st.className   = 'small text-success mb-1';
+        } else {
+            st.textContent = data.msg ?? 'Error al subir la imagen.';
+            st.className   = 'small text-danger mb-1';
+        }
+    } catch {
+        st.textContent = 'Error de red al subir la imagen.';
+        st.className   = 'small text-danger mb-1';
+    }
 }
 </script>
 }
