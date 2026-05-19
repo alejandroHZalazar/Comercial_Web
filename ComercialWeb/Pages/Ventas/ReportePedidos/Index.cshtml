@@ -384,7 +384,15 @@
                 document.getElementById('det-cliente').textContent    = cab.nombreComercial ?? '';
                 document.getElementById('det-fecha').textContent      = fmtDate(cab.fecha);
                 document.getElementById('det-iva').textContent        = (cab.iva ?? 0) + '%';
-                document.getElementById('det-observacion').textContent = cab.observacion ?? '';
+                // Observaciones: ecommerce concatena datos de entrega
+                let textoObs = cab.observacion ?? '';
+                if (cab.esEcommerce === 1) {
+                    textoObs = 'Observacion: ' + (cab.observacion ?? '')
+                        + '. Direccion de entrega: ' + (cab.direccionEntrega ?? '')
+                        + '. ' + (cab.direccionEntregaTexto ?? '')
+                        + '. Costo Envío: ' + (cab.costoEnvio ?? 0);
+                }
+                document.getElementById('det-observacion').textContent = textoObs;
 
                 const tbody = document.getElementById('tbodyDetalle');
                 tbody.innerHTML = '';

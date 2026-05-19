@@ -59,6 +59,12 @@ public class PedidoCabeceraDto
     // Descuento/Recargo a nivel cabecera (nullable = no aplica regla global)
     public decimal? Descuento      { get; set; }
     public decimal? Recargo        { get; set; }
+
+    // ── Ecommerce ──────────────────────────────────────────────────────────
+    public int?     EsEcommerce           { get; set; }
+    public string?  DireccionEntrega      { get; set; }
+    public string?  DireccionEntregaTexto { get; set; }
+    public decimal? CostoEnvio            { get; set; }
 }
 
 // ── Detalle de pedido para cargar en grilla ──────────────────────────────

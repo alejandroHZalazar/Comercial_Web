@@ -221,7 +221,8 @@ public class IndexModel : PageModel
                     FechaFacturaAsoc = request.FechaFacturaAsoc,
                     IvaPorcentaje    = request.Iva,
                     IIBBPorcentaje   = request.Impuesto,
-                    Observaciones    = $"Devolución N° {devolucionId}"
+                    Observaciones    = $"Devolución N° {devolucionId}",
+                    IdDevolucion     = (int)devolucionId
                 };
 
                 var (okFe, errorFe, pdfFe) = await _feService.EmitirNotaCreditoManualAsync(ncDto, prm.PuntoVenta);

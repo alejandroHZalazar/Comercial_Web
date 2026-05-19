@@ -28,6 +28,7 @@ namespace Domain.DTO
             public int? FkLocalidad { get; set; }
             public int? FkVendedor { get; set; }
             public int? FkZona { get; set; }
+            public string? PasswordHash { get; set; }
         }
     }
 }

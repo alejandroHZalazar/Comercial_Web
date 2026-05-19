@@ -14,6 +14,13 @@ public class NotaCreditoRequestDto
     public decimal  IIBBPorcentaje      { get; set; }
 
     public string   Observaciones       { get; set; } = "";
+
+    /// <summary>
+    /// Id de la devolución que origina esta NC.
+    /// 0 = NC manual sin devolución asociada (comportamiento original).
+    /// &gt; 0 = el detalle se obtiene de DevolucionesDetalles para ese Id.
+    /// </summary>
+    public int      IdDevolucion        { get; set; }
 }
 
 public class NotaCreditoDatosIniciales

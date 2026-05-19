@@ -2,9 +2,11 @@
 using Domain.DTO;
 using Domain.Entities;
 using Infrastructure.Data;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Diagnostics.Contracts;
+using System.Security.Cryptography;
 using static Domain.DTO.ClienteDTO;
 
 namespace Infrastructure.Services
@@ -77,6 +79,66 @@ namespace Infrastructure.Services
             await _context.SaveChangesAsync();
         }
 
+        // ── Password ──────────────────────────────────────────────────────────
+        public async Task<string> ResetPasswordAsync(int clienteId)
+        {
+            var cliente = await _context.Clientes.FindAsync(clienteId)
+                ?? throw new InvalidOperationException($"Cliente {clienteId} no encontrado.");
+
+            var password = _GenerarPasswordSeguro();
+            // Hashear con BCrypt vía ASP.NET Identity PasswordHasher (misma librería que usa el resto del sistema)
+            cliente.PasswordHash = new PasswordHasher<object>().HashPassword(null!, password);
+            await _context.SaveChangesAsync();
+
+            return password;   // se devuelve solo una vez para mostrar al operador
+        }
+
+        /// <summary>
+        /// Genera un password criptográficamente seguro de 12 caracteres:
+        /// al menos 1 mayúscula, 1 minúscula, 1 dígito y 1 símbolo.
+        /// </summary>
+        private static string _GenerarPasswordSeguro()
+        {
+            const string mayus    = "ABCDEFGHJKLMNPQRSTUVWXYZ";   // sin I, O (confusos)
+            const string minus    = "abcdefghjkmnpqrstuvwxyz";    // sin i, l, o
+            const string digitos  = "23456789";                    // sin 0, 1
+            const string simbolos = "!@#$%&*+-?";
+            const string todos    = mayus + minus + digitos + simbolos;
+            const int    longitud = 12;
+
+            using var rng = RandomNumberGenerator.Create();
+            var buf = new byte[longitud * 4];   // extra para descarte
+            var chars = new char[longitud];
+
+            // Garantizar al menos uno de cada categoría en posiciones fijas
+            chars[0] = _RndChar(mayus,   rng);
+            chars[1] = _RndChar(minus,   rng);
+            chars[2] = _RndChar(digitos, rng);
+            chars[3] = _RndChar(simbolos, rng);
+
+            // Rellenar el resto aleatoriamente
+            for (int i = 4; i < longitud; i++)
+                chars[i] = _RndChar(todos, rng);
+
+            // Mezclar para que los obligatorios no estén siempre al inicio
+            rng.GetBytes(buf);
+            for (int i = longitud - 1; i > 0; i--)
+            {
+                int j = (int)(BitConverter.ToUInt32(buf, i * 4) % (uint)(i + 1));
+                (chars[i], chars[j]) = (chars[j], chars[i]);
+            }
+
+            return new string(chars);
+        }
+
+        private static char _RndChar(string charset, RandomNumberGenerator rng)
+        {
+            var b = new byte[4];
+            rng.GetBytes(b);
+            return charset[(int)(BitConverter.ToUInt32(b, 0) % (uint)charset.Length)];
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
         public async Task DeleteAsync(int id)
         {
             var cliente = await _context.Clientes.FindAsync(id);
@@ -177,10 +239,11 @@ namespace Infrastructure.Services
                 Contacto = c.Contacto,
                 CondicionIva = i != null ? i.Descripcion : null,
                 Vendedor = u != null ? u.Nombre : null,
-                FkCondIva = c.FkCondIva,
-                FkLocalidad = c.FkLocalidad,
-                FkVendedor = c.FkVendedor,
-                FkZona = c.FkZona
+                FkCondIva    = c.FkCondIva,
+                FkLocalidad  = c.FkLocalidad,
+                FkVendedor   = c.FkVendedor,
+                FkZona       = c.FkZona,
+                PasswordHash = c.PasswordHash
             }).FirstOrDefaultAsync();
 
             return query;

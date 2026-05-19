@@ -26,4 +26,10 @@ public partial class Pedido
     public bool? Impreso { get; set; }
 
     public bool? Vendido { get; set; }
+
+    // ── Ecommerce ──────────────────────────────────────────────────────────
+    public int?     EsEcommerce          { get; set; }
+    public string?  DireccionEntrega     { get; set; }
+    public string?  DireccionEntregaTexto { get; set; }
+    public decimal? CostoEnvio           { get; set; }
 }

@@ -32,4 +32,6 @@ public partial class Cliente
     public int? FkLocalidad { get; set; }
 
     public int? FkZona { get; set; }
+
+    public string? PasswordHash { get; set; }
 }

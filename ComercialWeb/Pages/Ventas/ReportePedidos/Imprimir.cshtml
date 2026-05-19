@@ -77,6 +77,12 @@ else if (Model.Cabecera != null)
 {
   var cab = Model.Cabecera;
   var fmt = (decimal v) => v.ToString("N2", new System.Globalization.CultureInfo("es-AR"));
+  var textoObservacion = cab.EsEcommerce == 1
+      ? "Observacion: " + (cab.Observacion ?? "")
+          + ". Direccion de entrega: " + (cab.DireccionEntrega ?? "")
+          + ". " + (cab.DireccionEntregaTexto ?? "")
+          + ". Costo Envío: " + (cab.CostoEnvio?.ToString("N2", new System.Globalization.CultureInfo("es-AR")) ?? "0,00")
+      : (cab.Observacion ?? "");
 
   @* ── Encabezado empresa ── *@
   <div class="emp-header">
@@ -140,11 +146,11 @@ else if (Model.Cabecera != null)
   </div>
 
   @* ── Observacion ── *@
-  @if (!string.IsNullOrWhiteSpace(cab.Observacion))
+  @if (!string.IsNullOrWhiteSpace(textoObservacion))
   {
     <div class="observ-box">
       <label>Observacion</label>
-      @cab.Observacion
+      @textoObservacion
     </div>
   }
 

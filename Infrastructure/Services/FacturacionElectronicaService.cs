@@ -265,10 +265,6 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
 
             bool esCF = datosCliente.ClienteId == prm.ClienteCFId;
 
-            // ── Calcular neto sin IVA ni IIBB ────────────────────────────────
-            decimal totalSinIva = Math.Round(
-                dto.Importe / (1m + (dto.IvaPorcentaje / 100m) + (dto.IIBBPorcentaje / 100m)), 2);
-
             string letra        = (datosCliente.Letra ?? "B").ToUpper();
             string tipoNC       = $"NOTA DE CREDITO {letra}";
             string tipoFactAsoc = $"FACTURA {letra}";
@@ -280,6 +276,94 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
 
             decimal alicuotaIva = dto.IvaPorcentaje == 0 ? 21m : dto.IvaPorcentaje;
             string fecha = DateTime.Now.ToString("dd/MM/yyyy");
+
+            // ── Construir detalle según origen ───────────────────────────────
+            decimal neto;
+            decimal ivaTotal;
+            List<TfDetalle> detalleFE;
+
+            if (dto.IdDevolucion > 0)
+            {
+                // Detalle real obtenido de DevolucionesDetalles
+                var devDetalle = await _db.DevolucionesDetalles
+                    .Where(d => d.FkDevolucion == dto.IdDevolucion)
+                    .ToListAsync();
+
+                detalleFE = new List<TfDetalle>();
+                neto      = 0m;
+                ivaTotal  = 0m;
+
+                foreach (var d in devDetalle)
+                {
+                    decimal cantidad       = Math.Round(d.Cantidad ?? 0m, 2);
+                    decimal precioUnitario = Math.Round(
+                        alicuotaIva == 0
+                            ? (d.PrecioSinIva ?? 0m) / 1.21m
+                            : (d.PrecioSinIva ?? 0m), 3);
+                    decimal bonif    = Math.Round(d.Descuento ?? 0m, 2);
+
+                    decimal subtotal = precioUnitario * cantidad;
+                    if (bonif > 0) subtotal -= subtotal * (bonif / 100m);
+
+                    neto     += subtotal;
+                    ivaTotal += Math.Round(subtotal * (alicuotaIva / 100m), 2);
+
+                    string codigoProd = prm.CodigoDetalle switch
+                    {
+                        "CodProveedor" => d.CodProveedor ?? d.FkProducto?.ToString() ?? "1",
+                        "CodBarras"    => d.CodBarras    ?? d.FkProducto?.ToString() ?? "1",
+                        _              => d.FkProducto?.ToString() ?? "1"
+                    };
+
+                    detalleFE.Add(new TfDetalle
+                    {
+                        cantidad                = cantidad,
+                        afecta_stock            = "S",
+                        bonificacion_porcentaje = bonif,
+                        producto = new TfProducto
+                        {
+                            descripcion             = d.Descripcion ?? "",
+                            unidad_bulto            = 1,
+                            lista_precios           = "Lista de Precios",
+                            codigo                  = codigoProd,
+                            precio_unitario_sin_iva = precioUnitario,
+                            alicuota                = alicuotaIva,
+                            unidad_medida           = 7,
+                            actualiza_precio        = "N",
+                            rg5329                  = "N"
+                        }
+                    });
+                }
+            }
+            else
+            {
+                // Comportamiento original: línea única "Productos Varios"
+                neto     = Math.Round(
+                    dto.Importe / (1m + (dto.IvaPorcentaje / 100m) + (dto.IIBBPorcentaje / 100m)), 2);
+                ivaTotal = Math.Round(neto * alicuotaIva / 100m, 2);
+
+                detalleFE = new List<TfDetalle>
+                {
+                    new()
+                    {
+                        cantidad                = 1,
+                        afecta_stock            = "S",
+                        bonificacion_porcentaje = 0,
+                        producto = new TfProducto
+                        {
+                            descripcion             = "Productos Varios",
+                            unidad_bulto            = 1,
+                            lista_precios           = "Lista de Precios",
+                            codigo                  = "1",
+                            precio_unitario_sin_iva = neto,
+                            alicuota                = alicuotaIva,
+                            unidad_medida           = 7,
+                            actualiza_precio        = "N",
+                            rg5329                  = "N"
+                        }
+                    }
+                };
+            }
 
             // ── Armar request ────────────────────────────────────────────────
             var req = new TfFacturaRequest
@@ -315,7 +399,7 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
                     periodo_facturado_hasta = fecha,
                     rubro                   = prm.RubroFE,
                     rubro_grupo_contable    = $"{DateTime.Now.Month}/{DateTime.Now.Year}",
-                    total                   = dto.Importe,
+                    total                   = dto.Importe,   // se recalcula abajo
                     comprobantes_asociados = new List<TfComprobanteAsociado>
                     {
                         new()
@@ -327,41 +411,21 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
                             cuit              = cuit
                         }
                     },
-                    detalle = new List<TfDetalle>
-                    {
-                        new()
-                        {
-                            cantidad                = 1,
-                            afecta_stock            = "S",
-                            bonificacion_porcentaje = 0,
-                            producto = new TfProducto
-                            {
-                                descripcion             = "Productos Varios",
-                                unidad_bulto            = 1,
-                                lista_precios           = "Lista de Precios",
-                                codigo                  = "1",
-                                precio_unitario_sin_iva = totalSinIva,
-                                alicuota                = alicuotaIva,
-                                unidad_medida           = 7,
-                                actualiza_precio        = "N",
-                                rg5329                  = "N"
-                            }
-                        }
-                    }
+                    detalle = detalleFE
                 }
             };
 
             // ── Tributo IIBB ─────────────────────────────────────────────────
             if (dto.IIBBPorcentaje > 0 && !string.IsNullOrEmpty(prm.TributoIIBB))
             {
-                var totalTributo = Math.Round(totalSinIva * (dto.IIBBPorcentaje / 100m), 2);
+                var totalTributo = Math.Round(neto * (dto.IIBBPorcentaje / 100m), 2);
                 req.comprobante.tributos = new List<TfTributo>
                 {
                     new()
                     {
                         tipo           = int.TryParse(prm.TributoIIBB, out var t) ? t : 0,
                         regimen        = int.TryParse(prm.RegimenIIBB, out var r) ? r : 0,
-                        base_imponible = totalSinIva,
+                        base_imponible = neto,
                         alicuota       = dto.IIBBPorcentaje,
                         total          = totalTributo
                     }
@@ -369,9 +433,8 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
             }
 
             // ── Total del comprobante ─────────────────────────────────────────
-            decimal ivaTotal  = Math.Round(totalSinIva * alicuotaIva / 100m, 2);
-            decimal iibbTotal = dto.IIBBPorcentaje > 0 ? Math.Round(totalSinIva * dto.IIBBPorcentaje / 100m, 2) : 0m;
-            req.comprobante.total = Math.Round(totalSinIva + ivaTotal + iibbTotal, 2);
+            decimal iibbTotal = dto.IIBBPorcentaje > 0 ? Math.Round(neto * dto.IIBBPorcentaje / 100m, 2) : 0m;
+            req.comprobante.total = Math.Round(neto + ivaTotal + iibbTotal, 2);
 
             // ── Enviar con reintentos ─────────────────────────────────────────
             var (ok, respuesta, erroresStr) = await EnviarConReintentoAsync(req);

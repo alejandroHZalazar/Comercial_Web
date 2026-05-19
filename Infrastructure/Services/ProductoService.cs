@@ -72,15 +72,15 @@ namespace Infrastructure.Services
 
             var producto = new Producto
             {
-                CodProveedor      = vm.CodProveedor,
-                CodBarras         = vm.CodBarras,
-                Descripcion       = vm.Descripcion,
-                FkRubro           = vm.FkRubro,
-                FkProveedor       = vm.FkProveedor,
-                Iva               = vm.FkIva ?? 1,
-                Baja              = false,
-                DescripcionLarga  = vm.DescripcionLarga?.Trim(),
-                Imagen            = vm.Imagen?.Trim()
+                CodProveedor     = vm.CodProveedor,
+                CodBarras        = vm.CodBarras,
+                Descripcion      = vm.Descripcion,
+                FkRubro          = vm.FkRubro,
+                FkProveedor      = vm.FkProveedor,
+                Iva              = vm.FkIva ?? 1,
+                Baja             = false,
+                DescripcionLarga = vm.DescripcionLarga?.Trim(),
+                Imagen           = _Base64ABytes(vm.Imagen)
             };
 
             _context.Productos.Add(producto);
@@ -130,7 +130,19 @@ namespace Infrastructure.Services
             existente.Descripcion      = producto.Descripcion?.Trim();
             existente.FkProveedor      = producto.FkProveedor;
             existente.DescripcionLarga = producto.DescripcionLarga?.Trim();
-            existente.Imagen           = producto.Imagen?.Trim();
+
+            // Lógica de imagen:
+            //   null/vacío  → mantener la imagen existente sin cambios
+            //   "BORRAR"    → quitar imagen (null en BD)
+            //   base64/data → reemplazar por los nuevos bytes
+            if (producto.Imagen == "BORRAR")
+                existente.Imagen = null;
+            else
+            {
+                var nuevaImagen = _Base64ABytes(producto.Imagen);
+                if (nuevaImagen != null)
+                    existente.Imagen = nuevaImagen;
+            }
 
             var precioProducto = await _context.PreciosProductos.FirstOrDefaultAsync(pp => pp.FkProducto == producto.Id);
             if (precioProducto == null)
@@ -180,6 +192,33 @@ namespace Infrastructure.Services
                 .ToListAsync();
         }
 
+        public async Task<byte[]?> ObtenerImagenAsync(int id)
+        {
+            // Solo trae la columna imagen, sin cargar el resto del producto
+            return await _context.Productos
+                .Where(p => p.Id == id)
+                .Select(p => p.Imagen)
+                .FirstOrDefaultAsync();
+        }
+
+        // ── Helpers ───────────────────────────────────────────────────────────
+        /// <summary>
+        /// Convierte base64 (con o sin prefijo data:...) a byte[].
+        /// Devuelve null si el string está vacío o no es base64 válido.
+        /// </summary>
+        private static byte[]? _Base64ABytes(string? base64)
+        {
+            if (string.IsNullOrWhiteSpace(base64)) return null;
+            try
+            {
+                // Quitar prefijo "data:image/...;base64," si lo tiene
+                var idx = base64.IndexOf(',');
+                var datos = idx >= 0 ? base64[(idx + 1)..] : base64;
+                return Convert.FromBase64String(datos);
+            }
+            catch { return null; }
+        }
+
         public async Task<ProductoDetallesDTO> traerDetalleAsync(int id, int decCant, int decStock)
         {
             var producto = await (
@@ -207,7 +246,9 @@ namespace Infrastructure.Services
                 FkRubro          = p.FkRubro,
                 FkProveedor      = p.FkProveedor,
                 DescripcionLarga = p.DescripcionLarga,
-                Imagen           = p.Imagen
+                // El blob no se incluye en el DTO general; se sirve vía OnGetImagenAsync.
+                // Solo indicamos si tiene imagen para que la UI decida qué mostrar.
+                TieneImagen      = p.Imagen != null && p.Imagen.Length > 0
             }).FirstOrDefaultAsync();
 
 

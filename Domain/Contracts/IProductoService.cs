@@ -21,7 +21,7 @@ namespace Domain.Contracts
         Task<List<Producto>> GetByCodProveedorAsync(string codProveedor);
         Task<List<Producto>> GetByCodBarrasAsync(string codBarra);
         Task<ProductoDetallesDTO> traerDetalleAsync(int id, int decCant, int decStock);
-
+        Task<byte[]?> ObtenerImagenAsync(int id);
     }
 
 }

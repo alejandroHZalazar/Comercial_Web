@@ -321,6 +321,51 @@
                         </div>
                     </div>
 
+                    @* ── Acceso del cliente ── *@
+                    <div class="modal-section-title">Acceso del Cliente</div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-8">
+                            <label class="modal-field-label">Password Hash</label>
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="inputPasswordHash" readonly
+                                       autocomplete="new-password"
+                                       class="form-control form-control-sm font-monospace"
+                                       style="border-radius:8px 0 0 8px;font-size:.75rem;background:#f8f9fc;color:#2d3748;letter-spacing:.03em;"
+                                       placeholder="Sin contraseña asignada" />
+                                <button type="button" class="btn btn-outline-secondary btn-sm px-2"
+                                        style="border-radius:0 8px 8px 0;"
+                                        onclick="toggleVerPasswordHash()"
+                                        title="Mostrar / ocultar">
+                                    <svg id="iconOjoHash" xmlns="http://www.w3.org/2000/svg" width="15" height="15"
+                                         fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
+                                        <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="button" id="btnResetPassword" onclick="resetPasswordCliente()"
+                                    class="btn btn-sm w-100"
+                                    style="background:#f6c23e;color:#2d3748;border:none;border-radius:8px;font-weight:600;font-size:.82rem;display:none;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor"
+                                     viewBox="0 0 16 16" class="me-1">
+                                    <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                                    <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                                </svg>
+                                Resetear Password
+                            </button>
+                        </div>
+                    </div>
+                    @* Toast para mostrar el nuevo password *@
+                    <div id="alertNuevoPassword" class="alert alert-warning d-none py-2 px-3 mb-2"
+                         style="border-radius:8px;font-size:.83rem;">
+                        <strong>Nuevo password generado:</strong>
+                        <span id="spanNuevoPassword" class="font-monospace fw-bold ms-2"
+                              style="letter-spacing:.05em;"></span>
+                        <small class="d-block text-muted mt-1">Anotalo ahora — no se vuelve a mostrar.</small>
+                    </div>
+
                     <div class="modal-section-title">Clasificación</div>
                     <div class="row g-3">
                         <div class="col-md-6">
@@ -875,6 +920,10 @@
         document.getElementById('ClienteId').value = 0;
         document.getElementById('clienteModalLabel').textContent = 'Agregar Cliente';
         document.getElementById('btnGuardarTxt').textContent = 'Agregar';
+        // Ocultar sección password en modo nuevo
+        document.getElementById('inputPasswordHash').value = '';
+        document.getElementById('btnResetPassword').style.display = 'none';
+        document.getElementById('alertNuevoPassword').classList.add('d-none');
         new bootstrap.Modal(document.getElementById('clienteModal')).show();
     }
 
@@ -898,9 +947,68 @@
         document.querySelector('select[name="Cliente.FkLocalidad"]').value    = c.fkLocalidad     ?? '';
         document.querySelector('select[name="Cliente.FkZona"]').value         = c.fkZona          ?? '';
 
+        // Password hash
+        const inpPwd = document.getElementById('inputPasswordHash');
+        inpPwd.value = c.passwordHash ?? '';
+        inpPwd.type  = 'password';
+        // Restaurar icono ojo
+        document.getElementById('iconOjoHash').innerHTML =
+            '<path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/><path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>';
+        document.getElementById('btnResetPassword').style.display = '';
+        document.getElementById('alertNuevoPassword').classList.add('d-none');
+
         document.getElementById('clienteModalLabel').textContent = 'Editar Cliente';
         document.getElementById('btnGuardarTxt').textContent = 'Guardar cambios';
         new bootstrap.Modal(document.getElementById('clienteModal')).show();
+    }
+
+    // -------- TOGGLE OJO PASSWORD --------
+    // Estado inicial: type="text" (visible). El ojo lo oculta → text.
+    const _SVG_OJO_ABIERTO = '<path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/><path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>';
+    const _SVG_OJO_CERRADO = '<path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7.028 7.028 0 0 0-2.79.588l.77.771A5.944 5.944 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.134 13.134 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755-.165.165-.337.328-.517.486l.708.709z"/><path d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829l.822.822zm-2.943 1.299.822.821a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 0 2.829 2.83z"/><path d="M3.35 5.47c-.18.16-.353.322-.518.487A13.134 13.134 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7.029 7.029 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709z"/><path fill-rule="evenodd" d="M13.646 14.354l-12-12 .708-.708 12 12-.708.708z"/>';
+
+    function toggleVerPasswordHash() {
+        const inp = document.getElementById('inputPasswordHash');
+        const ico = document.getElementById('iconOjoHash');
+        if (inp.type === 'text') {
+            // Ocultar → password
+            inp.type = 'password';
+            ico.innerHTML = _SVG_OJO_CERRADO;
+        } else {
+            // Revelar → text
+            inp.type = 'text';
+            ico.innerHTML = _SVG_OJO_ABIERTO;
+        }
+    }
+
+    // -------- RESET PASSWORD --------
+    async function resetPasswordCliente() {
+        const id = document.getElementById('ClienteId').value;
+        if (!id || id === '0') return;
+
+        if (!confirm('¿Generar un nuevo password para este cliente?\nEl password actual quedará invalidado.')) return;
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+        try {
+            const r = await fetch('/Clientes/ABM?handler=ResetPassword', {
+                method : 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded',
+                           'RequestVerificationToken': token },
+                body   : 'id=' + encodeURIComponent(id)
+            });
+            const data = await r.json();
+            if (data.ok) {
+                // Actualizar campo password hash con el nuevo hash (no el texto plano)
+                document.getElementById('inputPasswordHash').value = '(nuevo hash guardado en BD)';
+                // Mostrar el password en texto plano una sola vez
+                document.getElementById('spanNuevoPassword').textContent = data.password;
+                document.getElementById('alertNuevoPassword').classList.remove('d-none');
+            } else {
+                alert('Error: ' + (data.msg ?? 'No se pudo resetear el password.'));
+            }
+        } catch (e) {
+            alert('Error de red: ' + e.message);
+        }
     }
 </script>
 

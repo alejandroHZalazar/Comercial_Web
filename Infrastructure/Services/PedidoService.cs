@@ -128,6 +128,7 @@ public class PedidoService : IPedidoService
             {
                 p.Id, p.FkCliente, p.Iva, p.FkVendedor, p.Observacion, p.Total, p.Fecha,
                 p.Descuento, p.Recargo,
+                p.EsEcommerce, p.DireccionEntrega, p.DireccionEntregaTexto, p.CostoEnvio,
                 NombreComercial = c != null ? c.NombreComercial : null,
                 Telefono        = c != null ? c.Telefono        : null,
                 Contacto        = c != null ? c.Contacto        : null,
@@ -157,19 +158,23 @@ public class PedidoService : IPedidoService
 
         return new PedidoCabeceraDto
         {
-            Id              = pedidoRow.Id,
-            FkCliente       = pedidoRow.FkCliente,
-            Iva             = pedidoRow.Iva,
-            FkVendedor      = pedidoRow.FkVendedor,
-            Observacion     = pedidoRow.Observacion,
-            Total           = pedidoRow.Total,
-            Fecha           = pedidoRow.Fecha,
-            Descuento       = pedidoRow.Descuento,
-            Recargo         = pedidoRow.Recargo,
-            NombreComercial = pedidoRow.NombreComercial,
-            Telefono        = pedidoRow.Telefono,
-            Contacto        = pedidoRow.Contacto,
-            DireccionFull   = string.Join(", ",
+            Id                    = pedidoRow.Id,
+            FkCliente             = pedidoRow.FkCliente,
+            Iva                   = pedidoRow.Iva,
+            FkVendedor            = pedidoRow.FkVendedor,
+            Observacion           = pedidoRow.Observacion,
+            Total                 = pedidoRow.Total,
+            Fecha                 = pedidoRow.Fecha,
+            Descuento             = pedidoRow.Descuento,
+            Recargo               = pedidoRow.Recargo,
+            EsEcommerce           = pedidoRow.EsEcommerce,
+            DireccionEntrega      = pedidoRow.DireccionEntrega,
+            DireccionEntregaTexto = pedidoRow.DireccionEntregaTexto,
+            CostoEnvio            = pedidoRow.CostoEnvio,
+            NombreComercial       = pedidoRow.NombreComercial,
+            Telefono              = pedidoRow.Telefono,
+            Contacto              = pedidoRow.Contacto,
+            DireccionFull         = string.Join(", ",
                 new[] { pedidoRow.Direccion, localidadNombre, provinciaNombre }
                     .Where(s => !string.IsNullOrWhiteSpace(s)))
         };

@@ -175,7 +175,7 @@
     }
     .img-drop-zone:hover { border-color: #4e73df; background: #f0f4ff; }
     .img-drop-zone.drag-over { border-color: #4e73df; background: #eef2ff; }
-    #imgPreviewContainer { display:none; position:relative; }
+    #imgPreviewContainer { position:relative; }
     #imgPreviewContainer img { max-height:120px; border-radius:6px; object-fit:contain; border:1px solid #e3e6f0; }
     .btn-quitar-img {
         position:absolute; top:-6px; right:-6px;
@@ -502,10 +502,10 @@
                         <input type="file" id="inputImagenFile" accept=".jpg,.jpeg,.png,.gif,.webp" style="display:none;" />
                     </div>
 
-                    {{! preview de imagen actual / subida }}
-                    <div id="imgPreviewContainer" class="mb-2 d-flex justify-content-center">
+                    <div id="imgPreviewContainer" class="mb-2 d-flex justify-content-center d-none">
                         <div style="position:relative;display:inline-block;">
-                            <img id="imgPreview" src="" alt="Preview" />
+                            <img id="imgPreview" src="" alt="Imagen del producto"
+                                 style="max-height:120px;border-radius:6px;object-fit:contain;border:1px solid #e3e6f0;" />
                             <button type="button" class="btn-quitar-img" onclick="quitarImagen()" title="Quitar imagen">✕</button>
                         </div>
                     </div>
@@ -683,9 +683,9 @@ async function abrirModalEditar(id) {
         document.querySelector("input[name='Producto.CantidadMinima']").value = prod.cantidadMinima ?? '';
         document.getElementById('DescripcionLarga').value = prod.descripcionLarga ?? '';
 
-        // Imagen
+        // Imagen: la servimos desde BD vía handler (no base64 en la respuesta JSON)
         _resetImagen();
-        if (prod.imagen) _cargarImagenExistente(prod.imagen);
+        if (prod.tieneImagen) _cargarImagenExistente(`/Productos/ABM?handler=Imagen&id=${id}`);
 
         document.getElementById('inputCantidad').disabled         = true;
         document.getElementById('stockEditNote').style.display    = '';
@@ -795,27 +795,30 @@ document.addEventListener('DOMContentLoaded', () => {
 function _resetImagen() {
     document.getElementById('ImagenUrl').value = '';
     document.getElementById('inputImagenFile').value = '';
-    document.getElementById('imgPreviewContainer').style.display = 'none';
     document.getElementById('imgPreview').src = '';
-    document.getElementById('imgDropZone').style.display = '';
+    document.getElementById('imgPreviewContainer').classList.add('d-none');
+    document.getElementById('imgDropZone').classList.remove('d-none');
     const st = document.getElementById('imgUploadStatus');
-    st.style.display = 'none'; st.textContent = '';
+    st.classList.add('d-none'); st.textContent = '';
 }
 
+// Muestra preview de la imagen ya guardada en BD (sirve vía handler).
+// Deja el drop zone visible para que el usuario pueda reemplazarla.
 function _cargarImagenExistente(url) {
-    document.getElementById('ImagenUrl').value = url;
-    document.getElementById('imgPreview').src  = url;
-    document.getElementById('imgPreviewContainer').style.display = '';
-    document.getElementById('imgDropZone').style.display = 'none';
+    document.getElementById('imgPreview').src = url;
+    document.getElementById('imgPreviewContainer').classList.remove('d-none');
+    // El drop zone queda visible → el usuario puede subir una imagen nueva encima
 }
 
 function quitarImagen() {
     _resetImagen();
+    // "BORRAR" le indica al servicio que debe poner null en BD
+    document.getElementById('ImagenUrl').value = 'BORRAR';
 }
 
 async function _subirImagen(file) {
     const st = document.getElementById('imgUploadStatus');
-    st.style.display = ''; st.textContent = 'Subiendo imagen…';
+    st.classList.remove('d-none'); st.textContent = 'Subiendo imagen…';
     st.className = 'small text-muted mb-1';
 
     const token = document.getElementById('antiForgeryToken').value;
@@ -831,11 +834,12 @@ async function _subirImagen(file) {
         const data = await resp.json();
 
         if (data.ok) {
-            document.getElementById('ImagenUrl').value = data.url;
-            document.getElementById('imgPreview').src  = data.url;
-            document.getElementById('imgPreviewContainer').style.display = '';
-            document.getElementById('imgDropZone').style.display = 'none';
-            st.textContent = 'Imagen cargada correctamente.';
+            // dataUrl = "data:image/...;base64,..." → va en el POST y el server lo guarda en BD
+            document.getElementById('ImagenUrl').value = data.dataUrl;
+            document.getElementById('imgPreview').src  = data.dataUrl;
+            document.getElementById('imgPreviewContainer').classList.remove('d-none');
+            document.getElementById('imgDropZone').classList.add('d-none');
+            st.textContent = 'Imagen cargada. Se guardará al presionar Guardar.';
             st.className   = 'small text-success mb-1';
         } else {
             st.textContent = data.msg ?? 'Error al subir la imagen.';

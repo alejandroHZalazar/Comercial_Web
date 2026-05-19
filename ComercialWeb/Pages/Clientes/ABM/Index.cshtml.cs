@@ -193,11 +193,28 @@ namespace Comercial_Web.Pages.Clientes.ABM
             return new JsonResult(new { success = true });
         }
 
+        // ── Reset de Password del cliente ─────────────────────────────────────
+        public async Task<IActionResult> OnPostResetPasswordAsync([FromForm] int id)
+        {
+            try
+            {
+                var nuevoPassword = await _clienteService.ResetPasswordAsync(id);
+                return new JsonResult(new { ok = true, password = nuevoPassword });
+            }
+            catch (Exception ex)
+            {
+                return new JsonResult(new { ok = false, msg = ex.Message });
+            }
+        }
+
         public async Task<IActionResult> OnGetClienteAsync(int id)
         {
             var cliente = await _clienteService.traerDetalleAsync(id);
             if (cliente is null) return NotFound();
-            return new JsonResult(cliente);
+            return new JsonResult(cliente, new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+            });
         }
 
         // ----------------------------------------------------------------

@@ -16,6 +16,8 @@ using Microsoft.AspNetCore.Http;
 namespace Comercial_Web.Pages.Productos.ABM
 {
     [Authorize]
+    [RequestSizeLimit(20 * 1024 * 1024)]   // 20 MB — cubre base64 de imagen de hasta ~14 MB original
+    [RequestFormLimits(MultipartBodyLengthLimit = 20 * 1024 * 1024)]
     public class IndexModel : PageModel
     {
         private readonly IParametroService _parametroService;
@@ -126,11 +128,11 @@ namespace Comercial_Web.Pages.Productos.ABM
                 ? $"<span class='badge-stock-bajo'>Stock bajo ({producto.Cantidad})</span>"
                 : $"<span class='badge-stock-ok'>En stock ({producto.Cantidad})</span>";
 
-            // Imagen
-            var imagenHtml = string.IsNullOrWhiteSpace(producto.Imagen)
+            // Imagen (servida desde BD vía handler, no desde archivo)
+            var imagenHtml = !producto.TieneImagen
                 ? ""
                 : $@"<div class='detail-section text-center'>
-                        <img src='{System.Net.WebUtility.HtmlEncode(producto.Imagen)}'
+                        <img src='/Productos/ABM?handler=Imagen&amp;id={producto.Id}'
                              alt='Imagen producto'
                              style='max-width:100%;max-height:180px;border-radius:8px;object-fit:contain;border:1px solid #e3e6f0;padding:4px;' />
                      </div>";
@@ -198,7 +200,35 @@ namespace Comercial_Web.Pages.Productos.ABM
             return Content(html, "text/html");
         }
 
-        // ── Subir imagen de producto ──────────────────────────────────────────────
+        // ── Servir imagen de un producto desde BD ─────────────────────────────
+        public async Task<IActionResult> OnGetImagenAsync(int id)
+        {
+            // Cargamos solo la columna imagen para no traer todo el producto
+            var bytes = await _productoService.ObtenerImagenAsync(id);
+            if (bytes == null || bytes.Length == 0)
+                return NotFound();
+
+            var contentType = _DetectarContentType(bytes);
+            return File(bytes, contentType);
+        }
+
+        private static string _DetectarContentType(byte[] data)
+        {
+            if (data.Length >= 2)
+            {
+                if (data[0] == 0xFF && data[1] == 0xD8) return "image/jpeg";
+                if (data[0] == 0x89 && data[1] == 0x50) return "image/png";
+                if (data[0] == 0x47 && data[1] == 0x49) return "image/gif";
+                // WEBP: "RIFF....WEBP"
+                if (data.Length >= 12 &&
+                    data[0] == 0x52 && data[1] == 0x49 &&
+                    data[8] == 0x57 && data[9] == 0x45)  return "image/webp";
+            }
+            return "image/jpeg";
+        }
+
+        // ── Subir imagen → convierte a base64 y lo devuelve al cliente ────────
+        // El base64 viaja en el hidden field del formulario y se guarda en BD al hacer POST Guardar.
         public async Task<IActionResult> OnPostSubirImagenAsync(IFormFile archivo)
         {
             if (archivo == null || archivo.Length == 0)
@@ -210,24 +240,20 @@ namespace Comercial_Web.Pages.Productos.ABM
             if (!extPermitidas.Contains(ext))
                 return new JsonResult(new { ok = false, msg = "Extensión no permitida. Use JPG, PNG, GIF o WEBP." });
 
-            // Validar tamaño (máx 2 MB)
-            if (archivo.Length > 2 * 1024 * 1024)
-                return new JsonResult(new { ok = false, msg = "El archivo supera el límite de 2 MB." });
+            // Validar tamaño (máx 5 MB)
+            if (archivo.Length > 5 * 1024 * 1024)
+                return new JsonResult(new { ok = false, msg = "El archivo supera el límite de 5 MB." });
 
-            // Directorio destino
-            var carpeta = Path.Combine(
-                Directory.GetCurrentDirectory(), "wwwroot", "images", "productos");
-            Directory.CreateDirectory(carpeta);
+            using var ms = new MemoryStream();
+            await archivo.CopyToAsync(ms);
+            var bytes = ms.ToArray();
 
-            // Nombre único para evitar colisiones
-            var nombreArchivo = $"{Guid.NewGuid():N}{ext}";
-            var rutaFisica    = Path.Combine(carpeta, nombreArchivo);
+            // Devolvemos base64 con prefijo para usar directamente como src de <img>
+            var mime   = _DetectarContentType(bytes);
+            var b64    = Convert.ToBase64String(bytes);
+            var dataUrl = $"data:{mime};base64,{b64}";
 
-            using (var stream = new FileStream(rutaFisica, FileMode.Create))
-                await archivo.CopyToAsync(stream);
-
-            var urlRelativa = $"/images/productos/{nombreArchivo}";
-            return new JsonResult(new { ok = true, url = urlRelativa });
+            return new JsonResult(new { ok = true, dataUrl });
         }
 
         public async Task<IActionResult> OnPostGuardarAsync()
@@ -273,13 +299,17 @@ namespace Comercial_Web.Pages.Productos.ABM
 
         public async Task<IActionResult> OnGetProductoAsync(int id)
         {
-            var cantDec = await _parametroService.ObtenerCantidadDecimalesProductosAsync();
+            var cantDec   = await _parametroService.ObtenerCantidadDecimalesProductosAsync();
             var cantStock = await _parametroService.ObtenerCantidadDecimalesStockAsync();
-            var producto = await _productoService.traerDetalleAsync(id, cantDec, cantStock);
+            var producto  = await _productoService.traerDetalleAsync(id, cantDec, cantStock);
             if (producto is null)
                 return NotFound();
 
-            return new JsonResult(producto);
+            // No enviamos el blob al cliente; la UI muestra la imagen vía /handler=Imagen
+            return new JsonResult(producto, new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+            });
         }
     }
 }

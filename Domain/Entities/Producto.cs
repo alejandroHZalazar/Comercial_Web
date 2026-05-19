@@ -29,5 +29,5 @@ public partial class Producto
 
     public string? DescripcionLarga { get; set; }
 
-    public string? Imagen { get; set; }
+    public byte[]? Imagen { get; set; }
 }

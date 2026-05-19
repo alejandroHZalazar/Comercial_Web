@@ -35,7 +35,13 @@ namespace Domain.DTO
         public int? FkRubro { get; set; }
         public int? FkProveedor { get; set; }
         public string? DescripcionLarga { get; set; }
+        /// <summary>
+        /// En POST: base64 de la imagen nueva (vacío = no cambiar en edición).
+        /// En GET (OnGetProductoAsync): no se usa; ver TieneImagen.
+        /// </summary>
         public string? Imagen { get; set; }
+        /// <summary>True si el producto ya tiene una imagen guardada en BD.</summary>
+        public bool TieneImagen { get; set; }
     }
 
 

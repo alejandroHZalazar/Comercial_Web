@@ -177,6 +177,9 @@ public partial class ComercialDbContext : DbContext
             entity.Property(e => e.Telefono)
                 .HasMaxLength(150)
                 .HasColumnName("telefono");
+            entity.Property(e => e.PasswordHash)
+                .HasMaxLength(256)
+                .HasColumnName("passwordHash");
         });
 
         modelBuilder.Entity<ClientesZona>(entity =>
@@ -541,6 +544,18 @@ public partial class ComercialDbContext : DbContext
                 .HasPrecision(18, 4)
                 .HasColumnName("total");
             entity.Property(e => e.Vendido).HasColumnName("vendido");
+            entity.Property(e => e.EsEcommerce)
+                .HasColumnType("int(11)")
+                .HasColumnName("esEcommerce");
+            entity.Property(e => e.DireccionEntrega)
+                .HasMaxLength(500)
+                .HasColumnName("direccionEntrega");
+            entity.Property(e => e.DireccionEntregaTexto)
+                .HasMaxLength(500)
+                .HasColumnName("direccionEntregaTexto");
+            entity.Property(e => e.CostoEnvio)
+                .HasPrecision(18, 4)
+                .HasColumnName("costoEnvio");
         });
 
         modelBuilder.Entity<PedidoDetalle>(entity =>
@@ -695,7 +710,7 @@ public partial class ComercialDbContext : DbContext
                 .HasColumnType("text")
                 .HasColumnName("descripcionLarga");
             entity.Property(e => e.Imagen)
-                .HasMaxLength(255)
+                .HasColumnType("longblob")
                 .HasColumnName("imagen");
         });
 
