@@ -216,6 +216,11 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
                     });
                     await _db.SaveChangesAsync();
                 }
+
+                // Descarga automática del PDF al directorio Descargas del usuario
+                await _DescargarPdfAsync(
+                    result.PdfUrl,
+                    $"Factura_{letra}_{ParseNumeroComprobante(result.NumeroComprobante)}_{DateTime.Now:yyyyMMdd}");
             }
             else
             {
@@ -461,6 +466,12 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
                     CreatedAt           = DateTime.Now
                 });
                 await _db.SaveChangesAsync();
+
+                // Descarga automática del PDF al directorio Descargas del usuario
+                await _DescargarPdfAsync(
+                    respuesta.comprobante_pdf_url,
+                    $"NC_{letra}_{ParseNumeroComprobante(respuesta.comprobante_nro)}_{DateTime.Now:yyyyMMdd}");
+
                 return (true, null, respuesta.comprobante_pdf_url);
             }
             else
@@ -639,6 +650,44 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
         public bool   EnviarMail    { get; set; }
         public string CodigoDetalle { get; set; } = "";
         public int    ClienteCFId   { get; set; }
+    }
+
+    // ── Descarga automática de PDF ───────────────────────────────────────────────
+    /// <summary>
+    /// Descarga el PDF del comprobante fiscal desde <paramref name="pdfUrl"/> y lo guarda
+    /// en la carpeta Descargas del usuario con el nombre <paramref name="nombreBase"/>.pdf.
+    /// Si la URL es vacía o la descarga falla, no lanza excepción ni afecta el flujo de emisión.
+    /// </summary>
+    private static async Task _DescargarPdfAsync(string? pdfUrl, string nombreBase)
+    {
+        if (string.IsNullOrWhiteSpace(pdfUrl)) return;
+        try
+        {
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+            var bytes = await http.GetByteArrayAsync(pdfUrl);
+
+            var carpeta = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "Downloads");
+            Directory.CreateDirectory(carpeta);   // no-op si ya existe
+
+            // Nombre único para evitar colisiones
+            var nombreArchivo = $"{nombreBase}.pdf";
+            var rutaCompleta  = Path.Combine(carpeta, nombreArchivo);
+            int sufijo = 1;
+            while (File.Exists(rutaCompleta))
+            {
+                nombreArchivo = $"{nombreBase}_{sufijo}.pdf";
+                rutaCompleta  = Path.Combine(carpeta, nombreArchivo);
+                sufijo++;
+            }
+
+            await File.WriteAllBytesAsync(rutaCompleta, bytes);
+        }
+        catch
+        {
+            // Descarga fallida: no interrumpe el flujo de emisión
+        }
     }
 
     // ── Consulta de venta para FE (evita dependencia circular con VentaService) ─
