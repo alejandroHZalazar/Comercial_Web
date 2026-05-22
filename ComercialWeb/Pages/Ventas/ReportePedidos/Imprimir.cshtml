@@ -33,14 +33,19 @@
     .cab-full       { grid-column: 1 / -1; }
 
     /* Tabla detalle */
-    table.det { width: 100%; border-collapse: collapse; margin-bottom: .7rem; font-size: 10.5px; }
+    table.det { width: 100%; border-collapse: collapse; margin-bottom: .7rem; font-size: 10px; }
     table.det thead tr { background: #1a3a5c; color: #fff; }
-    table.det thead th { padding: .35rem .45rem; text-align: left; font-weight: 600; white-space: nowrap; }
+    table.det thead th { padding: .3rem .4rem; text-align: left; font-weight: 600; white-space: nowrap; }
     table.det thead th.num { text-align: right; }
     table.det tbody tr:nth-child(even) { background: #f8f9fc; }
-    table.det tbody td { padding: .28rem .45rem; border-bottom: 1px solid #eee; vertical-align: top; }
+    table.det tbody td { padding: .25rem .4rem; border-bottom: 1px solid #eee; vertical-align: top; }
     table.det tbody td.num { text-align: right; white-space: nowrap; }
-    table.det tfoot td { padding: .3rem .45rem; font-size: 10px; }
+    table.det tfoot td { padding: .3rem .4rem; font-size: 9.5px; }
+    table.det col.c-cod  { width: 72px; }
+    table.det col.c-stock { width: 46px; }
+    table.det col.c-cant  { width: 46px; }
+    table.det col.c-sub   { width: 72px; }
+    table.det col.c-tot   { width: 72px; }
 
     /* Totales */
     .totales { margin-left: auto; width: 240px; border: 1px solid #e3e6f0; border-radius: 6px; overflow: hidden; font-size: 10.5px; }
@@ -156,26 +161,37 @@ else if (Model.Cabecera != null)
 
   @* ── Tabla detalle ── *@
   <table class="det">
+    <colgroup>
+      <col class="c-cod" />
+      <col class="c-cod" />
+      <col />
+      <col class="c-stock" />
+      <col class="c-cant" />
+      <col class="c-sub" />
+      <col class="c-tot" />
+    </colgroup>
     <thead>
       <tr>
+        <th>Cód. Prov.</th>
+        <th>Cód. Barras</th>
         <th>Descripcion</th>
-        <th class="num">Cantidad</th>
-        <th class="num">Precio s/IVA</th>
-        <th class="num">Desc/Rec %</th>
+        <th class="num">Stock</th>
+        <th class="num">Cant.</th>
         <th class="num">Subt. s/IVA</th>
-        <th class="num">IVA</th>
         <th class="num">Subtotal</th>
       </tr>
     </thead>
     <tbody>
       @foreach (var l in Model.Detalle)
       {
-        decimal ivaRate  = (cab.Iva ?? 0) / 100m;
-        decimal dr       = Model.GetDescRec(l);
-        decimal subSIva  = l.PrecioSinIva * (1m + dr / 100m);
-        decimal conIva   = subSIva * (1m + ivaRate);
-        decimal cant     = l.Cantidad;
+        decimal ivaRate = (cab.Iva ?? 0) / 100m;
+        decimal dr      = Model.GetDescRec(l);
+        decimal subSIva = l.PrecioSinIva * (1m + dr / 100m);
+        decimal conIva  = subSIva * (1m + ivaRate);
+        decimal cant    = l.Cantidad;
         <tr>
+          <td>@(l.CodProveedor ?? "")</td>
+          <td>@(l.CodBarras ?? "")</td>
           <td>
             @l.Descripcion
             @if (!string.IsNullOrWhiteSpace(l.Observ))
@@ -183,11 +199,9 @@ else if (Model.Cabecera != null)
               <br /><small style="color:#888;">@l.Observ</small>
             }
           </td>
+          <td class="num">@fmt(l.Stock)</td>
           <td class="num">@fmt(cant)</td>
-          <td class="num">$@fmt(l.PrecioSinIva)</td>
-          <td class="num" style="@(dr < 0 ? "color:#c0392b;" : dr > 0 ? "color:#1a7a45;" : "")">@fmt(dr)%</td>
           <td class="num">$@fmt(subSIva * cant)</td>
-          <td class="num">$@fmt((conIva - subSIva) * cant)</td>
           <td class="num" style="font-weight:600;">$@fmt(conIva * cant)</td>
         </tr>
       }
