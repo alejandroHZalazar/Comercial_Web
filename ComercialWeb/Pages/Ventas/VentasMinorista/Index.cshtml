@@ -1,0 +1,1399 @@
+@page
+@model Comercial_Web.Pages.Ventas.VentasMinorista.IndexModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewData["Title"] = "Venta Rápida";
+    var p = Model.Params;
+}
+
+<style>
+/* ── Layout general ───────────────────────────────────────────────── */
+.vt-header{background:linear-gradient(135deg,#1a3a5c 0%,#2e6da4 100%);border-radius:12px;padding:1rem 1.5rem;margin-bottom:1.1rem;color:#fff;display:flex;align-items:center;gap:.8rem;}
+.vt-header h4{margin:0;font-weight:700;font-size:1.05rem;}
+.vt-card{background:#fff;border:1px solid #e3e6f0;border-radius:10px;padding:.85rem 1.1rem;box-shadow:0 2px 8px rgba(0,0,0,.05);margin-bottom:.85rem;}
+.vt-label{font-size:.76rem;font-weight:600;color:#5a5c69;margin-bottom:.18rem;display:block;}
+.vt-input{font-size:.82rem;}
+/* ── Sección cliente ──────────────────────────────────────────────── */
+.cli-info{background:#f0f4ff;border:1px solid #b8caff;border-radius:6px;padding:.3rem .7rem;font-size:.78rem;color:#1a3a5c;font-weight:600;min-width:120px;}
+/* ── Grilla detalle ──────────────────────────────────────────────── */
+#tblDetalle{font-size:.78rem;width:100%;}
+#tblDetalle thead tr{background:#1a3a5c;color:#fff;}
+#tblDetalle thead th{padding:.38rem .45rem;white-space:nowrap;font-weight:600;}
+#tblDetalle tbody tr td{padding:.25rem .4rem;vertical-align:middle;}
+#tblDetalle tbody tr:nth-child(even){background:#f8f9fc;}
+#tblDetalle tbody tr:hover{background:#eef3ff;}
+#tblDetalle input[type=number]{width:80px;font-size:.78rem;padding:.15rem .3rem;border:1px solid #d1d3e2;border-radius:4px;text-align:right;}
+/* ── Total ───────────────────────────────────────────────────────── */
+.mn-total-panel{background:#1a3a5c;color:#fff;border-radius:10px;padding:.8rem 1.2rem;display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;}
+.mn-total-lbl{font-size:1rem;font-weight:700;opacity:.85;}
+.mn-total-val{font-size:2rem;font-weight:800;letter-spacing:-.02em;}
+/* ── Desc/Rec global inline ──────────────────────────────────────── */
+.mn-dr-bar{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;background:#fff7e6;border:1px solid #ffc107;border-radius:8px;padding:.4rem .7rem;margin-bottom:.7rem;font-size:.78rem;}
+/* ── Autocomplete ────────────────────────────────────────────────── */
+.ac-wrap{position:relative;}
+.ac-drop{display:none;position:absolute;top:100%;left:0;right:0;z-index:2000;background:#fff;border:1px solid #d1d3e2;border-radius:0 0 8px 8px;max-height:220px;overflow-y:auto;box-shadow:0 6px 18px rgba(0,0,0,.12);}
+.ac-drop.open{display:block;}
+.ac-item{padding:.3rem .6rem;font-size:.78rem;cursor:pointer;border-bottom:1px solid #f5f5f5;}
+.ac-item:hover,.ac-item.active{background:#f0f4ff;}
+.ac-item small{display:block;color:#888;font-size:.72rem;}
+/* ── Info cliente seleccionado ───────────────────────────────────── */
+.cliente-info-vt{background:#f8f9fc;border:1px solid #e3e6f0;border-radius:8px;padding:.55rem .8rem;font-size:.8rem;margin-top:.4rem;}
+.ci-row{display:flex;gap:.5rem;margin-bottom:.18rem;align-items:flex-start;}
+.ci-lbl{color:#6c757d;min-width:70px;font-size:.74rem;font-weight:600;}
+/* ── Botones acción ──────────────────────────────────────────────── */
+.btn-vender-mn{background:linear-gradient(135deg,#1cc88a,#13855c);color:#fff;border:none;border-radius:8px;padding:.65rem 2rem;font-size:1.1rem;font-weight:700;cursor:pointer;min-height:52px;transition:opacity .15s;}
+.btn-vender-mn:hover{opacity:.88;}
+/* ── Alertas ─────────────────────────────────────────────────────── */
+#alertDiv{display:none;font-size:.8rem;}
+/* ── Modales ─────────────────────────────────────────────────────── */
+.modal-header-cli{background:linear-gradient(135deg,#1a3a5c,#2e6da4);padding:.65rem 1rem;}
+.modal-section-title{font-size:.72rem;font-weight:700;text-transform:uppercase;color:#6c757d;letter-spacing:.06em;border-bottom:1px solid #e3e6f0;padding-bottom:.2rem;margin-bottom:.5rem;}
+/* ── Modal Formas de Pago ─────────────────────────────────────────── */
+#modalPagos .modal-header{background:linear-gradient(135deg,#1a3a5c,#2e6da4);color:#fff;padding:.7rem 1rem;}
+#modalPagos .modal-body{padding:.9rem 1rem;background:#f8f9fc;}
+#modalPagos .modal-footer{background:#f0f2f5;padding:.5rem .8rem;}
+.mp-planes-grid{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.8rem;}
+.mp-btn-plan{padding:.45rem .9rem;font-size:.82rem;font-weight:600;border-radius:6px;border:2px solid #2e6da4;background:#fff;color:#1a3a5c;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.mp-btn-plan:hover{background:#2e6da4;color:#fff;}
+.mp-btn-plan.mp-activo{background:#1a3a5c;color:#fff;border-color:#1a3a5c;}
+.mp-btn-cc{padding:.45rem .9rem;font-size:.82rem;font-weight:600;border-radius:6px;border:2px solid #6c757d;background:#fff;color:#6c757d;cursor:pointer;transition:all .15s;}
+.mp-btn-cc:hover,.mp-btn-cc.mp-activo{background:#6c757d;color:#fff;}
+.mp-lista{max-height:180px;overflow-y:auto;margin-top:.4rem;}
+.mp-item{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #dee2e6;border-radius:6px;padding:.35rem .7rem;margin-bottom:.3rem;font-size:.82rem;}
+.mp-item-nom{flex:1;font-weight:600;color:#1a3a5c;}
+.mp-item-imp{width:90px;text-align:right;color:#2e6da4;font-weight:700;}
+.mp-item-del{background:none;border:none;color:#e74a3b;cursor:pointer;font-size:1rem;padding:0 .2rem;line-height:1;}
+.mp-refs{display:flex;gap:.4rem;margin-top:.5rem;flex-wrap:wrap;}
+.mp-refs input{flex:1;min-width:90px;}
+.mp-saldo-bar{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #dee2e6;border-radius:6px;padding:.3rem .7rem;font-size:.82rem;margin-bottom:.6rem;}
+.mp-saldo-bar .mp-saldo-val{font-weight:700;font-size:.95rem;}
+</style>
+
+@* ══ HEADER ══════════════════════════════════════════════════════════════ *@
+<div class="vt-header">
+  <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="26" height="26">
+    <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+  </svg>
+  <h4>Venta Rápida</h4>
+</div>
+
+@* ══ ALERTA ════════════════════════════════════════════════════════════════ *@
+<div id="alertDiv" class="alert alert-danger alert-dismissible" role="alert">
+  <span id="alertMsg"></span>
+  <button type="button" class="btn-close" onclick="document.getElementById('alertDiv').style.display='none'"></button>
+</div>
+
+@* ══ CLIENTE ═══════════════════════════════════════════════════════════════ *@
+<div class="vt-card">
+  <div class="row g-2">
+    <div class="col-12">
+      <label class="vt-label">Buscar Cliente</label>
+      <div class="ac-wrap mb-2">
+        <input type="text" id="txtBuscarCliente" class="form-control form-control-sm vt-input"
+               placeholder="Buscar cliente por nombre..." autocomplete="off"
+               oninput="onClienteInput(this.value)" onkeydown="onClienteKeydown(event)" />
+        <div id="dropClientes" class="ac-drop"></div>
+      </div>
+      <div style="display:flex;gap:.4rem;margin-bottom:.5rem;">
+        <button type="button" class="btn btn-sm btn-outline-success" style="font-size:.78rem;" onclick="abrirModalCli()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="12" height="12" style="vertical-align:-.1em;margin-right:.25rem;"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.029 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664h10z"/></svg>
+          Nuevo Cliente
+        </button>
+      </div>
+      <div id="clienteInfo" style="display:none;">
+        <div class="cliente-info-vt">
+          <div class="ci-row"><span class="ci-lbl">Nombre</span><strong id="ci-nombre"></strong></div>
+          <div class="ci-row"><span class="ci-lbl">Teléfono</span><span id="ci-telefono"></span></div>
+          <div class="ci-row"><span class="ci-lbl">Dirección</span><span id="ci-direccion"></span></div>
+          <div class="ci-row"><span class="ci-lbl">Cond. IVA</span><span id="ci-condiva"></span></div>
+        </div>
+      </div>
+      <div id="clienteVacio" style="@(p.TieneConsumidorFinal == 1 ? "display:none;" : "")color:#aaa;font-size:.78rem;padding:.4rem 0;">
+        Busque o cree un cliente para comenzar.
+      </div>
+    </div>
+  </div>
+</div>
+<input type="hidden" id="hClienteId" value="@(p.TieneConsumidorFinal == 1 ? p.ClienteConsumidorFinal.ToString() : "0")" />
+
+@* ══ BÚSQUEDA POR CÓDIGO DE BARRAS ════════════════════════════════════════ *@
+<div class="vt-card">
+  <div class="row g-2 align-items-end">
+    <div class="col-md-4">
+      <label class="vt-label">Cód. Barras / Descripción</label>
+      <input type="text" id="txtBusqCB" class="form-control form-control-sm vt-input"
+             placeholder="@(p.TieneLectoraCB == 1 ? "Lector de cód. barras…" : "Código de barras o descripción…")" autocomplete="off"
+             onkeydown="onBusqCBKeydown(event)" />
+    </div>
+    <div class="col-md-4">
+      <label class="vt-label">Descripción</label>
+      <div class="ac-wrap">
+        <input type="text" id="txtBusqDesc" class="form-control form-control-sm vt-input"
+               placeholder="Buscar por descripción…" autocomplete="off"
+               oninput="buscarProductoDesc()"
+               onkeydown="onBusqDescKeydown(event)" />
+        <div class="ac-list" id="acDesc" style="position:absolute;top:100%;left:0;right:0;z-index:1200;background:#fff;border:1px solid #d1d3e2;border-radius:0 0 8px 8px;box-shadow:0 4px 12px rgba(0,0,0,.1);max-height:180px;overflow-y:auto;display:none;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+@* ══ GRILLA DETALLE ════════════════════════════════════════════════════════ *@
+<div class="vt-card" style="padding:.6rem .8rem;">
+  <div class="table-responsive">
+    <table id="tblDetalle" class="table table-bordered table-sm mb-0">
+      <thead>
+        <tr>
+          <th style="width:120px;">Cód. Barras</th>
+          <th>Descripción</th>
+          <th style="text-align:right;width:95px;">Cant.</th>
+          <th style="text-align:right;width:100px;">Precio unit.</th>
+          <th style="text-align:right;width:100px;">Precio c/desc</th>
+          <th style="text-align:right;width:100px;">Subtotal</th>
+          <th style="text-align:center;width:36px;"></th>
+        </tr>
+      </thead>
+      <tbody id="tbodyDetalle">
+        <tr id="rowVacio">
+          <td colspan="7" style="text-align:center;padding:1.2rem;color:#aaa;font-size:.8rem;">
+            Escanee o busque un producto para comenzar.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@* ══ DESC/REC GLOBAL ════════════════════════════════════════════════════════ *@
+<div class="mn-dr-bar" id="mnDrBar">
+  <span style="font-size:.75rem;font-weight:700;color:#856404;">Desc/Rec global:</span>
+  <select id="mnDrMode" class="form-select form-select-sm" style="width:110px;font-size:.76rem;">
+    <option value="desc">▼ Descuento</option>
+    <option value="rec">▲ Recargo</option>
+  </select>
+  <input type="number" id="mnDrPct" class="form-control form-control-sm" style="width:75px;font-size:.82rem;" value="0" min="0" max="100" step="0.01" />
+  <span style="font-size:.73rem;color:#856404;">%</span>
+  <button type="button" class="btn btn-sm btn-warning" style="font-size:.75rem;" onclick="mnAplicarDr()">Aplicar</button>
+  <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:.75rem;" onclick="mnLimpiarDr()">Limpiar</button>
+</div>
+
+@* ══ FORMAS DE PAGO — datos JSON para JS ════════════════════════════════ *@
+@if (p.TieneMediosPagos == 1 || p.LlevaCC == 1)
+{
+  <script id="jsPlanesPago" type="application/json">
+    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PlanesPago, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }))
+  </script>
+}
+
+@* ══ TOTAL + BOTONES ════════════════════════════════════════════════════ *@
+<div class="mn-total-panel">
+  <span class="mn-total-lbl">TOTAL</span>
+  <span class="mn-total-val" id="tot-total">$0,00</span>
+</div>
+<div style="display:flex;gap:.6rem;justify-content:flex-end;margin-bottom:1.5rem;">
+  <button type="button" onclick="vender()" class="btn-vender-mn">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="16" height="16" style="margin-right:.4rem;vertical-align:-.1em;"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg>
+    Confirmar Venta (F5)
+  </button>
+  <button type="button" onclick="limpiarFormulario()" class="btn btn-sm" style="font-size:.82rem;background:#6c757d;color:#fff;border:none;">
+    Limpiar
+  </button>
+</div>
+
+@* ══ MODAL: FORMAS DE PAGO ════════════════════════════════════════════════ *@
+<div class="modal fade" id="modalPagos" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content" style="border-radius:12px;overflow:hidden;">
+      <div class="modal-header">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="17" height="17" class="me-2"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2.5 1a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-2z"/></svg>
+        <h5 class="modal-title mb-0">Formas de Pago</h5>
+        <button type="button" class="btn-close btn-close-white ms-auto" onclick="mpCancelar()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mp-saldo-bar">
+          <span>Total: <strong id="mpTotal">$0,00</strong></span>
+          <span>Pagado: <strong id="mpPagado" style="color:#1cc88a;">$0,00</strong></span>
+          <span>Saldo: <strong id="mpSaldoVal" class="mp-saldo-val" style="color:#e74a3b;">$0,00</strong></span>
+        </div>
+        <div id="mpListaFps" class="mp-lista"></div>
+        @* ── Sección de vuelto ── *@
+        <div id="mpVueltoWrap" style="display:none;background:#fff3cd;border-radius:6px;padding:.4rem .7rem;margin-bottom:.5rem;">
+          <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
+            <span style="font-size:.82rem;font-weight:700;">Monto recibido:</span>
+            <input type="number" id="txtMontoRecibido" class="form-control form-control-sm"
+                   style="width:130px;" min="0" step="0.01" placeholder="0,00" />
+            <span style="font-size:.82rem;margin-left:.2rem;">Vuelto:
+              <strong id="lblVuelto" style="font-size:1rem;color:#1cc88a;">$0,00</strong>
+            </span>
+          </div>
+        </div>
+        <hr style="margin:.5rem 0;">
+        <div style="font-size:.78rem;font-weight:700;color:#5a5c69;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem;">Seleccionar forma de pago</div>
+        <div id="mpPlanesGrid" class="mp-planes-grid"></div>
+        <div id="mpCCRow" style="display:none;margin-bottom:.5rem;">
+          <button class="mp-btn-cc" id="mpBtnCC" onclick="mpAgregarCC()">Cuenta Corriente</button>
+        </div>
+        <div id="mpDetalleForm" style="display:none;">
+          <div style="display:flex;gap:.5rem;align-items:flex-end;flex-wrap:wrap;margin-bottom:.4rem;">
+            <div id="mpImporteWrap" style="display:none;">
+              <label class="vt-label">Importe</label>
+              <input type="number" id="mpImporte" class="form-control form-control-sm" style="width:120px;" min="0" step="0.01" placeholder="0.00" />
+            </div>
+            <div id="mpRef1Wrap" style="display:none;">
+              <label class="vt-label">Ref. 1</label>
+              <input type="text" id="mpRef1" class="form-control form-control-sm" style="width:130px;" />
+            </div>
+            <div id="mpRef2Wrap" style="display:none;">
+              <label class="vt-label">Ref. 2</label>
+              <input type="text" id="mpRef2" class="form-control form-control-sm" style="width:130px;" />
+            </div>
+            <div id="mpRef3Wrap" style="display:none;">
+              <label class="vt-label">Ref. 3</label>
+              <input type="text" id="mpRef3" class="form-control form-control-sm" style="width:130px;" />
+            </div>
+            <button class="btn btn-sm btn-primary" onclick="mpConfirmarItem()">+ Agregar</button>
+          </div>
+        </div>
+        <div style="font-size:.74rem;color:#888;margin-top:.2rem;" id="mpShortcutsHint"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="mpCancelar()">Cancelar</button>
+        <button type="button" class="btn btn-primary btn-sm" id="mpBtnConfirmar" onclick="mpConfirmarVenta()">Confirmar venta (Enter)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@* ══ MODAL: NUEVO CLIENTE ════════════════════════════════════════════════ *@
+<div class="modal fade" id="modalNuevoCli" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" style="border-radius:12px;overflow:hidden;">
+      <div class="modal-header modal-header-cli">
+        <span style="color:#fff;font-weight:700;font-size:.95rem;">Agregar Nuevo Cliente</span>
+        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="padding:1rem 1.25rem;">
+        <div id="cliAlertDiv" class="alert alert-danger" style="display:none;font-size:.8rem;"></div>
+        <p class="modal-section-title">Datos Generales</p>
+        <div class="row g-2">
+          <div class="col-md-6"><label class="vt-label">Nombre Comercial *</label><input type="text" id="cliNombreComercial" class="form-control form-control-sm" /></div>
+          <div class="col-md-6"><label class="vt-label">Razón Social</label><input type="text" id="cliRazonSocial" class="form-control form-control-sm" /></div>
+          <div class="col-md-4"><label class="vt-label">CUIL</label><input type="text" id="cliCuil" class="form-control form-control-sm" /></div>
+          <div class="col-md-8"><label class="vt-label">Dirección</label><input type="text" id="cliDireccion" class="form-control form-control-sm" /></div>
+        </div>
+        <p class="modal-section-title mt-3">Contacto</p>
+        <div class="row g-2">
+          <div class="col-md-4"><label class="vt-label">Email</label><input type="email" id="cliEmail" class="form-control form-control-sm" /></div>
+          <div class="col-md-4"><label class="vt-label">Teléfono</label><input type="text" id="cliTelefono" class="form-control form-control-sm" /></div>
+          <div class="col-md-4"><label class="vt-label">Celular</label><input type="text" id="cliCelular" class="form-control form-control-sm" /></div>
+        </div>
+        <p class="modal-section-title mt-3">Clasificación</p>
+        <div class="row g-2">
+          <div class="col-md-4">
+            <label class="vt-label">Condición IVA</label>
+            <select id="cliCondIva" class="form-select form-select-sm">
+              @foreach (var ci in Model.ListaCondIvas) { <option value="@ci.Value">@ci.Text</option> }
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="vt-label">Vendedor</label>
+            <select id="cliVendedor" class="form-select form-select-sm">
+              @foreach (var v3 in Model.ListaVendedores) { <option value="@v3.Value">@v3.Text</option> }
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="vt-label">Localidad</label>
+            <select id="cliLocalidad" class="form-select form-select-sm">
+              @foreach (var loc in Model.ListaLocalidades) { <option value="@loc.Value">@loc.Text</option> }
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="vt-label">Zona</label>
+            <select id="cliZona" class="form-select form-select-sm">
+              @foreach (var z in Model.ListaZonas) { <option value="@z.Value">@z.Text</option> }
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="background:#f8f9fc;border-top:1px solid #e3e6f0;">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-sm btn-success" onclick="guardarNuevoCliente()">Guardar Cliente</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@* ══ MODAL: PROGRESO VENTA ════════════════════════════════════════════════ *@
+<div class="modal fade" id="modalProgresoVenta" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content" style="border-radius:12px;overflow:hidden;">
+      <div style="background:linear-gradient(135deg,#1a3a5c,#2e6da4);padding:.7rem 1rem;display:flex;align-items:center;gap:.6rem;color:#fff;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="18" height="18"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/></svg>
+        <span style="font-weight:700;font-size:.9rem;">Registrando Venta</span>
+      </div>
+      <div class="modal-body" style="padding:1.2rem 1.3rem;">
+        <div id="progVentaMsg" style="font-size:.82rem;font-weight:600;color:#1a3a5c;margin-bottom:.7rem;min-height:1.2em;">Iniciando...</div>
+        <div class="progress" style="height:10px;border-radius:6px;">
+          <div id="progVentaBar" class="progress-bar progress-bar-striped progress-bar-animated"
+               role="progressbar" style="width:0%;background:linear-gradient(90deg,#1cc88a,#2e6da4);border-radius:6px;"
+               aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+        <div id="progVentaDetalle" style="font-size:.74rem;color:#6c757d;margin-top:.5rem;min-height:1em;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+@* ══ MODAL: CONFIRMAR PROMOCIONES DETECTADAS ════════════════════════════════ *@
+<div class="modal fade" id="modalConfirmarPromo" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 shadow" style="border-radius:.65rem;overflow:hidden;">
+      <div class="modal-header py-2" style="background:linear-gradient(135deg,#1a3a5c,#2e6da4);color:#fff;">
+        <h6 class="modal-title mb-0" style="font-weight:700;font-size:.9rem;">
+          🏷️ Promociones detectadas
+        </h6>
+        <button type="button" class="btn-close btn-close-white btn-sm ms-auto" onclick="volverAgregarPromo()" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body p-3" id="cuerpoModalPromo" style="font-size:.84rem;"></div>
+      <div class="modal-footer py-2" style="background:#f8fbff;border-top:1px solid #d5dce6;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="volverAgregarPromo()">&#8592; Volver a agregar producto</button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="confirmarYVender()">&#10004; Confirmar y vender</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+(function(){
+'use strict';
+
+// ── Estado global ──────────────────────────────────────────────────────────
+var _rows          = [];
+var _clienteId     = @(p.TieneConsumidorFinal == 1 ? p.ClienteConsumidorFinal : 0);
+var _drGlobal      = 0;           // desc/rec global (negativo=desc, positivo=rec)
+
+// ── Constantes del modelo ──────────────────────────────────────────────────
+var TIENE_CB       = @p.TieneLectoraCB;
+var TIENE_MEDPAG   = @p.TieneMediosPagos;
+var IMPUTA_VENTA   = @p.ImputaEnVenta;
+var LLEVA_CC       = @p.LlevaCC;
+var ID_PLAN_EFEC   = @p.IdPlanEfectivo;
+var DEC            = @p.Decimales;
+var DEC_CANT       = @p.DecimalesCant;
+var TIENE_PRODUCTOS_BALANZA = @p.TieneProductosBalanza;
+var PREFIJO_BALANZA         = '@Html.Raw(p.PrefijoBalanza.Replace("'", "\\'"))';
+var POSICION_PRODUCTO       = '@Html.Raw(p.PosicionProducto.Replace("'", "\\'"))';
+var POSICION_PRECIO         = '@Html.Raw(p.PosicionPrecio.Replace("'", "\\'"))';
+var DIVISOR_PRECIO          = @(decimal.TryParse(p.DivisorPrecio, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var dpv2) && dpv2 > 0 ? dpv2.ToString(System.Globalization.CultureInfo.InvariantCulture) : "1");
+var VENDEDOR_ID    = @Model.VendedorAdminId;
+var HACE_NOTA_VENTA_TK = @p.HaceNotaVentaTK;
+
+// ── Formateadores ──────────────────────────────────────────────────────────
+function fmt(n){ return new Intl.NumberFormat('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n??0); }
+function fmtN(n,d){ return new Intl.NumberFormat('es-AR',{minimumFractionDigits:d,maximumFractionDigits:d}).format(n??0); }
+function fmtInp(n,d){ return (+(n||0)).toFixed(d); }
+function escHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── Cliente ────────────────────────────────────────────────────────────────
+var _cliTimer = null;
+var _cliSelIdx = -1;
+var _cliResults = [];
+
+window.onClienteInput = function(val){
+  clearTimeout(_cliTimer);
+  _cliSelIdx = -1;
+  if (val.length < 2){ cerrarDropCli(); return; }
+  _cliTimer = setTimeout(function(){ fetchClientes(val); }, 300);
+};
+
+window.onClienteKeydown = function(e){
+  var drop  = document.getElementById('dropClientes');
+  var items = drop.querySelectorAll('.ac-item');
+  if (e.key === 'ArrowDown'){ e.preventDefault(); _cliSelIdx = Math.min(_cliSelIdx+1, items.length-1); highlightCli(items); }
+  else if (e.key === 'ArrowUp'){ e.preventDefault(); _cliSelIdx = Math.max(_cliSelIdx-1, 0); highlightCli(items); }
+  else if (e.key === 'Enter'){ e.preventDefault(); if (_cliSelIdx >= 0 && _cliResults[_cliSelIdx]) seleccionarCliente(_cliResults[_cliSelIdx]); }
+  else if (e.key === 'Escape') cerrarDropCli();
+};
+
+function highlightCli(items){
+  items.forEach(function(it,i){ it.classList.toggle('active', i === _cliSelIdx); });
+  if (items[_cliSelIdx]) items[_cliSelIdx].scrollIntoView({block:'nearest'});
+}
+
+async function fetchClientes(q){
+  var resp = await fetch('?handler=BuscarClientes&q=' + encodeURIComponent(q));
+  _cliResults = await resp.json();
+  var drop = document.getElementById('dropClientes');
+  if (!_cliResults.length){ cerrarDropCli(); return; }
+  drop.innerHTML = _cliResults.map(function(c,i){
+    return '<div class="ac-item" data-idx="' + i + '">'
+      + '<strong>' + escHtml(c.nombreComercial||'') + '</strong>'
+      + '<small>' + escHtml(c.direccionFull||'') + '</small>'
+      + '</div>';
+  }).join('');
+  drop.querySelectorAll('.ac-item').forEach(function(el){
+    el.addEventListener('click', function(){ seleccionarCliente(_cliResults[parseInt(el.dataset.idx)]); });
+  });
+  drop.classList.add('open');
+}
+
+window.seleccionarCliente = function(c){
+  if (typeof c === 'string') c = JSON.parse(c);
+  _clienteId = c.clienteId;
+  document.getElementById('hClienteId').value = c.clienteId;
+  document.getElementById('txtBuscarCliente').value = '';
+  cerrarDropCli();
+  document.getElementById('ci-nombre').textContent    = c.nombreComercial || '';
+  document.getElementById('ci-telefono').textContent  = c.telefono        || '--';
+  document.getElementById('ci-direccion').textContent = c.direccionFull   || '--';
+  document.getElementById('ci-condiva').textContent   = c.condIvaDescripcion || c.condIvaAbrev || '';
+  document.getElementById('clienteInfo').style.display  = 'block';
+  document.getElementById('clienteVacio').style.display = 'none';
+};
+
+function cerrarDropCli(){
+  var drop = document.getElementById('dropClientes');
+  drop.classList.remove('open');
+  drop.innerHTML = '';
+}
+
+async function cargarClientePorId(id){
+  var resp = await fetch('?handler=ClienteData&id=' + id);
+  var r    = await resp.json();
+  if (!r.ok) return;
+  var d = r.data;
+  _clienteId = d.id;
+  document.getElementById('hClienteId').value = d.id;
+  document.getElementById('ci-nombre').textContent    = d.nombreComercial || '';
+  document.getElementById('ci-telefono').textContent  = d.telefono        || '--';
+  document.getElementById('ci-direccion').textContent = d.direccionFull   || '--';
+  document.getElementById('ci-condiva').textContent   = d.condIvaDescripcion || d.condIvaAbrev || '';
+  document.getElementById('clienteInfo').style.display  = 'block';
+  document.getElementById('clienteVacio').style.display = 'none';
+}
+
+// ── Nuevo Cliente ──────────────────────────────────────────────────────────
+window.abrirModalCli = function(){
+  document.querySelectorAll('#modalNuevoCli input, #modalNuevoCli select').forEach(el=>{
+    if(el.tagName==='INPUT') el.value='';
+  });
+  document.getElementById('cliAlertDiv').style.display='none';
+  new bootstrap.Modal(document.getElementById('modalNuevoCli')).show();
+};
+
+window.guardarNuevoCliente = async function(){
+  var nom = document.getElementById('cliNombreComercial').value.trim();
+  if (!nom){ showCliError('El nombre comercial es obligatorio.'); return; }
+  var dto = {
+    nombreComercial: nom,
+    razonSocial: document.getElementById('cliRazonSocial').value.trim(),
+    cuil: document.getElementById('cliCuil').value.trim(),
+    direccion: document.getElementById('cliDireccion').value.trim(),
+    email: document.getElementById('cliEmail').value.trim(),
+    telefono: document.getElementById('cliTelefono').value.trim(),
+    celular: document.getElementById('cliCelular').value.trim(),
+    fkCondIva: parseInt(document.getElementById('cliCondIva').value)||0,
+    fkVendedor: parseInt(document.getElementById('cliVendedor').value)||0,
+    fkLocalidad: parseInt(document.getElementById('cliLocalidad').value)||0,
+    fkZona: parseInt(document.getElementById('cliZona').value)||0
+  };
+  try{
+    var resp = await fetch('?handler=CrearClienteRapido', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(dto) });
+    var ct = resp.headers.get('Content-Type')||'';
+    if (!ct.includes('json')){ showCliError('Error del servidor: '+(await resp.text()).substring(0,300)); return; }
+    var r = await resp.json();
+    if (!r.ok){ showCliError(r.msg||'Error al guardar.'); return; }
+    bootstrap.Modal.getInstance(document.getElementById('modalNuevoCli'))?.hide();
+    seleccionarCliente({ clienteId: r.clienteId, nombreComercial: r.nombreComercial, telefono: r.telefono||'', direccionFull: '', condIvaAbrev: '' });
+  } catch(ex){ showCliError('Error: '+ex.message); }
+};
+function showCliError(msg){ var el=document.getElementById('cliAlertDiv'); el.textContent=msg; el.style.display=''; }
+
+// ── Búsqueda de productos ──────────────────────────────────────────────────
+async function _buscarProducto(q, tipo){
+  if (!q) return [];
+  var url = '?handler=BuscarProductos&q='+encodeURIComponent(q)+'&tipo='+tipo+'&proveedores=';
+  try {
+    return await (await fetch(url)).json();
+  } catch (ex){
+    return [];
+  }
+}
+
+function _agregarOSumar(prod, cantidad){
+  var existente = _rows.find(r=>r.fkProducto===prod.productoId);
+  if (existente){
+    existente.cantidad = (+existente.cantidad||0) + (+cantidad||0);
+    recalcularFila(existente);
+  } else {
+    var row = {
+      fkProducto  : prod.productoId,
+      codBarras   : prod.codBarras   || '',
+      codProveedor: prod.codProveedor|| '',
+      descripcion : prod.descripcion || '',
+      precioSinIva: prod.precioSinIva|| 0,
+      descRec     : _drGlobal,
+      cantidad    : +cantidad || 0,
+      stock       : prod.stock       || 0,
+      fraccionado : prod.fraccionado || false,
+      costo       : prod.costo       || 0,
+      dolarizado  : prod.dolarizado  || false,
+      sel         : false
+    };
+    recalcularFila(row);
+    _rows.push(row);
+  }
+  renderGrilla();
+}
+
+// ── Balanza: helpers ────────────────────────────────────────────────────────
+function esCodigoBalanza(codigo, prefijo){
+  if (!codigo || !prefijo) return false;
+  return codigo.length === 13 && codigo.startsWith(prefijo);
+}
+
+function extraerPorPosicion(codigo, posicion){
+  if (!posicion) return '';
+  var partes = posicion.split(',');
+  if (partes.length < 2) return '';
+  var ini = parseInt(partes[0].trim(), 10) - 1;
+  var fin = parseInt(partes[1].trim(), 10);
+  if (isNaN(ini) || isNaN(fin) || ini < 0 || fin <= ini) return '';
+  return codigo.substring(ini, fin);
+}
+
+// ── Cód. Barras ────────────────────────────────────────────────────────────
+window.onBusqCBKeydown = async function(e){
+  if (e.key === 'Escape'){ e.target.value=''; return; }
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  var inp = document.getElementById('txtBusqCB');
+  var raw = inp.value.trim();
+  if (!raw) return;
+
+  // ── Balanza: prioridad máxima ────────────────────────────────────────────
+  if (TIENE_CB === 1 && TIENE_PRODUCTOS_BALANZA === 1 && esCodigoBalanza(raw, PREFIJO_BALANZA)){
+    if (!PREFIJO_BALANZA || !POSICION_PRODUCTO || !POSICION_PRECIO || DIVISOR_PRECIO <= 0){
+      showAlert('Para operar con productos de balanza debe parametrizar: Prefijo, Posición de Producto, Posición de Importe y Divisor de Importe.');
+      return;
+    }
+    var codProdBal = extraerPorPosicion(raw, POSICION_PRODUCTO);
+    if (!codProdBal){ showAlert('No se pudo extraer el código de producto del código de balanza.'); return; }
+
+    var listaBal = await _buscarProducto(codProdBal.trim(), 'codBarras');
+    if (!listaBal.length){ showAlert('Producto de balanza no encontrado: ' + codProdBal.trim()); inp.select(); return; }
+    var prodBal = listaBal[0];
+
+    var precioStrBal  = extraerPorPosicion(raw, POSICION_PRECIO);
+    var precioBalanza = precioStrBal ? parseFloat(precioStrBal) / DIVISOR_PRECIO : 0;
+
+    var cantBal;
+    if (precioBalanza > 0){
+      var precioConIvaBal = prodBal.precioSinIva || 0;   // IVA=0 en minorista
+      cantBal = precioConIvaBal > 0 ? precioBalanza / precioConIvaBal : 1;
+    } else {
+      cantBal = 1;
+    }
+
+    _agregarOSumar(prodBal, cantBal);
+    inp.value = '';
+    inp.focus();
+    return;
+  }
+
+  // ── Soporte "<cantidad|importe>*<codigo>" ────────────────────────────────
+  var q = raw;
+  var cantPrefijo = null;
+  var idxAst = raw.indexOf('*');
+  if (idxAst >= 0){
+    var pref  = raw.substring(0, idxAst).trim().replace(',', '.');
+    var resto = raw.substring(idxAst + 1).trim();
+    if (!resto){ showAlert('Ingrese un código de barras después del asterisco.'); inp.select(); return; }
+    var n = parseFloat(pref);
+    cantPrefijo = (isFinite(n) && n > 0) ? n : 1;
+    q = resto;
+  }
+
+  var lista = await _buscarProducto(q, 'codBarras');
+  if (!lista.length){ showAlert('Producto no encontrado por código de barras.'); inp.select(); return; }
+  var prod = lista[0];
+
+  if (cantPrefijo !== null){
+    var cantEfectiva;
+    if (prod.fraccionado){
+      var precioConIvaFrac = prod.precioSinIva || 0;  // IVA=0
+      cantEfectiva = precioConIvaFrac > 0 ? cantPrefijo / precioConIvaFrac : 1;
+    } else {
+      cantEfectiva = cantPrefijo;
+    }
+    _agregarOSumar(prod, cantEfectiva);
+  } else {
+    // En modo kiosco siempre sumamos 1 (sin importar TIENE_CB)
+    _agregarOSumar(prod, 1);
+  }
+  inp.value = '';
+  inp.focus();
+};
+
+// ── Descripción (autocomplete) ─────────────────────────────────────────────
+var _descTimer   = null;
+var _descResults = [];
+var _descSelIdx  = -1;
+
+window.buscarProductoDesc = function(){
+  clearTimeout(_descTimer);
+  var q = document.getElementById('txtBusqDesc').value.trim();
+  var ac = document.getElementById('acDesc');
+  if (q.length < 2){
+    ac.style.display='none'; ac.innerHTML='';
+    _descResults=[]; _descSelIdx=-1;
+    return;
+  }
+  _descTimer = setTimeout(async()=>{
+    var lista = await _buscarProducto(q, 'descripcion');
+    _descResults = lista;
+    _descSelIdx  = -1;
+    ac.innerHTML = '';
+    if (!lista.length){ ac.style.display='none'; return; }
+    lista.forEach((prod, idx)=>{
+      var d = document.createElement('div');
+      d.className='ac-item';
+      d.innerHTML =
+        '<strong>'+escHtml(prod.descripcion||'')+'</strong>'+
+        '<small>'+
+          'Cód.Barras: '+escHtml(prod.codBarras||'-')+
+          ' | P.Unit: $'+fmt(prod.precioSinIva)+
+        '</small>';
+      d.onclick    = ()=>{ _descSelIdx=idx; _seleccionarProdDesc(); };
+      ac.appendChild(d);
+    });
+    ac.style.display='block';
+  }, 280);
+};
+
+function _seleccionarProdDesc(){
+  if (_descSelIdx < 0 || _descSelIdx >= _descResults.length) return;
+  var prod = _descResults[_descSelIdx];
+  document.getElementById('txtBusqDesc').value = '';
+  var ac = document.getElementById('acDesc');
+  ac.style.display='none'; ac.innerHTML='';
+  _descResults = []; _descSelIdx = -1;
+  _agregarOSumar(prod, 1);
+}
+
+window.onBusqDescKeydown = function(e){
+  var ac = document.getElementById('acDesc');
+  var items = ac.querySelectorAll('.ac-item');
+  if (e.key === 'ArrowDown'){
+    if (!items.length) return;
+    e.preventDefault();
+    _descSelIdx = Math.min(_descSelIdx+1, items.length-1);
+    items.forEach(it=>it.classList.remove('active'));
+    items[_descSelIdx].classList.add('active');
+    items[_descSelIdx].scrollIntoView({block:'nearest'});
+  } else if (e.key === 'ArrowUp'){
+    if (!items.length) return;
+    e.preventDefault();
+    _descSelIdx = Math.max(_descSelIdx-1, 0);
+    items.forEach(it=>it.classList.remove('active'));
+    items[_descSelIdx].classList.add('active');
+    items[_descSelIdx].scrollIntoView({block:'nearest'});
+  } else if (e.key === 'Enter'){
+    e.preventDefault();
+    if (_descSelIdx >= 0){ _seleccionarProdDesc(); return; }
+    if (_descResults.length === 1){ _descSelIdx = 0; _seleccionarProdDesc(); return; }
+  } else if (e.key === 'Escape'){
+    ac.style.display='none'; ac.innerHTML='';
+    _descResults=[]; _descSelIdx=-1;
+  }
+};
+
+// ── Recalcular fila (IVA=0 siempre) ───────────────────────────────────────
+function recalcularFila(row){
+  var dr = row.descRec || 0;
+  row.subtotalSIva = row.precioSinIva * (1 + dr / 100);
+  row.precioConIva = row.subtotalSIva;   // IVA = 0
+  row.subtotal     = row.precioConIva * row.cantidad;
+}
+
+// ── Render grilla ─────────────────────────────────────────────────────────
+function renderGrilla(){
+  var tbody = document.getElementById('tbodyDetalle');
+  var vacio = document.getElementById('rowVacio');
+  tbody.querySelectorAll('tr.data-row').forEach(r=>r.remove());
+
+  if (!_rows.length){ vacio.style.display=''; recalcularTotales(); return; }
+  vacio.style.display='none';
+
+  _rows.forEach((row, idx)=>{
+    var tr = document.createElement('tr');
+    tr.className='data-row';
+    tr.innerHTML =
+      '<td style="font-size:.75rem;">'+escHtml(row.codBarras||'')+'</td>'+
+      '<td>'+escHtml(row.descripcion||'')+'</td>'+
+      '<td style="text-align:right;">'+
+        '<input type="number" class="inp-cant" style="width:80px;font-size:.76rem;text-align:right;" value="'+fmtInp(row.cantidad,DEC_CANT)+'" step="any" onchange="onChangeCant('+idx+',this.value)" onkeydown="onCantKeydown(event,'+idx+')" />'+
+      '</td>'+
+      '<td style="text-align:right;">$'+fmt(row.precioSinIva)+'</td>'+
+      '<td style="text-align:right;'+(row.descRec<0?'color:#c0392b;':row.descRec>0?'color:#1a7a45;':'')+'">$'+fmt(row.precioConIva)+'</td>'+
+      '<td style="text-align:right;font-weight:600;">$'+fmt(row.subtotal)+'</td>'+
+      '<td style="text-align:center;">'+
+        '<button type="button" onclick="eliminarFila('+idx+')" style="background:none;border:none;color:#e74a3b;font-size:.9rem;cursor:pointer;padding:0 .2rem;" title="Eliminar">✕</button>'+
+      '</td>';
+    tbody.appendChild(tr);
+  });
+  recalcularTotales();
+}
+
+// ── Eventos de fila ────────────────────────────────────────────────────────
+window.onChangeCant = function(idx,val){
+  _rows[idx].cantidad = parseFloat(val)||0;
+  recalcularFila(_rows[idx]);
+  renderGrilla();
+};
+window.onCantKeydown = function(e, idx){
+  if (e.key!=='Enter') return;
+  e.preventDefault();
+  setTimeout(()=>{ var el=document.getElementById('txtBusqCB'); if(el) el.focus(); }, 30);
+};
+window.eliminarFila = function(idx){ _rows.splice(idx,1); renderGrilla(); };
+
+// ── Desc/Rec global ────────────────────────────────────────────────────────
+window.mnAplicarDr = function(){
+  var pct  = parseFloat(document.getElementById('mnDrPct').value)||0;
+  var mode = document.getElementById('mnDrMode').value;
+  _drGlobal = mode === 'desc' ? -Math.abs(pct) : Math.abs(pct);
+  _rows.forEach(r=>{ r.descRec = _drGlobal; recalcularFila(r); });
+  renderGrilla();
+};
+window.mnLimpiarDr = function(){
+  _drGlobal = 0;
+  document.getElementById('mnDrPct').value = '0';
+  _rows.forEach(r=>{ r.descRec = 0; recalcularFila(r); });
+  renderGrilla();
+};
+
+// ── Totales ────────────────────────────────────────────────────────────────
+function recalcularTotales(){
+  var total = _rows.reduce(function(a,r){ return a + (r.subtotal||0); }, 0);
+  document.getElementById('tot-total').textContent = '$' + fmt(total);
+  actualizarResumenPago(total);
+}
+
+// ── Formas de pago — Modal ─────────────────────────────────────────────────
+var _planesPago = (TIENE_MEDPAG===1||LLEVA_CC===1)
+  ? JSON.parse(document.getElementById('jsPlanesPago')?.textContent || '[]')
+  : [];
+var _formasPago = [];
+var _mpPlanActual = null;
+
+function _mpCalcTotal(){
+  return _rows.reduce(function(a,r){ return a + (r.subtotal||0); }, 0);
+}
+
+function _mpCalcSaldo(){
+  var total  = _mpCalcTotal();
+  var pagado = _formasPago.reduce(function(a,fp){ return a+fp.importe; }, 0);
+  return Math.max(0, total - pagado);
+}
+
+function _mpActualizarBarra(){
+  var total  = _mpCalcTotal();
+  var pagado = _formasPago.reduce(function(a,fp){ return a+fp.importe; }, 0);
+  var saldo  = total - pagado;
+  document.getElementById('mpTotal').textContent   = '$'+fmt(total);
+  document.getElementById('mpPagado').textContent  = '$'+fmt(pagado);
+  var sEl = document.getElementById('mpSaldoVal');
+  sEl.textContent   = '$'+fmt(Math.abs(saldo));
+  sEl.style.color   = saldo<=0.005 ? '#1cc88a' : '#e74a3b';
+  // Recalcular vuelto si hay monto recibido
+  _mnActualizarVuelto();
+}
+
+function _mpRenderLista(){
+  var el = document.getElementById('mpListaFps');
+  if (!_formasPago.length){ el.innerHTML=''; return; }
+  el.innerHTML = _formasPago.map(function(fp,i){
+    return '<div class="mp-item">'
+      +'<span class="mp-item-nom">'+escHtml(fp.medioNombre)+' — '+escHtml(fp.planNombre)+'</span>'
+      +(IMPUTA_VENTA===1?'<span class="mp-item-imp">$'+fmt(fp.importe)+'</span>':'')
+      +'<button class="mp-item-del" onclick="mpEliminarFp('+i+')" title="Quitar">×</button>'
+      +'</div>';
+  }).join('');
+}
+
+function _mpRenderBotones(){
+  var grid = document.getElementById('mpPlanesGrid');
+  grid.innerHTML = '';
+  var idx = 0;
+  _planesPago.forEach(function(pl){
+    var btn = document.createElement('button');
+    btn.className = 'mp-btn-plan'+((_mpPlanActual&&_mpPlanActual.planId===pl.planId)?' mp-activo':'');
+    var numKey = idx+1;
+    btn.textContent = pl.planNombre + (numKey<=9?' ('+numKey+')':'');
+    btn.dataset.planId = pl.planId;
+    btn.onclick = (function(p){ return function(){ _mpSeleccionarPlan(p); }; })(pl);
+    grid.appendChild(btn);
+    idx++;
+  });
+  var sh = document.getElementById('mpShortcutsHint');
+  if (_planesPago.length>0){
+    var hints = _planesPago.slice(0,9).map(function(pl,i){ return (i+1)+': '+pl.planNombre; });
+    sh.textContent = 'Teclas: '+hints.join(' | ')+(LLEVA_CC===1?' | C: Cta. Cte.':'')+' | Enter: Confirmar | Esc: Cancelar';
+  }
+}
+
+function _mpSeleccionarPlan(pl){
+  _mpPlanActual = pl;
+  document.querySelectorAll('.mp-btn-plan').forEach(function(b){
+    b.classList.toggle('mp-activo', parseInt(b.dataset.planId)===pl.planId);
+  });
+  document.querySelectorAll('.mp-btn-cc').forEach(function(b){ b.classList.remove('mp-activo'); });
+  var df = document.getElementById('mpDetalleForm');
+  df.style.display = '';
+  var iw = document.getElementById('mpImporteWrap');
+  iw.style.display = IMPUTA_VENTA===1 ? '' : 'none';
+  if (IMPUTA_VENTA===1){
+    var impEl = document.getElementById('mpImporte');
+    var saldo = _mpCalcSaldo();
+    impEl.value = saldo>0.005 ? saldo.toFixed(2) : '';
+    impEl.focus();
+    impEl.select();
+  }
+  var r1=document.getElementById('mpRef1Wrap'),r2=document.getElementById('mpRef2Wrap'),r3=document.getElementById('mpRef3Wrap');
+  r1.style.display = r2.style.display = r3.style.display = pl.conDatos ? '' : 'none';
+  document.getElementById('mpRef1').value='';
+  document.getElementById('mpRef2').value='';
+  document.getElementById('mpRef3').value='';
+}
+
+window.mpConfirmarItem = function(){
+  if (!_mpPlanActual){ return; }
+  var importe = IMPUTA_VENTA===1 ? (parseFloat(document.getElementById('mpImporte').value)||0) : 0;
+  var ref1 = document.getElementById('mpRef1').value;
+  var ref2 = document.getElementById('mpRef2').value;
+  var ref3 = document.getElementById('mpRef3').value;
+  if (IMPUTA_VENTA===1 && importe<=0){ document.getElementById('mpImporte').focus(); return; }
+  _formasPago.push({
+    medioId: _mpPlanActual.medioId,
+    planId : _mpPlanActual.planId,
+    medioNombre: _mpPlanActual.medioNombre,
+    planNombre : _mpPlanActual.planNombre,
+    importe: importe,
+    ref1: ref1, ref2: ref2, ref3: ref3
+  });
+  _mpPlanActual = null;
+  document.getElementById('mpDetalleForm').style.display='none';
+  document.getElementById('modalPagos').focus();
+  _mpRenderLista();
+  _mpActualizarBarra();
+  _mpRenderBotones();
+};
+
+window.mpEliminarFp = function(idx){
+  _formasPago.splice(idx,1);
+  _mpRenderLista();
+  _mpActualizarBarra();
+};
+
+window.mpAgregarCC = function(){
+  var pl = {medioId:0, planId:0, medioNombre:'Cuenta Corriente', planNombre:'CC', conDatos:false};
+  document.querySelectorAll('.mp-btn-cc').forEach(function(b){ b.classList.add('mp-activo'); });
+  document.querySelectorAll('.mp-btn-plan').forEach(function(b){ b.classList.remove('mp-activo'); });
+  _mpPlanActual = pl;
+  var df = document.getElementById('mpDetalleForm');
+  df.style.display='';
+  var iw=document.getElementById('mpImporteWrap');
+  iw.style.display=IMPUTA_VENTA===1?'':'none';
+  if (IMPUTA_VENTA===1){
+    var impEl=document.getElementById('mpImporte');
+    var saldo=_mpCalcSaldo();
+    impEl.value=saldo>0.005?saldo.toFixed(2):'';
+    impEl.focus();
+    impEl.select();
+  }
+  document.getElementById('mpRef1Wrap').style.display='none';
+  document.getElementById('mpRef2Wrap').style.display='none';
+  document.getElementById('mpRef3Wrap').style.display='none';
+};
+
+window.mpCancelar = function(){
+  _formasPago=[];
+  _mpPlanActual=null;
+  bootstrap.Modal.getInstance(document.getElementById('modalPagos'))?.hide();
+};
+
+window.mpConfirmarVenta = function(){
+  if (IMPUTA_VENTA===1){
+    if (!_formasPago.length){ showAlert('Agregue al menos una forma de pago.'); return; }
+    var saldo=_mpCalcSaldo();
+    if (saldo>0.02){ showAlert('Saldo pendiente: $'+fmt(saldo)+'. Complete el pago antes de confirmar.'); return; }
+  } else {
+    if (!_formasPago.length){ showAlert('Seleccione una forma de pago.'); return; }
+  }
+  bootstrap.Modal.getInstance(document.getElementById('modalPagos'))?.hide();
+  if (IMPUTA_VENTA!==1 && _formasPago.length>0){
+    var total=_mpCalcTotal();
+    var share=total/_formasPago.length;
+    _formasPago.forEach(function(fp){ fp.importe=share; });
+  }
+  grabarVenta();
+};
+
+function _mpAbrirModal(){
+  _formasPago=[];
+  _mpPlanActual=null;
+  _mpRenderLista();
+  _mpActualizarBarra();
+  _mpRenderBotones();
+  document.getElementById('mpCCRow').style.display=LLEVA_CC===1?'':'none';
+  document.getElementById('mpDetalleForm').style.display='none';
+  // Mostrar sección de vuelto
+  document.getElementById('mpVueltoWrap').style.display='';
+  document.getElementById('txtMontoRecibido').value='';
+  document.getElementById('lblVuelto').textContent='$0,00';
+  new bootstrap.Modal(document.getElementById('modalPagos')).show();
+  if (_planesPago.length===1){ _mpSeleccionarPlan(_planesPago[0]); }
+}
+
+// ── Cálculo de vuelto ──────────────────────────────────────────────────────
+function _mnActualizarVuelto(){
+  var el = document.getElementById('txtMontoRecibido');
+  if (!el || document.getElementById('mpVueltoWrap').style.display === 'none') return;
+  var recibido = parseFloat(el.value.replace(',','.')) || 0;
+  var total    = _mpCalcTotal();
+  var vuelto   = recibido - total;
+  var lblVuelto = document.getElementById('lblVuelto');
+  lblVuelto.textContent = '$' + fmt(Math.max(0, vuelto));
+  lblVuelto.style.color = vuelto >= 0 ? '#1cc88a' : '#e74a3b';
+}
+
+// Listener del campo vuelto (se adjunta una vez)
+document.getElementById('txtMontoRecibido').addEventListener('input', function(){
+  _mnActualizarVuelto();
+});
+
+// Keyboard shortcuts dentro del modal pagos
+document.getElementById('modalPagos').addEventListener('keydown', function(e){
+  if (!document.getElementById('modalPagos').classList.contains('show')) return;
+
+  var activeEl = document.activeElement;
+  var enInput  = activeEl &&
+                 (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') &&
+                 activeEl.offsetParent !== null;
+  if (enInput){
+    if (e.key === 'Enter'){  e.preventDefault(); mpConfirmarItem(); }
+    if (e.key === 'Escape'){ e.preventDefault(); activeEl.blur(); document.getElementById('modalPagos').focus(); }
+    return;
+  }
+
+  var num = parseInt(e.key);
+  if (num >= 1 && num <= 9 && num <= _planesPago.length){
+    e.preventDefault();
+    _mpSeleccionarPlan(_planesPago[num-1]);
+  }
+  if ((e.key === 'c' || e.key === 'C') && LLEVA_CC===1){ e.preventDefault(); mpAgregarCC(); }
+  if (e.key === 'Enter') { e.preventDefault(); mpConfirmarVenta(); }
+  if (e.key === 'Escape'){ e.preventDefault(); mpCancelar(); }
+});
+
+function actualizarResumenPago(){
+  // Barra de saldo está dentro del modal
+}
+
+// ── F5 ──────────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', function(e){
+  if (e.key==='F5'){ e.preventDefault(); vender(); }
+});
+
+// ── Validar y vender ───────────────────────────────────────────────────────
+window.vender = async function(){
+  if (!formularioValido()) return;
+
+  // ── Verificar promociones ──────────────────────────────────────────────
+  var promoIntercept = await _verificarPromociones();
+  if (promoIntercept) return;
+  // ──────────────────────────────────────────────────────────────────────
+
+  // ── Modal de formas de pago ────────────────────────────────────────────
+  if (TIENE_MEDPAG===1 || LLEVA_CC===1){
+    _mpAbrirModal();
+    return;
+  }
+  // ──────────────────────────────────────────────────────────────────────
+
+  await grabarVenta();
+};
+
+function formularioValido(){
+  if (_clienteId <= 0){ showAlert('Seleccione un cliente.'); return false; }
+  if (!_rows.length)  { showAlert('Agregue al menos un producto.'); return false; }
+  return true;
+}
+
+async function grabarVenta(){
+  var sub   = _rows.reduce((a,r)=>a+(r.subtotalSIva||0)*r.cantidad, 0);
+  var total = sub;   // IVA=0, impuesto=0
+  var costo = _rows.reduce((a,r)=>a+(r.costo*r.cantidad), 0);
+
+  var detalle = _rows.map(r=>({
+    fkProducto    : r.fkProducto,
+    precioSinIva  : r.precioSinIva,
+    precioConIva  : r.precioConIva,
+    cantidad      : r.cantidad,
+    costo         : r.costo,
+    subtotal      : r.subtotal,
+    fraccionado   : r.fraccionado||false,
+    descRec       : r.descRec||0,
+    subtotalSinIva: r.subtotalSIva||0,
+    fkPedido      : 0
+  }));
+
+  var fps = (TIENE_MEDPAG===1||LLEVA_CC===1) ? (_formasPago||[]) : [];
+  var importeCobro = fps.reduce((a,fp)=>a+fp.importe, 0);
+
+  var formasPago = fps.map ? fps.map(fp=>({
+    fkMedioPago: fp.medioId,
+    fkPlanPago : fp.planId,
+    importe    : fp.importe,
+    referencia1: fp.ref1||null,
+    referencia2: fp.ref2||null,
+    referencia3: fp.ref3||null
+  })) : [];
+
+  // Desc/Rec global
+  var descGlobal = (_drGlobal < 0) ? Math.abs(_drGlobal) : null;
+  var recGlobal  = (_drGlobal > 0) ? Math.abs(_drGlobal) : null;
+
+  var dto = {
+    total          : total,
+    costo          : costo,
+    fkCliente      : _clienteId,
+    fkCajero       : 0,
+    iva            : 0,
+    descuento      : descGlobal,
+    recargo        : recGlobal,
+    fkVendedor     : VENDEDOR_ID,
+    comision       : 0,
+    impuesto       : 0,
+    llevaCC        : @(p.LlevaCC == 1 ? "true" : "false"),
+    imputaEnVenta  : @(p.ImputaEnVenta == 1 ? "true" : "false"),
+    tieneMediosPagos:@(p.TieneMediosPagos == 1 ? "true" : "false"),
+    importeCobro   : importeCobro,
+    haceCaja       : false,
+    cajaId         : 0,
+    pedidoCargado  : 0,
+    detalle        : detalle,
+    formasPago     : formasPago
+  };
+
+  var popupComprobante = null;
+  try { popupComprobante = window.open('about:blank', '_blank'); } catch(e){ popupComprobante = null; }
+
+  toggleBtns(true);
+  progAbrir();
+  try{
+    var nItems = dto.detalle.length;
+    progActualizar('Enviando venta al servidor...', 20,
+      nItems+' producto'+(nItems!==1?'s':'')+' — total $'+fmt(dto.total));
+
+    progAutoAvanzar(55, 120);
+
+    var resp = await fetch('?handler=GrabarVenta', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(dto)
+    });
+
+    progAutoDetener();
+    progActualizar('Procesando respuesta...', 65, '');
+    var r = await resp.json();
+    if (!r.ok){
+      progCerrar();
+      if (popupComprobante){ try{ popupComprobante.close(); }catch(e){} }
+      showAlert('Error al guardar venta: '+(r.msg||'Error desconocido.'));
+      toggleBtns(false);
+      return;
+    }
+
+    var ventaId = r.ventaId;
+
+    // Disparar evento para componentes de promo
+    document.dispatchEvent(new CustomEvent('ventaGrabada', { detail: { ventaId: ventaId } }));
+
+    var urlComp = (HACE_NOTA_VENTA_TK===1)
+                   ? '/Ventas/Ventas/TicketX/'+ventaId
+                   : '/Ventas/Ventas/ComprobanteX/'+ventaId;
+    progActualizar('Abriendo comprobante...', 90, 'Venta N° '+ventaId);
+    if (popupComprobante && !popupComprobante.closed){
+      try { popupComprobante.location.href = urlComp; popupComprobante.focus(); }
+      catch(e){ popupComprobante = null; }
+    }
+    if (!popupComprobante || popupComprobante.closed){
+      showInfo('Venta N° '+ventaId+' registrada. '+
+        '<a href="'+urlComp+'" target="_blank" style="font-weight:700;">Abrir comprobante</a>');
+    }
+
+    progActualizar('¡Venta registrada!', 100, 'N° '+ventaId);
+    setTimeout(progCerrar, 900);
+    limpiarFormulario();
+  } catch(ex){
+    progCerrar();
+    if (popupComprobante){ try{ popupComprobante.close(); }catch(e){} }
+    showAlert('Error técnico: '+ex.message);
+  }
+  toggleBtns(false);
+}
+
+function toggleBtns(disabled){
+  document.querySelectorAll('.btn-vender-mn').forEach(b=>b.disabled=disabled);
+}
+
+// ── Limpiar formulario ─────────────────────────────────────────────────────
+window.limpiarFormulario = function(){
+  _rows=[];
+  document.getElementById('txtBusqCB').value='';
+  var acD=document.getElementById('acDesc'); if(acD){ acD.style.display='none'; acD.innerHTML=''; }
+  _formasPago=[];
+  @if (p.TieneConsumidorFinal == 1)
+  {
+    <text>
+  _clienteId=@p.ClienteConsumidorFinal;
+  cargarClientePorId(@p.ClienteConsumidorFinal);
+    </text>
+  }
+  else
+  {
+    <text>
+  _clienteId=0;
+  document.getElementById('hClienteId').value='0';
+  document.getElementById('txtBuscarCliente').value='';
+  document.getElementById('ci-nombre').textContent='';
+  document.getElementById('ci-telefono').textContent='';
+  document.getElementById('ci-direccion').textContent='';
+  document.getElementById('ci-condiva').textContent='';
+  document.getElementById('clienteInfo').style.display='none';
+  document.getElementById('clienteVacio').style.display='';
+    </text>
+  }
+  renderGrilla();
+};
+
+// ── Progreso venta ─────────────────────────────────────────────────────────
+var _progModal = null;
+var _progAutoTimer = null;
+var _progCurrent = 0;
+function progAbrir(){
+  _progModal = new bootstrap.Modal(document.getElementById('modalProgresoVenta'));
+  progActualizar('Preparando datos...', 10, '');
+  _progModal.show();
+}
+function progActualizar(msg, pct, detalle){
+  _progCurrent = pct;
+  document.getElementById('progVentaMsg').textContent    = msg;
+  document.getElementById('progVentaDetalle').textContent= detalle||'';
+  var bar = document.getElementById('progVentaBar');
+  bar.style.width = pct+'%';
+  bar.setAttribute('aria-valuenow', pct);
+}
+function progAutoAvanzar(tope, pasoMs){
+  progAutoDetener();
+  _progAutoTimer = setInterval(function(){
+    if (_progCurrent >= tope){ progAutoDetener(); return; }
+    _progCurrent = Math.min(tope, _progCurrent + 1);
+    var bar = document.getElementById('progVentaBar');
+    bar.style.width = _progCurrent+'%';
+    bar.setAttribute('aria-valuenow', _progCurrent);
+  }, pasoMs||150);
+}
+function progAutoDetener(){
+  if (_progAutoTimer){ clearInterval(_progAutoTimer); _progAutoTimer=null; }
+}
+function progCerrar(){
+  progAutoDetener();
+  if (_progModal){ _progModal.hide(); _progModal=null; }
+}
+
+// ── Alertas ────────────────────────────────────────────────────────────────
+function showAlert(msg){
+  var d=document.getElementById('alertDiv');
+  document.getElementById('alertMsg').textContent=msg;
+  d.className='alert alert-danger alert-dismissible';
+  d.style.display='block';
+  d.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function showInfo(msg){
+  var d=document.getElementById('alertDiv');
+  document.getElementById('alertMsg').innerHTML=msg;
+  d.className='alert alert-success alert-dismissible';
+  d.style.display='block';
+  setTimeout(()=>d.style.display='none', 6000);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ── MÓDULO PROMOCIONES ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+
+var _resultadoPromo = null;
+
+async function _verificarPromociones(){
+  if (!_rows.length) return false;
+
+  var carrito = _rows.map(function(r){ return { fkProducto: r.fkProducto, cantidad: r.cantidad }; });
+
+  var resp, data;
+  try {
+    resp = await fetch('?handler=CalcularPromociones', {
+      method : 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body   : JSON.stringify(carrito)
+    });
+    if (!resp.ok){ console.error('CalcularPromociones HTTP', resp.status); return false; }
+    data = await resp.json();
+  } catch(err){
+    console.error('CalcularPromociones error:', err);
+    return false;
+  }
+
+  var tieneFormadas = data && data.formadas && data.formadas.length > 0;
+  var tieneCasi     = data && data.casiCompletas && data.casiCompletas.length > 0;
+  if (!data || !data.hayPromociones || (!tieneFormadas && !tieneCasi)) return false;
+
+  _resultadoPromo = data;
+  _renderModalPromo(data);
+  var modalEl = document.getElementById('modalConfirmarPromo');
+  if (!modalEl){ console.error('Modal promo no encontrado'); return false; }
+  bootstrap.Modal.getOrCreateInstance(modalEl).show();
+  return true;
+}
+
+function _renderModalPromo(data){
+  var html = '';
+
+  if (data.formadas && data.formadas.length){
+    html += '<h6 class="fw-bold" style="color:#1cc88a;">✔ Promociones a formar:</h6><ul class="mb-2">';
+    data.formadas.forEach(function(f){
+      html += '<li><strong>'+escHtml(f.nombrePromo)+'</strong> &times; '+f.cantidad;
+      if (f.componentesUsados && f.componentesUsados.length){
+        html += '<ul class="text-muted" style="font-size:.76rem;">';
+        f.componentesUsados.forEach(function(c){
+          html += '<li>'+escHtml(c.descripcion)+' &mdash; '+fmtN(c.cantidadUsada, DEC_CANT)+' u.</li>';
+        });
+        html += '</ul>';
+      }
+      html += '</li>';
+    });
+    html += '</ul>';
+  }
+
+  if (data.casiCompletas && data.casiCompletas.length){
+    html += '<hr><h6 class="fw-bold" style="color:#e67e22;">⚠ Casi completas (falta 1 unidad):</h6><ul class="mb-1">';
+    data.casiCompletas.forEach(function(c){
+      var cod = c.codBarrasFaltante ? ' ['+escHtml(c.codBarrasFaltante)+']' : '';
+      html += '<li><strong>'+escHtml(c.nombrePromo)+'</strong>: agregar <em>'+escHtml(c.productoFaltante)+cod+'</em></li>';
+    });
+    html += '</ul>';
+    html += '<p class="text-muted" style="font-size:.76rem;">Puede cerrar este aviso y agregar el producto faltante para completar la promoción.</p>';
+  }
+
+  document.getElementById('cuerpoModalPromo').innerHTML = html;
+}
+
+window.volverAgregarPromo = function(){
+  bootstrap.Modal.getInstance(document.getElementById('modalConfirmarPromo'))?.hide();
+  _resultadoPromo = null;
+};
+
+window.confirmarYVender = function(){
+  bootstrap.Modal.getInstance(document.getElementById('modalConfirmarPromo'))?.hide();
+  _aplicarPromociones(_resultadoPromo);
+  // Abrir modal pagos si corresponde, o grabar directamente
+  if (TIENE_MEDPAG===1 || LLEVA_CC===1){
+    _mpAbrirModal();
+  } else {
+    grabarVenta();
+  }
+};
+
+function _aplicarPromociones(data){
+  if (!data || !data.formadas) return;
+
+  data.formadas.forEach(function(f){
+    f.componentesUsados.forEach(function(c){
+      var idx = _rows.findIndex(function(r){ return r.fkProducto === c.fkProducto; });
+      if (idx === -1) return;
+      _rows[idx].cantidad = (_rows[idx].cantidad || 0) - (c.cantidadUsada || 0);
+      if (_rows[idx].cantidad <= 0) _rows.splice(idx, 1);
+    });
+
+    for (var i = 0; i < f.cantidad; i++){
+      _rows.push({
+        fkProducto  : f.fkProductoPromo,
+        codBarras   : '',
+        codProveedor: '',
+        descripcion : f.nombrePromo,
+        precioSinIva: 0,
+        descRec     : 0,
+        cantidad    : 1,
+        stock       : 0,
+        fraccionado : false,
+        costo       : 0,
+        dolarizado  : false,
+        sel         : false
+      });
+    }
+  });
+
+  renderGrilla();
+  recalcularTotales();
+}
+
+document.addEventListener('ventaGrabada', async function(e){
+  var ventaId = e.detail?.ventaId;
+  if (!ventaId || !_resultadoPromo || !_resultadoPromo.formadas.length){
+    _resultadoPromo = null;
+    return;
+  }
+
+  var grupos = _resultadoPromo.formadas.map(function(f){
+    return {
+      fkProductoPromo: f.fkProductoPromo,
+      componentes    : f.componentesUsados.map(function(c){
+        return { fkSlot: c.fkSlot, fkProducto: c.fkProducto, cantidad: c.cantidadUsada };
+      })
+    };
+  });
+
+  var token = (document.querySelector('[name=__RequestVerificationToken]') || {}).value || '';
+  await fetch('?handler=GuardarComponentes', {
+    method : 'POST',
+    headers: { 'Content-Type':'application/json', 'RequestVerificationToken': token },
+    body   : JSON.stringify({ ventaId: ventaId, grupos: grupos })
+  });
+
+  _resultadoPromo = null;
+});
+
+// ── Fin MÓDULO PROMOCIONES ─────────────────────────────────────────────────
+
+// ── Inicialización ────────────────────────────────────────────────────────
+(function init(){
+  document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+  document.body.classList.remove('modal-open');
+  document.body.style.removeProperty('overflow');
+  document.body.style.removeProperty('padding-right');
+
+  document.querySelectorAll('#txtBusqCB, #txtBusqDesc').forEach(el => {
+    el.disabled = false;
+    el.readOnly = false;
+  });
+
+  if (_clienteId > 0){ cargarClientePorId(_clienteId); }
+
+  renderGrilla();
+})();
+
+})();
+</script>
+}

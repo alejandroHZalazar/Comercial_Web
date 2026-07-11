@@ -389,9 +389,20 @@
             mostrarToast('El archivo debe ser .csv o .txt', false);
             return;
         }
-        const reader = new FileReader();
-        reader.onload = e => parsearCSV(e.target.result, file.name);
-        reader.readAsText(file, 'UTF-8');
+        // Detectar BOM para elegir codificación:
+        //   - UTF-8 BOM (EF BB BF) → leer como UTF-8
+        //   - Sin BOM              → leer como windows-1252 (CSV de Excel en español/argentino)
+        const sniffer = new FileReader();
+        sniffer.onload = e => {
+            const bytes = new Uint8Array(e.target.result);
+            const enc = (bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF)
+                ? 'UTF-8'
+                : 'windows-1252';
+            const reader = new FileReader();
+            reader.onload = ev => parsearCSV(ev.target.result, file.name);
+            reader.readAsText(file, enc);
+        };
+        sniffer.readAsArrayBuffer(file.slice(0, 3));
     }
 
     // ================================================================

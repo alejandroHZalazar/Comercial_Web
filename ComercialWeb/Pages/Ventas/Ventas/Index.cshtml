@@ -1,4 +1,4 @@
-@page
+﻿@page
 @model Comercial_Web.Pages.Ventas.Ventas.IndexModel
 @using Microsoft.AspNetCore.Mvc.Rendering
 @{
@@ -82,6 +82,25 @@
 .pd-totales-det{background:#f8f9fc;border:1px solid #e3e6f0;border-radius:8px;padding:.75rem 1rem;font-size:.82rem;margin-top:.75rem;}
 .pd-tot-row{display:flex;justify-content:space-between;padding:.15rem 0;}
 .pd-tot-row.pd-tot-total{font-weight:700;font-size:.95rem;color:#1a3a5c;border-top:1px solid #dee2e6;margin-top:.3rem;padding-top:.4rem;}
+/* ── Modal Formas de Pago ─────────────────────────────────────────── */
+#modalPagos .modal-header{background:linear-gradient(135deg,#1a3a5c,#2e6da4);color:#fff;padding:.7rem 1rem;}
+#modalPagos .modal-body{padding:.9rem 1rem;background:#f8f9fc;}
+#modalPagos .modal-footer{background:#f0f2f5;padding:.5rem .8rem;}
+.mp-planes-grid{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.8rem;}
+.mp-btn-plan{padding:.45rem .9rem;font-size:.82rem;font-weight:600;border-radius:6px;border:2px solid #2e6da4;background:#fff;color:#1a3a5c;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.mp-btn-plan:hover{background:#2e6da4;color:#fff;}
+.mp-btn-plan.mp-activo{background:#1a3a5c;color:#fff;border-color:#1a3a5c;}
+.mp-btn-cc{padding:.45rem .9rem;font-size:.82rem;font-weight:600;border-radius:6px;border:2px solid #6c757d;background:#fff;color:#6c757d;cursor:pointer;transition:all .15s;}
+.mp-btn-cc:hover,.mp-btn-cc.mp-activo{background:#6c757d;color:#fff;}
+.mp-lista{max-height:180px;overflow-y:auto;margin-top:.4rem;}
+.mp-item{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #dee2e6;border-radius:6px;padding:.35rem .7rem;margin-bottom:.3rem;font-size:.82rem;}
+.mp-item-nom{flex:1;font-weight:600;color:#1a3a5c;}
+.mp-item-imp{width:90px;text-align:right;color:#2e6da4;font-weight:700;}
+.mp-item-del{background:none;border:none;color:#e74a3b;cursor:pointer;font-size:1rem;padding:0 .2rem;line-height:1;}
+.mp-refs{display:flex;gap:.4rem;margin-top:.5rem;flex-wrap:wrap;}
+.mp-refs input{flex:1;min-width:90px;}
+.mp-saldo-bar{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #dee2e6;border-radius:6px;padding:.3rem .7rem;font-size:.82rem;margin-bottom:.6rem;}
+.mp-saldo-bar .mp-saldo-val{font-weight:700;font-size:.95rem;}
 </style>
 
 @* ══ HEADER ══════════════════════════════════════════════════════════════ *@
@@ -314,21 +333,9 @@
   </div>
 </div>
 
-@* ══ FORMAS DE PAGO (si tieneMediosPagos) ════════════════════════════════ *@
-@if (p.TieneMediosPagos == 1)
+@* ══ FORMAS DE PAGO — datos JSON para JS ════════════════════════════════ *@
+@if (p.TieneMediosPagos == 1 || p.LlevaCC == 1)
 {
-  <div class="vt-card" id="secFormasPago">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
-      <span style="font-size:.78rem;font-weight:700;color:#5a5c69;text-transform:uppercase;letter-spacing:.05em;">Formas de Pago</span>
-      <button type="button" class="btn btn-sm btn-outline-primary" style="font-size:.74rem;" onclick="addFormaPago()">+ Agregar</button>
-    </div>
-    <div id="containerFormasPago"></div>
-    <div id="fpResumen" style="font-size:.78rem;color:#5a5c69;margin-top:.3rem;display:none;">
-      Pagado: <strong id="fpPagado">$0,00</strong> &nbsp;|&nbsp; Saldo: <strong id="fpSaldo" style="color:#e74a3b;">$0,00</strong>
-    </div>
-  </div>
-
-  @* Datos de medios/planes en JSON para JS (camelCase para que coincidan con las claves esperadas en JS) *@
   <script id="jsPlanesPago" type="application/json">
     @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PlanesPago, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }))
   </script>
@@ -343,6 +350,59 @@
   <button type="button" onclick="limpiarFormulario()" class="btn btn-sm" style="font-size:.82rem;background:#6c757d;color:#fff;border:none;">
     Limpiar
   </button>
+</div>
+
+@* ══ MODAL: FORMAS DE PAGO ════════════════════════════════════════════════ *@
+<div class="modal fade" id="modalPagos" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content" style="border-radius:12px;overflow:hidden;">
+      <div class="modal-header">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="17" height="17" class="me-2"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2.5 1a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-2z"/></svg>
+        <h5 class="modal-title mb-0">Formas de Pago</h5>
+        <button type="button" class="btn-close btn-close-white ms-auto" onclick="mpCancelar()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mp-saldo-bar">
+          <span>Total: <strong id="mpTotal">$0,00</strong></span>
+          <span>Pagado: <strong id="mpPagado" style="color:#1cc88a;">$0,00</strong></span>
+          <span>Saldo: <strong id="mpSaldoVal" class="mp-saldo-val" style="color:#e74a3b;">$0,00</strong></span>
+        </div>
+        <div id="mpListaFps" class="mp-lista"></div>
+        <hr style="margin:.5rem 0;">
+        <div style="font-size:.78rem;font-weight:700;color:#5a5c69;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem;">Seleccionar forma de pago</div>
+        <div id="mpPlanesGrid" class="mp-planes-grid"></div>
+        <div id="mpCCRow" style="display:none;margin-bottom:.5rem;">
+          <button class="mp-btn-cc" id="mpBtnCC" onclick="mpAgregarCC()">Cuenta Corriente</button>
+        </div>
+        <div id="mpDetalleForm" style="display:none;">
+          <div style="display:flex;gap:.5rem;align-items:flex-end;flex-wrap:wrap;margin-bottom:.4rem;">
+            <div id="mpImporteWrap" style="display:none;">
+              <label class="vt-label">Importe</label>
+              <input type="number" id="mpImporte" class="form-control form-control-sm" style="width:120px;" min="0" step="0.01" placeholder="0.00" />
+            </div>
+            <div id="mpRef1Wrap" style="display:none;">
+              <label class="vt-label">Ref. 1</label>
+              <input type="text" id="mpRef1" class="form-control form-control-sm" style="width:130px;" />
+            </div>
+            <div id="mpRef2Wrap" style="display:none;">
+              <label class="vt-label">Ref. 2</label>
+              <input type="text" id="mpRef2" class="form-control form-control-sm" style="width:130px;" />
+            </div>
+            <div id="mpRef3Wrap" style="display:none;">
+              <label class="vt-label">Ref. 3</label>
+              <input type="text" id="mpRef3" class="form-control form-control-sm" style="width:130px;" />
+            </div>
+            <button class="btn btn-sm btn-primary" onclick="mpConfirmarItem()">+ Agregar</button>
+          </div>
+        </div>
+        <div style="font-size:.74rem;color:#888;margin-top:.2rem;" id="mpShortcutsHint"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="mpCancelar()">Cancelar</button>
+        <button type="button" class="btn btn-primary btn-sm" id="mpBtnConfirmar" onclick="mpConfirmarVenta()">Confirmar venta (Enter)</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 @* ══ MODAL: BUSCAR PEDIDO ══════════════════════════════════════════════════ *@
@@ -616,6 +676,8 @@ var TIENE_CB       = @p.TieneLectoraCB;
 var FILTRA_PROV    = @p.FiltraPorProveedor;
 var TIENE_MEDPAG   = @p.TieneMediosPagos;
 var IMPUTA_VENTA   = @p.ImputaEnVenta;
+var LLEVA_CC       = @p.LlevaCC;
+var ID_PLAN_EFEC   = @p.IdPlanEfectivo;
 var TIENE_CAJA     = @p.TieneCaja;
 var HACE_COMPROBANTE_X = @p.HaceNotaVentaTK == 0 ? 1 : 0;
 var HACE_NOTA_VENTA_TK = @p.HaceNotaVentaTK;
@@ -1442,92 +1504,222 @@ window.bpFilterItems = function(input,cls){
   });
 };
 
-// ── Formas de pago ─────────────────────────────────────────────────────────
-@if (p.TieneMediosPagos == 1)
-{
-  <text>
-var _planesPago = JSON.parse(document.getElementById('jsPlanesPago').textContent);
+// ── Formas de pago — Modal (frmImputacionVenta) ────────────────────────────
+var _planesPago = (TIENE_MEDPAG===1||LLEVA_CC===1)
+  ? JSON.parse(document.getElementById('jsPlanesPago').textContent)
+  : [];
 var _formasPago = [];
+var _mpPlanActual = null;   // plan seleccionado actualmente en el modal
 
-window.addFormaPago = function(){
-  var medios = [...new Map(_planesPago.map(pl=>[pl.medioId,{id:pl.medioId,nombre:pl.medioNombre}])).values()];
-  var idx = _formasPago.length;
-  _formasPago.push({medioId:0,planId:0,importe:0,ref1:'',ref2:'',ref3:''});
-  renderFormasPago();
-};
+// Calcula el total actual de la venta (igual que grabarVenta)
+function _mpCalcTotal(){
+  var iva    = parseFloat(document.getElementById('txtIva').value)||0;
+  var imp    = parseFloat(document.getElementById('cboIngBrutos').value)||0;
+  var sub    = _rows.reduce(function(a,r){ return a+(r.subtotalSIva||0)*(r.cantidad||0); }, 0);
+  return sub + sub*iva/100 + sub*imp/100;
+}
 
-function renderFormasPago(){
-  var container = document.getElementById('containerFormasPago');
-  container.innerHTML='';
-  var mediosMap = new Map();
-  _planesPago.forEach(pl=>{ if(!mediosMap.has(pl.medioId)) mediosMap.set(pl.medioId,pl.medioNombre); });
+// Saldo restante = total - ya imputado
+function _mpCalcSaldo(){
+  var total  = _mpCalcTotal();
+  var pagado = _formasPago.reduce(function(a,fp){ return a+fp.importe; }, 0);
+  return Math.max(0, total - pagado);
+}
 
-  _formasPago.forEach((fp,idx)=>{
-    var planes = _planesPago.filter(pl=>fp.medioId===0||pl.medioId===fp.medioId);
-    var conDatos = _planesPago.find(pl=>pl.medioId===fp.medioId)?.conDatos||false;
-    var div=document.createElement('div');
-    div.className='fp-row';
-    div.innerHTML=
-      '<div style="flex:1;min-width:130px;"><label class="vt-label">Medio de Pago</label>'+
-        '<select class="form-select form-select-sm" onchange="fpChangeMedio('+idx+',this.value)">'+
-          '<opt'+'ion value="0">\u2014 Seleccione \u2014</opt'+'ion>'+
-          [...mediosMap.entries()].map(([id,nom])=>'<opt'+'ion value="'+id+'"'+(fp.medioId===id?' selected':'')+'>'+escHtml(nom)+'</opt'+'ion>').join('')+
-        '</select></div>'+
-      '<div style="flex:1;min-width:130px;"><label class="vt-label">Plan de Pago</label>'+
-        '<select class="form-select form-select-sm" onchange="fpChangePlan('+idx+',this.value)">'+
-          '<opt'+'ion value="0">\u2014 Seleccione \u2014</opt'+'ion>'+
-          _planesPago.filter(pl=>fp.medioId===0||pl.medioId===fp.medioId).map(pl=>'<opt'+'ion value="'+pl.planId+'"'+(fp.planId===pl.planId?' selected':'')+'>'+escHtml(pl.planNombre)+'</opt'+'ion>').join('')+
-        '</select></div>'+
-      (IMPUTA_VENTA===1?
-        '<div style="width:100px;"><label class="vt-label">Importe</label>'+
-          '<input type="number" class="form-control form-control-sm" value="'+fp.importe+'" min="0" step="0.01" onchange="fpChangeImporte('+idx+',this.value)" /></div>'
-        :'')+
-      (conDatos?
-        '<div style="flex:1;min-width:80px;"><label class="vt-label">Ref. 1</label><input type="text" class="form-control form-control-sm" value="'+escHtml(fp.ref1)+'" onchange="fpChangeRef('+idx+',1,this.value)" /></div>'+
-        '<div style="flex:1;min-width:80px;"><label class="vt-label">Ref. 2</label><input type="text" class="form-control form-control-sm" value="'+escHtml(fp.ref2)+'" onchange="fpChangeRef('+idx+',2,this.value)" /></div>'+
-        '<div style="flex:1;min-width:80px;"><label class="vt-label">Ref. 3</label><input type="text" class="form-control form-control-sm" value="'+escHtml(fp.ref3)+'" onchange="fpChangeRef('+idx+',3,this.value)" /></div>'
-        :'')+
-      '<div style="align-self:flex-end;"><button type="button" onclick="fpEliminar('+idx+')" style="background:none;border:none;color:#e74a3b;cursor:pointer;font-size:1rem;padding:0 .3rem;" title="Quitar">✕</button></div>';
-    container.appendChild(div);
+// Actualiza la barra de totales del modal
+function _mpActualizarBarra(){
+  var total  = _mpCalcTotal();
+  var pagado = _formasPago.reduce(function(a,fp){ return a+fp.importe; }, 0);
+  var saldo  = total - pagado;
+  document.getElementById('mpTotal').textContent   = '$'+fmt(total);
+  document.getElementById('mpPagado').textContent  = '$'+fmt(pagado);
+  var sEl = document.getElementById('mpSaldoVal');
+  sEl.textContent   = '$'+fmt(Math.abs(saldo));
+  sEl.style.color   = saldo<=0.005 ? '#1cc88a' : '#e74a3b';
+}
+
+// Renderiza la lista de FPs ya cargadas
+function _mpRenderLista(){
+  var el = document.getElementById('mpListaFps');
+  if (!_formasPago.length){ el.innerHTML=''; return; }
+  el.innerHTML = _formasPago.map(function(fp,i){
+    return '<div class="mp-item">'
+      +'<span class="mp-item-nom">'+escHtml(fp.medioNombre)+' — '+escHtml(fp.planNombre)+'</span>'
+      +(IMPUTA_VENTA===1?'<span class="mp-item-imp">$'+fmt(fp.importe)+'</span>':'')
+      +'<button class="mp-item-del" onclick="mpEliminarFp('+i+')" title="Quitar">×</button>'
+      +'</div>';
+  }).join('');
+}
+
+// Renderiza los botones de planes
+function _mpRenderBotones(){
+  var grid = document.getElementById('mpPlanesGrid');
+  grid.innerHTML = '';
+  var idx = 0;
+  _planesPago.forEach(function(pl){
+    var btn = document.createElement('button');
+    btn.className = 'mp-btn-plan'+((_mpPlanActual&&_mpPlanActual.planId===pl.planId)?' mp-activo':'');
+    var numKey = idx+1;
+    btn.textContent = pl.planNombre + (numKey<=9?' ('+numKey+')':'');
+    btn.dataset.planId = pl.planId;
+    btn.onclick = (function(p){ return function(){ _mpSeleccionarPlan(p); }; })(pl);
+    grid.appendChild(btn);
+    idx++;
   });
-  actualizarResumenPago();
+  var sh = document.getElementById('mpShortcutsHint');
+  if (_planesPago.length>0){
+    var hints = _planesPago.slice(0,9).map(function(pl,i){ return (i+1)+': '+pl.planNombre; });
+    sh.textContent = 'Teclas: '+hints.join(' | ')+(LLEVA_CC===1?' | C: Cta. Cte.':'')+' | Enter: Confirmar | Esc: Cancelar';
+  }
 }
 
-window.fpChangeMedio = function(idx,val){
-  _formasPago[idx].medioId=parseInt(val)||0;
-  _formasPago[idx].planId=0;
-  renderFormasPago();
+// Selecciona un plan y muestra campo importe / refs
+function _mpSeleccionarPlan(pl){
+  _mpPlanActual = pl;
+  document.querySelectorAll('.mp-btn-plan').forEach(function(b){
+    b.classList.toggle('mp-activo', parseInt(b.dataset.planId)===pl.planId);
+  });
+  document.querySelectorAll('.mp-btn-cc').forEach(function(b){ b.classList.remove('mp-activo'); });
+  var df = document.getElementById('mpDetalleForm');
+  df.style.display = '';
+  var iw = document.getElementById('mpImporteWrap');
+  iw.style.display = IMPUTA_VENTA===1 ? '' : 'none';
+  if (IMPUTA_VENTA===1){
+    var impEl = document.getElementById('mpImporte');
+    var saldo = _mpCalcSaldo();
+    impEl.value = saldo>0.005 ? saldo.toFixed(2) : '';
+    impEl.focus();
+    impEl.select();
+  }
+  var r1=document.getElementById('mpRef1Wrap'),r2=document.getElementById('mpRef2Wrap'),r3=document.getElementById('mpRef3Wrap');
+  r1.style.display = r2.style.display = r3.style.display = pl.conDatos ? '' : 'none';
+  document.getElementById('mpRef1').value='';
+  document.getElementById('mpRef2').value='';
+  document.getElementById('mpRef3').value='';
+}
+
+// Agrega la fp seleccionada a la lista
+window.mpConfirmarItem = function(){
+  if (!_mpPlanActual){ return; }
+  var importe = IMPUTA_VENTA===1 ? (parseFloat(document.getElementById('mpImporte').value)||0) : 0;
+  var ref1 = document.getElementById('mpRef1').value;
+  var ref2 = document.getElementById('mpRef2').value;
+  var ref3 = document.getElementById('mpRef3').value;
+  if (IMPUTA_VENTA===1 && importe<=0){ document.getElementById('mpImporte').focus(); return; }
+  _formasPago.push({
+    medioId: _mpPlanActual.medioId,
+    planId : _mpPlanActual.planId,
+    medioNombre: _mpPlanActual.medioNombre,
+    planNombre : _mpPlanActual.planNombre,
+    importe: importe,
+    ref1: ref1, ref2: ref2, ref3: ref3
+  });
+  _mpPlanActual = null;
+  document.getElementById('mpDetalleForm').style.display='none';
+  // Devolver foco al modal para que los shortcuts vuelvan a funcionar
+  document.getElementById('modalPagos').focus();
+  _mpRenderLista();
+  _mpActualizarBarra();
+  _mpRenderBotones();
 };
-window.fpChangePlan  = function(idx,val){ _formasPago[idx].planId=parseInt(val)||0; };
-window.fpChangeImporte=function(idx,val){ _formasPago[idx].importe=parseFloat(val)||0; actualizarResumenPago(); };
-window.fpChangeRef   = function(idx,n,val){ _formasPago[idx]['ref'+n]=val; };
-window.fpEliminar    = function(idx){ _formasPago.splice(idx,1); renderFormasPago(); };
-  </text>
+
+// Elimina una fp de la lista
+window.mpEliminarFp = function(idx){
+  _formasPago.splice(idx,1);
+  _mpRenderLista();
+  _mpActualizarBarra();
+};
+
+// Agrega Cuenta Corriente
+window.mpAgregarCC = function(){
+  var pl = {medioId:0, planId:0, medioNombre:'Cuenta Corriente', planNombre:'CC', conDatos:false};
+  document.querySelectorAll('.mp-btn-cc').forEach(function(b){ b.classList.add('mp-activo'); });
+  document.querySelectorAll('.mp-btn-plan').forEach(function(b){ b.classList.remove('mp-activo'); });
+  _mpPlanActual = pl;
+  var df = document.getElementById('mpDetalleForm');
+  df.style.display='';
+  var iw=document.getElementById('mpImporteWrap');
+  iw.style.display=IMPUTA_VENTA===1?'':'none';
+  if (IMPUTA_VENTA===1){
+    var impEl=document.getElementById('mpImporte');
+    var saldo=_mpCalcSaldo();
+    impEl.value=saldo>0.005?saldo.toFixed(2):'';
+    impEl.focus();
+    impEl.select();
+  }
+  document.getElementById('mpRef1Wrap').style.display='none';
+  document.getElementById('mpRef2Wrap').style.display='none';
+  document.getElementById('mpRef3Wrap').style.display='none';
+};
+
+// Cancela el modal sin vender
+window.mpCancelar = function(){
+  _formasPago=[];
+  _mpPlanActual=null;
+  bootstrap.Modal.getInstance(document.getElementById('modalPagos'))?.hide();
+};
+
+// Confirma la venta desde el modal
+window.mpConfirmarVenta = function(){
+  if (IMPUTA_VENTA===1){
+    if (!_formasPago.length){ showAlert('Agregue al menos una forma de pago.'); return; }
+    var saldo=_mpCalcSaldo();
+    if (saldo>0.02){ showAlert('Saldo pendiente: $'+fmt(saldo)+'. Complete el pago antes de confirmar.'); return; }
+  } else {
+    if (!_formasPago.length){ showAlert('Seleccione una forma de pago.'); return; }
+  }
+  bootstrap.Modal.getInstance(document.getElementById('modalPagos'))?.hide();
+  if (IMPUTA_VENTA!==1 && _formasPago.length>0){
+    var total=_mpCalcTotal();
+    var share=total/_formasPago.length;
+    _formasPago.forEach(function(fp){ fp.importe=share; });
+  }
+  grabarVenta();
+};
+
+// Abre el modal de pagos
+function _mpAbrirModal(){
+  _formasPago=[];
+  _mpPlanActual=null;
+  _mpRenderLista();
+  _mpActualizarBarra();
+  _mpRenderBotones();
+  document.getElementById('mpCCRow').style.display=LLEVA_CC===1?'':'none';
+  document.getElementById('mpDetalleForm').style.display='none';
+  new bootstrap.Modal(document.getElementById('modalPagos')).show();
+  if (_planesPago.length===1){ _mpSeleccionarPlan(_planesPago[0]); }
 }
 
-function actualizarResumenPago(total){
-  @if (p.TieneMediosPagos == 1 && p.ImputaEnVenta == 1)
-  {
-    <text>
-  if (total===undefined){
-    var iva=parseFloat(document.getElementById('txtIva').value)||0;
-    var imp=parseFloat(document.getElementById('cboIngBrutos').value)||0;
-    // Mismo cálculo que recalcularFila/Totales: subtotal s/IVA por CANTIDAD, luego IVA e Ing.Brutos ADITIVOS.
-    var sub=_rows.reduce((a,r)=>a+(r.subtotalSIva||0)*(r.cantidad||0),0);
-    total=sub + sub*iva/100 + sub*imp/100;
+// Keyboard shortcuts dentro del modal
+document.getElementById('modalPagos').addEventListener('keydown', function(e){
+  if (!document.getElementById('modalPagos').classList.contains('show')) return;
+
+  // Si el foco está en un <input> o <textarea>, no disparar shortcuts numéricos/letras.
+  // Enter en ese contexto = agregar el ítem; Escape = quitar el foco del campo.
+  var activeEl = document.activeElement;
+  // enInput: el foco está en un input VISIBLE (offsetParent===null indica display:none en él o sus padres)
+  var enInput  = activeEl &&
+                 (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') &&
+                 activeEl.offsetParent !== null;
+  if (enInput){
+    if (e.key === 'Enter'){  e.preventDefault(); mpConfirmarItem(); }
+    if (e.key === 'Escape'){ e.preventDefault(); activeEl.blur(); document.getElementById('modalPagos').focus(); }
+    return;   // resto de teclas (números, letras, punto, etc.) pasan sin interferir
   }
-  var pagado=(_formasPago||[]).reduce((a,fp)=>a+fp.importe,0);
-  var saldo=total-pagado;
-  var res=document.getElementById('fpResumen');
-  if (res && (_formasPago||[]).length>0){
-    res.style.display='';
-    document.getElementById('fpPagado').textContent='$'+fmt(pagado);
-    var saldoEl=document.getElementById('fpSaldo');
-    saldoEl.textContent='$'+fmt(Math.abs(saldo));
-    saldoEl.style.color=(saldo>0)?'#e74a3b':'#1cc88a';
+
+  // Foco fuera de inputs → shortcuts normales
+  var num = parseInt(e.key);
+  if (num >= 1 && num <= 9 && num <= _planesPago.length){
+    e.preventDefault();
+    _mpSeleccionarPlan(_planesPago[num-1]);
   }
-    </text>
-  }
+  if ((e.key === 'c' || e.key === 'C') && LLEVA_CC===1){ e.preventDefault(); mpAgregarCC(); }
+  if (e.key === 'Enter') { e.preventDefault(); mpConfirmarVenta(); }
+  if (e.key === 'Escape'){ e.preventDefault(); mpCancelar(); }
+});
+
+function actualizarResumenPago(){
+  // Barra de saldo ahora esta dentro del modal
 }
 
 // ── F5 / F6 ────────────────────────────────────────────────────────────────
@@ -1546,6 +1738,13 @@ window.vender = async function(ordenFacturar){
   if (promoIntercept) return;   // modal abierto, esperar confirmación del usuario
   // ─────────────────────────────────────────────────────────────────────────
 
+  // ── Modal de formas de pago (si aplica) ──────────────────────────────────
+  if (TIENE_MEDPAG===1 || LLEVA_CC===1){
+    _mpAbrirModal();
+    return;   // grabarVenta() se llama desde mpConfirmarVenta()
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   await grabarVenta();
 };
 
@@ -1555,10 +1754,6 @@ function formularioValido(){
   if (COMISIONA===1){
     var vend=parseInt(document.getElementById('cboVendedor')?.value)||0;
     if (vend<=0){ showAlert('Seleccione un vendedor.'); return false; }
-  }
-  if (@(p.TieneMediosPagos == 1 ? "true" : "false")){
-    var fps = (_formasPago||[]);
-    if (fps.some(fp=>fp.medioId<=0||fp.planId<=0)){ showAlert('Complete todas las formas de pago.'); return false; }
   }
   return true;
 }
@@ -1585,19 +1780,8 @@ async function grabarVenta(){
     fkPedido      : _pedidoCargado||0
   }));
 
-  var fps = @(p.TieneMediosPagos == 1 ? "(_formasPago||[])" : "[]");
-  var importeCobro = fps.reduce ? fps.reduce((a,fp)=>a+fp.importe,0) : 0;
-  // Si no se imputa, distribuir total entre formas de pago
-  @if (p.TieneMediosPagos == 1 && p.ImputaEnVenta == 0)
-  {
-    <text>
-  if (fps.length>0 && importeCobro===0){
-    var share=total/fps.length;
-    fps.forEach(fp=>fp.importe=share);
-    importeCobro=total;
-  }
-    </text>
-  }
+  var fps = (TIENE_MEDPAG===1||LLEVA_CC===1) ? (_formasPago||[]) : [];
+  var importeCobro = fps.reduce((a,fp)=>a+fp.importe,0);
 
   var formasPago = fps.map ? fps.map(fp=>({
     fkMedioPago: fp.medioId,
@@ -1760,10 +1944,7 @@ window.limpiarFormulario = function(){
   document.getElementById('txtBusqCant').value='1';
   var _acD = document.getElementById('acDesc'); if (_acD){ _acD.style.display='none'; _acD.innerHTML=''; }
   _limpiarPendiente();
-  @if (p.TieneMediosPagos == 1)
-  {
-    <text>_formasPago=[]; renderFormasPago();</text>
-  }
+  _formasPago=[];
   // Restaurar cliente consumidor final si corresponde
   @if (p.TieneConsumidorFinal == 1)
   {

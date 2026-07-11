@@ -37,7 +37,7 @@ public class IndexModel : PageModel
     private readonly ICobroService          _cobroService;
     private readonly IPorcentajeIvaService  _porcIvaService;
     private readonly IPromocionService      _promoService;
-    private readonly IParametroService      _parametroService;
+    protected readonly IParametroService    _parametroService;
 
     public IndexModel(
         IVentaService         ventaService,
@@ -77,9 +77,18 @@ public class IndexModel : PageModel
     public List<PlanPagoConMedioDto> PlanesPago       { get; private set; } = new();
     public int                       UsuarioId        { get; private set; }
 
+    protected virtual bool OmitirRedirectMinorista => false;
+
     // ── OnGet ────────────────────────────────────────────────────────────
-    public async Task OnGetAsync()
+    public virtual async Task<IActionResult> OnGetAsync()
     {
+        if (!OmitirRedirectMinorista)
+        {
+            var esMin = await _parametroService.ObtenerValorAsync("empresa", "esMinorista");
+            if (esMin == "1")
+                return RedirectToPage("/Ventas/VentasMinorista/Index");
+        }
+
         Params = await _ventaService.GetParametrosAsync(Environment.MachineName);
 
         var vendedores = await _usuarioService.GetAllAsync();
@@ -136,6 +145,7 @@ public class IndexModel : PageModel
 
         var nombre = User.FindFirstValue(ClaimTypes.Name) ?? "";
         UsuarioId = await _cobroService.GetUsuarioIdByNombreAsync(nombre);
+        return Page();
     }
 
     // ── Helper para el multi-select de clientes ──────────────────────────
