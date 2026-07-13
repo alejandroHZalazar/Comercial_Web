@@ -28,8 +28,10 @@ public partial class Pedido
     public bool? Vendido { get; set; }
 
     // ── Ecommerce ──────────────────────────────────────────────────────────
-    public int?     EsEcommerce          { get; set; }
-    public string?  DireccionEntrega     { get; set; }
+    public int?     EsEcommerce           { get; set; }
+    public string?  EstadoEcommerce       { get; set; }
+    public string?  NombreCliente         { get; set; }
+    public string?  DireccionEntrega      { get; set; }
     public string?  DireccionEntregaTexto { get; set; }
-    public decimal? CostoEnvio           { get; set; }
+    public decimal? CostoEnvio            { get; set; }
 }

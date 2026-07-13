@@ -82,11 +82,19 @@ public class PedidoService : IPedidoService
         DateTime? desde, DateTime? hasta,
         List<int> vendedores, List<int> clientes)
     {
+        // LEFT JOINs para incluir pedidos Ecommerce con fk_cliente o fk_vendedor nulos
         var q = from p in _db.Pedidos
                 where p.Total > 0
-                join c in _db.Clientes on p.FkCliente equals c.Id
-                join u in _db.Usuarios on p.FkVendedor equals u.Id
-                select new { p, ClienteNombre = c.NombreComercial, VendedorNombre = u.Nombre, p.Impreso, p.Vendido };
+                join cj in _db.Clientes  on p.FkCliente  equals cj.Id into clJoin
+                from c in clJoin.DefaultIfEmpty()
+                join uj in _db.Usuarios on p.FkVendedor  equals uj.Id into usJoin
+                from u in usJoin.DefaultIfEmpty()
+                select new
+                {
+                    p,
+                    ClienteNombre  = c != null ? c.NombreComercial : p.NombreCliente,
+                    VendedorNombre = u != null ? u.Nombre          : null
+                };
 
         if (desde.HasValue)
             q = q.Where(x => x.p.Fecha >= desde.Value);
@@ -102,16 +110,18 @@ public class PedidoService : IPedidoService
             .Take(300)
             .Select(x => new PedidoBuscarItem
             {
-                Id             = x.p.Id,
-                Fecha          = x.p.Fecha,
-                NombreCliente  = x.ClienteNombre,
-                FkCliente      = x.p.FkCliente,
-                NombreVendedor = x.VendedorNombre,
-                Observacion    = x.p.Observacion,
-                Iva            = x.p.Iva,
-                Total          = x.p.Total,
-                Impreso        = x.Impreso,
-                Vendido        = x.Vendido
+                Id              = x.p.Id,
+                Fecha           = x.p.Fecha,
+                NombreCliente   = x.ClienteNombre,
+                FkCliente       = x.p.FkCliente,
+                NombreVendedor  = x.VendedorNombre,
+                Observacion     = x.p.Observacion,
+                Iva             = x.p.Iva,
+                Total           = x.p.Total,
+                Impreso         = x.p.Impreso,
+                Vendido         = x.p.Vendido,
+                EsEcommerce     = x.p.EsEcommerce,
+                EstadoEcommerce = x.p.EstadoEcommerce
             }).ToListAsync();
     }
 

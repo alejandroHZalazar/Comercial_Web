@@ -40,6 +40,8 @@ public class PedidoBuscarItem
     public decimal? Total          { get; set; }
     public bool?    Impreso        { get; set; }
     public bool?    Vendido        { get; set; }
+    public int?     EsEcommerce    { get; set; }
+    public string?  EstadoEcommerce { get; set; }
 }
 
 // ── Cabecera de pedido (para cargar pedido a editar) ─────────────────────

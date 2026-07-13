@@ -547,6 +547,12 @@ public partial class ComercialDbContext : DbContext
             entity.Property(e => e.EsEcommerce)
                 .HasColumnType("int(11)")
                 .HasColumnName("esEcommerce");
+            entity.Property(e => e.EstadoEcommerce)
+                .HasMaxLength(50)
+                .HasColumnName("estadoEcommerce");
+            entity.Property(e => e.NombreCliente)
+                .HasMaxLength(200)
+                .HasColumnName("nombreCliente");
             entity.Property(e => e.DireccionEntrega)
                 .HasMaxLength(500)
                 .HasColumnName("direccionEntrega");

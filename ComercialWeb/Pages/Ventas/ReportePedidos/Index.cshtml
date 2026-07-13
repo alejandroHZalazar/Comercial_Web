@@ -41,6 +41,8 @@
 .badge-impreso   { background:#1cc88a;color:#fff;font-size:.7rem;padding:.2em .5em;border-radius:4px; }
 .badge-noimpreso { background:#e9ecef;color:#6c757d;font-size:.7rem;padding:.2em .5em;border-radius:4px; }
 .badge-vendido   { background:#4e73df;color:#fff;font-size:.7rem;padding:.2em .5em;border-radius:4px; }
+.badge-ecomm     { background:#fd7e14;color:#fff;font-size:.7rem;padding:.2em .5em;border-radius:4px; }
+.badge-ecomm-estado { background:#fff3cd;color:#856404;font-size:.65rem;padding:.15em .45em;border-radius:4px;border:1px solid #ffc107; }
 /* Loading */
 #loadingRow { display:none; }
 /* Detail modal */
@@ -335,6 +337,10 @@
                 }
                 document.getElementById('lblConteo').textContent = data.length + ' pedido(s)';
                 data.forEach(p => {
+                    const esEcomm   = p.esEcommerce === 1;
+                    const estadoBadge = esEcomm && p.estadoEcommerce
+                        ? `<span class="badge-ecomm-estado ms-1">${p.estadoEcommerce}</span>`
+                        : '';
                     const tr = document.createElement('tr');
                     tr.className = 'data-row';
                     tr.innerHTML = `
@@ -344,7 +350,9 @@
                         <td>${p.nombreVendedor ?? ''}</td>
                         <td style="text-align:right;font-weight:600;">$${fmt(p.total)}</td>
                         <td style="text-align:center;">
-                            ${p.vendido  ? '<span class="badge-vendido">Vendido</span> ' : ''}
+                            ${esEcomm ? '<span class="badge-ecomm">E-commerce</span> ' : ''}
+                            ${estadoBadge}
+                            ${p.vendido  ? ' <span class="badge-vendido">Vendido</span> ' : ''}
                             ${p.impreso  ? '<span class="badge-impreso">Impreso</span>' : '<span class="badge-noimpreso">No impreso</span>'}
                         </td>
                         <td style="text-align:center;">

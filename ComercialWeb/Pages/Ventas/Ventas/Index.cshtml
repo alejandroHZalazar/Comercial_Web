@@ -1316,10 +1316,14 @@ window.buscarPedidos = async function(){
     var chkVendido = p2.vendido
       ? '<span style="color:#e74a3b;font-weight:700;" title="Sí">&#10003;</span>'
       : '<span style="color:#aaa;" title="No">&#8212;</span>';
+    var ecommBadge = p2.esEcommerce === 1
+      ? '<br><span style="background:#fd7e14;color:#fff;font-size:.6rem;padding:.1em .4em;border-radius:3px;white-space:nowrap;">E-com</span>'
+        + (p2.estadoEcommerce ? ' <span style="background:#fff3cd;color:#856404;font-size:.6rem;padding:.1em .4em;border-radius:3px;border:1px solid #ffc107;white-space:nowrap;">'+escHtml(p2.estadoEcommerce)+'</span>' : '')
+      : '';
     var tr=document.createElement('tr');
     tr.innerHTML='<td style="font-weight:700;color:#1a3a5c;">#'+p2.id+'</td>'+
       '<td>'+fmtDate(p2.fecha)+'</td>'+
-      '<td>'+escHtml(p2.nombreCliente||'')+'</td>'+
+      '<td>'+escHtml(p2.nombreCliente||'')+ecommBadge+'</td>'+
       '<td>'+escHtml(p2.nombreVendedor||'')+'</td>'+
       '<td style="text-align:right;font-weight:600;">$'+fmt(p2.total)+'</td>'+
       '<td style="text-align:center;">'+chkImpreso+'</td>'+
