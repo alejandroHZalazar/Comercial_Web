@@ -83,15 +83,27 @@ public class CambiosPreciosMasivoService : ICambiosPreciosMasivoService
 
             int prodId = producto.Id;
 
-            // 4. Obtener ganancia y descuento del proveedor
+            // 4. Obtener ganancia y descuento
+            //    - preciosPorProducto = 1 → se toman de Productos (ganancia/descuento del producto; NULL = 0)
+            //    - NULL o 0             → comportamiento actual: se toman del proveedor
             int idProvFinal = producto.FkProveedor ?? fila.IdProveedor;
             var proveedor = await _db.Proveedores
                 .Where(p => p.Id == idProvFinal)
-                .Select(p => new { p.Ganancia, p.Descuento })
+                .Select(p => new { p.Ganancia, p.Descuento, p.PreciosPorProducto })
                 .FirstOrDefaultAsync();
 
-            decimal ganancia  = proveedor?.Ganancia  ?? 0m;
-            decimal descuento = proveedor?.Descuento ?? 0m;
+            decimal ganancia;
+            decimal descuento;
+            if (proveedor?.PreciosPorProducto == true)
+            {
+                ganancia  = producto.Ganancia  ?? 0m;
+                descuento = producto.Descuento ?? 0m;
+            }
+            else
+            {
+                ganancia  = proveedor?.Ganancia  ?? 0m;
+                descuento = proveedor?.Descuento ?? 0m;
+            }
 
             // 5. Resguardar precios anteriores en productosLog
             //    DELETE previo + INSERT (igual que el SP)
@@ -203,14 +215,31 @@ public class CambiosPreciosMasivoService : ICambiosPreciosMasivoService
                 .Where(p => p.Modulo == "productos" && p.Parametro1 == "dolarizaProductos")
                 .Select(p => p.Valor)
                 .FirstOrDefaultAsync();
-            // Ganancia / descuento del proveedor
+            // Ganancia / descuento
+            //   - preciosPorProducto = 1 → se toman del CSV (req.Ganancia/Descuento; NULL = 0)
+            //                                y se persisten en Productos.ganancia/descuento
+            //   - NULL o 0             → comportamiento actual: se toman del proveedor
+            //                                y NO se persisten en Productos (quedan NULL)
             var prov = await _db.Proveedores
                 .Where(p => p.Id == req.IdProveedor)
-                .Select(p => new { p.Ganancia, p.Descuento })
+                .Select(p => new { p.Ganancia, p.Descuento, p.PreciosPorProducto })
                 .FirstOrDefaultAsync();
 
-            decimal ganancia  = prov?.Ganancia  ?? 0m;
-            decimal descuento = prov?.Descuento ?? 0m;
+            decimal ganancia, descuento;
+            decimal? gananciaProducto = null;   // lo que se guarda en Productos
+            decimal? descuentoProducto = null;
+            if (prov?.PreciosPorProducto == true)
+            {
+                gananciaProducto  = req.Ganancia;
+                descuentoProducto = req.Descuento;
+                ganancia  = req.Ganancia  ?? 0m;
+                descuento = req.Descuento ?? 0m;
+            }
+            else
+            {
+                ganancia  = prov?.Ganancia  ?? 0m;
+                descuento = prov?.Descuento ?? 0m;
+            }
 
             decimal nuevoCosto = req.PrecioProv * (1m - descuento / 100m);
             decimal nuevoLista = req.PrecioProv * (1m + ganancia  / 100m);
@@ -226,7 +255,9 @@ public class CambiosPreciosMasivoService : ICambiosPreciosMasivoService
                 Iva          = 1,
                 Baja         = false,
                 Fraccionado  = false,
-                Dolarizado   = false
+                Dolarizado   = false,
+                Ganancia     = gananciaProducto,
+                Descuento    = descuentoProducto
             };
             _db.Productos.Add(prod);
             await _db.SaveChangesAsync();   // obtiene prod.Id

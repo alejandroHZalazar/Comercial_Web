@@ -37,6 +37,10 @@ public class InsertarProductoNuevoRequest
     public decimal PrecioProv    { get; set; }
     public decimal StockInicial  { get; set; }
     public decimal CantMinima    { get; set; }
+    // Porcentajes del CSV — solo se usan/persisten si el proveedor tiene preciosPorProducto = 1.
+    // NULL = columna vacía (proveedor por-proveedor).
+    public decimal? Ganancia     { get; set; }
+    public decimal? Descuento    { get; set; }
 }
 
 public class InsertarProductoNuevoResult

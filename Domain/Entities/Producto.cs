@@ -27,6 +27,12 @@ public partial class Producto
 
     public bool? EsPromocion { get; set; }
 
+    // Porcentajes por producto — solo se usan cuando el proveedor tiene preciosPorProducto = 1.
+    // Columnas decimal(18,2) DEFAULT NULL. NULL = el producto usa los porcentajes del proveedor.
+    public decimal? Ganancia { get; set; }
+
+    public decimal? Descuento { get; set; }
+
     public string? DescripcionLarga { get; set; }
 
     public byte[]? Imagen { get; set; }

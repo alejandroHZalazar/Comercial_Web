@@ -62,7 +62,8 @@ namespace Comercial_Web.Pages.Productos.ABM
                                 Id = v.Id,
                                 NombreComercial = v.NombreComercial ?? "",
                                 Ganancia = v.Ganancia ?? 0,
-                                Descuento = v.Descuento ?? 0
+                                Descuento = v.Descuento ?? 0,
+                                PreciosPorProducto = v.PreciosPorProducto
                             }).ToList();
         }
 
@@ -275,6 +276,18 @@ namespace Comercial_Web.Pages.Productos.ABM
                 await CargarCombosAsync();
                 //await CargarGrillaAsync();
                 return Page();
+            }
+
+            // Regla de porcentajes por producto: solo se persisten si el proveedor
+            // tiene preciosPorProducto = 1. En cualquier otro caso se fuerzan a NULL
+            // (no se confía en el cliente; se valida contra la BD).
+            var proveedorSel = Producto.FkProveedor.HasValue
+                ? await _proveedorService.GetByIdAsync(Producto.FkProveedor.Value)
+                : null;
+            if (proveedorSel?.PreciosPorProducto != true)
+            {
+                Producto.Ganancia  = null;
+                Producto.Descuento = null;
             }
 
             if (Producto.Id == 0)

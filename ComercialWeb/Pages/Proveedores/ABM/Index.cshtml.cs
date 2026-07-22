@@ -61,7 +61,8 @@ namespace Comercial_Web.Pages.Proveedores.ABM
                     ProveedorForm.Telefono,
                     ProveedorForm.Celular,
                     ProveedorForm.Ganancia ?? 0m,
-                    ProveedorForm.Descuento ?? 0m
+                    ProveedorForm.Descuento ?? 0m,
+                    ProveedorForm.PreciosPorProducto
                 );
             }
             else
@@ -75,7 +76,8 @@ namespace Comercial_Web.Pages.Proveedores.ABM
                     ProveedorForm.Telefono,
                     ProveedorForm.Celular,
                     ProveedorForm.Ganancia ?? 0m,
-                    ProveedorForm.Descuento ?? 0m
+                    ProveedorForm.Descuento ?? 0m,
+                    ProveedorForm.PreciosPorProducto
                 );
             }
 

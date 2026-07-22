@@ -223,12 +223,13 @@
                         </svg>
                         <span id="lblCopiar">Copiar</span>
                     </button>
-                    <pre id="csvEjemplo" class="ejemplo-code">Codigo	Precio	Descripcion	CodBarras	idproveedor
+                    <pre id="csvEjemplo" class="ejemplo-code">Codigo	Precio	Descripcion	CodBarras	idproveedor	descuento	ganancia
 5003	9825,20	LIBRO DE TELAS	7798143643873	3
 2023	10181,60	MAMADERA DE VIDRIO 240ML	7798143643651	3
-3000	10543,20	PRENDEDOR VAITA X6	7798143640612	3</pre>
+3000	10543,20	PRENDEDOR VAITA X6	7798143640612	3		</pre>
                     <div class="mt-1" style="font-size:.72rem;color:#9aa3b0;">
-                        Separador: <strong>tabulación o punto y coma</strong> · Decimales: <strong>coma o punto</strong> · Primera fila = encabezados
+                        Separador: <strong>tabulación o punto y coma</strong> · Decimales: <strong>coma o punto</strong> · Primera fila = encabezados<br>
+                        Columnas <strong>descuento</strong> y <strong>ganancia</strong>: completar solo para proveedores con <em>precios por producto</em>; en el resto, dejarlas vacías.
                     </div>
                 </div>
             </div>
@@ -451,6 +452,15 @@ function parseNum(v) {
     return isNaN(n) ? 0 : n;
 }
 
+// Igual que parseNum pero devuelve null cuando la celda viene vacía
+// (para las columnas descuento/ganancia de proveedores sin preciosPorProducto).
+function parseNumOrNull(v) {
+    if (v == null) return null;
+    const s = String(v).replace(/[ ﻿\t]/g, '').trim();
+    if (s === '') return null;
+    return parseNum(s);
+}
+
 // =================================================================
 // PARSEO CSV
 // =================================================================
@@ -510,7 +520,11 @@ function parsearCSV(texto, nombreArchivo) {
             precio:     parseNum(cols[1]),
             descripcion:cols[2] || '',
             codBarras:  cols[3] || '',
-            idProveedor:parseInt(cols[4]) || 0
+            idProveedor:parseInt(cols[4]) || 0,
+            // Columnas opcionales (solo se usan al insertar productos nuevos de
+            // proveedores con preciosPorProducto = 1). Vacías → null.
+            descuento:  parseNumOrNull(cols[5]),
+            ganancia:   parseNumOrNull(cols[6])
         });
     });
 
@@ -692,7 +706,9 @@ async function insertarNuevo(idx) {
                 idProveedor:  f.idProveedor,
                 precioProv:   f.precio,
                 stockInicial: stock,
-                cantMinima:   cantMin
+                cantMinima:   cantMin,
+                ganancia:     f.ganancia  ?? null,
+                descuento:    f.descuento ?? null
             })
         });
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
@@ -742,7 +758,8 @@ async function insertarTodosNuevos() {
                 body: JSON.stringify({
                     codProveedor: codProv, codBarras: codBarras,
                     descripcion:  desc, idProveedor: f.idProveedor,
-                    precioProv:   f.precio, stockInicial: stock, cantMinima: cantMin
+                    precioProv:   f.precio, stockInicial: stock, cantMinima: cantMin,
+                    ganancia:     f.ganancia  ?? null, descuento: f.descuento ?? null
                 })
             });
             const r = await resp.json();

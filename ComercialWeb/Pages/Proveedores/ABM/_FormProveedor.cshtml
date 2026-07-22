@@ -68,6 +68,18 @@
                     Estos porcentajes se usan al calcular precios desde este proveedor.
                 </div>
             </div>
+            <div class="col-12">
+                <div style="background:#f8f9fa;border:1px solid #e3e6f0;border-radius:8px;padding:.6rem .85rem;display:flex;align-items:center;gap:.6rem;">
+                    <input type="checkbox" asp-for="PreciosPorProductoFlag" id="chkPreciosPorProducto"
+                           style="width:1.1rem;height:1.1rem;cursor:pointer;accent-color:#4e73df;" />
+                    <label for="chkPreciosPorProducto" style="margin:0;font-size:.82rem;font-weight:600;color:#495057;cursor:pointer;">
+                        Precios por producto
+                    </label>
+                    <span style="font-size:.75rem;color:#6c757d;margin-left:.25rem;">
+                        — los precios de este proveedor se gestionan individualmente por producto.
+                    </span>
+                </div>
+            </div>
         </div>
     </div>
 

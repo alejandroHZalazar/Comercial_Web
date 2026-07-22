@@ -712,6 +712,12 @@ public partial class ComercialDbContext : DbContext
             entity.Property(e => e.EsPromocion)
                 .HasDefaultValueSql("'0'")
                 .HasColumnName("esPromocion");
+            entity.Property(e => e.Ganancia)
+                .HasPrecision(18, 2)
+                .HasColumnName("ganancia");
+            entity.Property(e => e.Descuento)
+                .HasPrecision(18, 2)
+                .HasColumnName("descuento");
             entity.Property(e => e.DescripcionLarga)
                 .HasColumnType("text")
                 .HasColumnName("descripcionLarga");
@@ -856,6 +862,8 @@ public partial class ComercialDbContext : DbContext
             entity.Property(e => e.Telefono)
                 .HasMaxLength(45)
                 .HasColumnName("telefono");
+            entity.Property(e => e.PreciosPorProducto)
+                .HasColumnName("preciosPorProducto");
         });
 
         modelBuilder.Entity<Provincia>(entity =>

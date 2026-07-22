@@ -8,8 +8,8 @@ namespace Application.Interfaces
     {
         Task<List<Proveedore>> GetAllAsync();
         Task<Proveedore?> GetByIdAsync(int id);
-        Task<int> CreateAsync(string nombreComercial, string? cuil, string? direccion, string? email, string? telefono, string? celular, decimal ganancia, decimal descuento);
-        Task UpdateAsync(int id, string nombreComercial, string? cuil, string? direccion, string? email, string? telefono, string? celular, decimal ganancia, decimal descuento);
+        Task<int> CreateAsync(string nombreComercial, string? cuil, string? direccion, string? email, string? telefono, string? celular, decimal ganancia, decimal descuento, bool? preciosPorProducto = null);
+        Task UpdateAsync(int id, string nombreComercial, string? cuil, string? direccion, string? email, string? telefono, string? celular, decimal ganancia, decimal descuento, bool? preciosPorProducto = null);
         Task DeleteAsync(int id); // baja lógica
         Task<List<ProveedorCabeceraDto>> TraerCabeceraAsync();
 

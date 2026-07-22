@@ -79,6 +79,8 @@ namespace Infrastructure.Services
                 FkProveedor      = vm.FkProveedor,
                 Iva              = vm.FkIva ?? 1,
                 Baja             = false,
+                Ganancia         = vm.Ganancia,
+                Descuento        = vm.Descuento,
                 DescripcionLarga = vm.DescripcionLarga?.Trim(),
                 Imagen           = _Base64ABytes(vm.Imagen)
             };
@@ -129,6 +131,8 @@ namespace Infrastructure.Services
             existente.FkRubro          = producto.FkRubro;
             existente.Descripcion      = producto.Descripcion?.Trim();
             existente.FkProveedor      = producto.FkProveedor;
+            existente.Ganancia         = producto.Ganancia;
+            existente.Descuento        = producto.Descuento;
             existente.DescripcionLarga = producto.DescripcionLarga?.Trim();
 
             // Lógica de imagen:
@@ -245,6 +249,8 @@ namespace Infrastructure.Services
                 PrecioProveedor  = prpr.Precio,
                 FkRubro          = p.FkRubro,
                 FkProveedor      = p.FkProveedor,
+                Ganancia         = p.Ganancia,
+                Descuento        = p.Descuento,
                 DescripcionLarga = p.DescripcionLarga,
                 // El blob no se incluye en el DTO general; se sirve vía OnGetImagenAsync.
                 // Solo indicamos si tiene imagen para que la UI decida qué mostrar.

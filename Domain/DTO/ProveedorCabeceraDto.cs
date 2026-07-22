@@ -19,6 +19,8 @@ namespace Domain.DTO
         public string? NombreComercial { get; set; } = "";
         public decimal? Ganancia { get; set; }
         public decimal? Descuento { get; set; }
+        // true → los porcentajes se cargan por producto; NULL/false → por proveedor (comportamiento actual).
+        public bool? PreciosPorProducto { get; set; }
 
     }
 }

@@ -392,11 +392,34 @@
                                 <option value="">— Seleccione —</option>
                                 @foreach (var p in Model.Proveedores)
                                 {
-                                    <option value="@p.Id" data-ganancia="@p.Ganancia" data-descuento="@p.Descuento">
+                                    <option value="@p.Id" data-ganancia="@p.Ganancia" data-descuento="@p.Descuento"
+                                            data-precios-por-producto="@((p.PreciosPorProducto == true) ? "1" : "0")">
                                         @p.NombreComercial
                                     </option>
                                 }
                             </select>
+                        </div>
+                    </div>
+
+                    @* -- Porcentajes por Producto (visible solo si el proveedor tiene preciosPorProducto = 1) -- *@
+                    <div id="seccionPorcentajesProducto" style="display:none;">
+                        <div class="modal-section-label">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" class="me-1">
+                                <path d="M0 0h1v15h15v1H0V0Zm14.817 3.113a.5.5 0 0 1 .07.704l-4.5 5.5a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61 4.15-5.073a.5.5 0 0 1 .704-.07Z"/>
+                            </svg>
+                            Porcentajes por Producto
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" style="font-size:.83rem;">Ganancia (%)</label>
+                                <input type="text" id="GananciaProducto" name="Producto.Ganancia"
+                                       class="form-control form-control-sm price-input" placeholder="0,00" autocomplete="off" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" style="font-size:.83rem;">Descuento (%)</label>
+                                <input type="text" id="DescuentoProducto" name="Producto.Descuento"
+                                       class="form-control form-control-sm price-input" placeholder="0,00" autocomplete="off" />
+                            </div>
                         </div>
                     </div>
 
@@ -588,14 +611,50 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('TipoBusqueda').selectedIndex = @ViewData["FiltroDefecto"];
 
     document.getElementById('productoForm').addEventListener('submit', function () {
-        ['PrecioProveedor','Costo','PrecioLista'].forEach(id => {
+        ['PrecioProveedor','Costo','PrecioLista','GananciaProducto','DescuentoProducto'].forEach(id => {
             const inp = document.getElementById(id);
             if (inp?.value) inp.value = inp.value.replace('.', ',');
         });
     });
 
+    // Mostrar/ocultar los porcentajes por producto según el proveedor seleccionado
+    document.getElementById('ProveedorSelect').addEventListener('change', () => toggleCamposPorcentaje(true));
+
     document.getElementById('btnConfirmarBajaProd').addEventListener('click', ejecutarBajaProd);
 });
+
+// ================================================================
+//  PORCENTAJES POR PRODUCTO — visibilidad según proveedor
+// ================================================================
+// Devuelve true si el proveedor seleccionado maneja porcentajes por producto.
+function proveedorEsPorProducto() {
+    const sel = document.getElementById('ProveedorSelect');
+    const opt = sel.options[sel.selectedIndex];
+    return opt?.getAttribute('data-precios-por-producto') === '1';
+}
+
+// Muestra/oculta la sección. Si prefillDefaults=true y se activa por producto con
+// los campos vacíos, precarga los porcentajes por defecto del proveedor como punto de partida.
+function toggleCamposPorcentaje(prefillDefaults) {
+    const seccion = document.getElementById('seccionPorcentajesProducto');
+    const gInp    = document.getElementById('GananciaProducto');
+    const dInp    = document.getElementById('DescuentoProducto');
+
+    if (proveedorEsPorProducto()) {
+        seccion.style.display = '';
+        if (prefillDefaults) {
+            const sel = document.getElementById('ProveedorSelect');
+            const opt = sel.options[sel.selectedIndex];
+            if (!gInp.value) gInp.value = opt?.getAttribute('data-ganancia')  ?? '';
+            if (!dInp.value) dInp.value = opt?.getAttribute('data-descuento') ?? '';
+        }
+    } else {
+        // Proveedor por-proveedor (NULL/0): se ocultan y se vacían para que se envíen como NULL.
+        seccion.style.display = 'none';
+        gInp.value = '';
+        dInp.value = '';
+    }
+}
 
 // ================================================================
 //  BÚSQUEDA (Enter o botón)
@@ -657,6 +716,8 @@ function abrirModalNuevoProducto() {
     document.getElementById('productoModalLabel').textContent = 'Nuevo Producto';
     document.getElementById('inputCantidad').disabled = false;
     document.getElementById('stockEditNote').style.display = 'none';
+    // Sin proveedor seleccionado → sección de porcentajes por producto oculta
+    toggleCamposPorcentaje(false);
     _resetImagen();
     _modalProd.show();
 }
@@ -681,7 +742,13 @@ async function abrirModalEditar(id) {
         document.getElementById('PrecioLista').value     = prod.precio           ?? '';
         document.querySelector("input[name='Producto.Cantidad']").value       = prod.cantidad      ?? '';
         document.querySelector("input[name='Producto.CantidadMinima']").value = prod.cantidadMinima ?? '';
+        document.getElementById('GananciaProducto').value  = prod.ganancia  ?? '';
+        document.getElementById('DescuentoProducto').value = prod.descuento ?? '';
         document.getElementById('DescripcionLarga').value = prod.descripcionLarga ?? '';
+
+        // Visibilidad de porcentajes por producto según el proveedor del producto
+        // (no precargar defaults: respetar los valores ya guardados)
+        toggleCamposPorcentaje(false);
 
         // Imagen: la servimos desde BD vía handler (no base64 en la respuesta JSON)
         _resetImagen();
@@ -700,11 +767,20 @@ async function abrirModalEditar(id) {
 //  CALCULAR PRECIO
 // ================================================================
 function calcularPrecio() {
-    const precioProveedor = parseFloat(document.getElementById('PrecioProveedor').value) || 0;
+    const precioProveedor = parseFloat((document.getElementById('PrecioProveedor').value || '').replace(',', '.')) || 0;
     const sel     = document.getElementById('ProveedorSelect');
     const opt     = sel.options[sel.selectedIndex];
-    const ganancia = parseFloat(opt?.getAttribute('data-ganancia')) || 0;
-    const descuento= parseFloat(opt?.getAttribute('data-descuento'))|| 0;
+
+    let ganancia, descuento;
+    if (proveedorEsPorProducto()) {
+        // Porcentajes cargados a nivel producto
+        ganancia  = parseFloat((document.getElementById('GananciaProducto').value  || '').replace(',', '.')) || 0;
+        descuento = parseFloat((document.getElementById('DescuentoProducto').value || '').replace(',', '.')) || 0;
+    } else {
+        // Comportamiento actual: porcentajes a nivel proveedor
+        ganancia  = parseFloat(opt?.getAttribute('data-ganancia'))  || 0;
+        descuento = parseFloat(opt?.getAttribute('data-descuento')) || 0;
+    }
 
     document.getElementById('PrecioLista').value = (precioProveedor + precioProveedor * ganancia  / 100).toFixed(2);
     document.getElementById('Costo').value       = (precioProveedor - precioProveedor * descuento / 100).toFixed(2);

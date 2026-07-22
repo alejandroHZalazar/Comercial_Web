@@ -42,19 +42,21 @@ namespace Infrastructure.Services
             string? telefono,
             string? celular,
             decimal ganancia,
-            decimal descuento)
+            decimal descuento,
+            bool? preciosPorProducto = null)
         {
             var nuevo = new Proveedore
             {
-                NombreComercial = nombreComercial.Trim(),
-                Cuil = cuil?.Trim(),
-                Direccion = direccion?.Trim(),
-                Email = email?.Trim(),
-                Telefono = telefono?.Trim(),
-                Celular = celular?.Trim(),
-                Ganancia = ganancia,
-                Descuento = descuento,
-                Baja = false
+                NombreComercial  = nombreComercial.Trim(),
+                Cuil             = cuil?.Trim(),
+                Direccion        = direccion?.Trim(),
+                Email            = email?.Trim(),
+                Telefono         = telefono?.Trim(),
+                Celular          = celular?.Trim(),
+                Ganancia         = ganancia,
+                Descuento        = descuento,
+                PreciosPorProducto = preciosPorProducto,
+                Baja             = false
             };
 
             _context.Proveedores.Add(nuevo);
@@ -62,9 +64,6 @@ namespace Infrastructure.Services
             return nuevo.Id;
         }
 
-        /// <summary>
-        /// Modificación de proveedor con todos los campos
-        /// </summary>
         public async Task UpdateAsync(
             int id,
             string nombreComercial,
@@ -74,20 +73,22 @@ namespace Infrastructure.Services
             string? telefono,
             string? celular,
             decimal ganancia,
-            decimal descuento)
+            decimal descuento,
+            bool? preciosPorProducto = null)
         {
             var existente = await _context.Proveedores.FirstOrDefaultAsync(p => p.Id == id);
             if (existente == null)
                 throw new InvalidOperationException($"No se encontró el proveedor Id={id}");
 
-            existente.NombreComercial = nombreComercial.Trim();
-            existente.Cuil = cuil?.Trim();
-            existente.Direccion = direccion?.Trim();
-            existente.Email = email?.Trim();
-            existente.Telefono = telefono?.Trim();
-            existente.Celular = celular?.Trim();
-            existente.Ganancia = ganancia;
-            existente.Descuento = descuento;
+            existente.NombreComercial    = nombreComercial.Trim();
+            existente.Cuil               = cuil?.Trim();
+            existente.Direccion          = direccion?.Trim();
+            existente.Email              = email?.Trim();
+            existente.Telefono           = telefono?.Trim();
+            existente.Celular            = celular?.Trim();
+            existente.Ganancia           = ganancia;
+            existente.Descuento          = descuento;
+            existente.PreciosPorProducto = preciosPorProducto;
 
             await _context.SaveChangesAsync();
         }

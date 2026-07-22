@@ -34,6 +34,9 @@ namespace Domain.DTO
         public decimal? PrecioProveedor { get; set; }
         public int? FkRubro { get; set; }
         public int? FkProveedor { get; set; }
+        // Porcentajes por producto (solo se persisten si el proveedor tiene preciosPorProducto = 1).
+        public decimal? Ganancia { get; set; }
+        public decimal? Descuento { get; set; }
         public string? DescripcionLarga { get; set; }
         /// <summary>
         /// En POST: base64 de la imagen nueva (vacío = no cambiar en edición).

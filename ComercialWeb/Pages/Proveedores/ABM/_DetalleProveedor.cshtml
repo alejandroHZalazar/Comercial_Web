@@ -72,6 +72,19 @@ else
         </div>
     </div>
     <div class="det-field">
+        <span class="det-label">Precios por producto</span>
+        <span>
+            @if (Model.PreciosPorProducto == true)
+            {
+                <span class="badge-activo">Sí</span>
+            }
+            else
+            {
+                <span class="badge-inactivo">No</span>
+            }
+        </span>
+    </div>
+    <div class="det-field">
         <span class="det-label">Estado</span>
         <span>
             @if (Model.Baja == true)
