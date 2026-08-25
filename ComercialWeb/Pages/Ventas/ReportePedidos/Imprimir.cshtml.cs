@@ -33,6 +33,11 @@ public class ImprimirModel : PageModel
     public decimal TotIva           { get; private set; }
     public decimal TotTotal         { get; private set; }
 
+    // Descuento general sobre Total S/IVA (modo bonificacionesPorDetalle = 1)
+    public bool    EsDescuentoGeneral    { get; private set; }
+    public decimal DescGeneralPct        { get; private set; }
+    public decimal TotDescGeneralImporte { get; private set; }
+
     public async Task<IActionResult> OnGetAsync(int id)
     {
         if (id <= 0) { Error = "ID de pedido inválido."; return Page(); }
@@ -63,11 +68,17 @@ public class ImprimirModel : PageModel
             LogoHtml = $"<img src=\"data:{mime};base64,{Convert.ToBase64String(img)}\" style=\"max-height:60px;max-width:160px;\" />";
         }
 
+        // Modo de bonificación: 1 = por línea (cab.Descuento es descuento general sobre Total S/IVA)
+        var bonStr = await _parametroService.ObtenerValorAsync("ventas", "bonificacionesPorDetalle");
+        EsDescuentoGeneral = bonStr == "1";
+
         // Calculate totals applying the global descuento rule
         decimal ivaRate = (Cabecera.Iva ?? 0) / 100m;
         decimal? descRecGlobal = null;
-        if (Cabecera.Descuento.HasValue)
-            descRecGlobal = (Cabecera.Descuento ?? 0m) * -1m + (Cabecera.Recargo ?? 0m);
+        if (EsDescuentoGeneral)
+            DescGeneralPct = Cabecera.Descuento ?? 0m;                       // descuento general (no reemplaza líneas)
+        else if (Cabecera.Descuento.HasValue)
+            descRecGlobal = (Cabecera.Descuento ?? 0m) * -1m + (Cabecera.Recargo ?? 0m);  // regla global clásica
 
         foreach (var l in Detalle)
         {
@@ -86,13 +97,24 @@ public class ImprimirModel : PageModel
             TotTotal      += precioConIva * cant;
         }
 
+        // Descuento general: netea Total S/IVA, IVA y Total (no altera las líneas)
+        if (EsDescuentoGeneral && DescGeneralPct > 0)
+        {
+            decimal factor = 1m - DescGeneralPct / 100m;
+            TotDescGeneralImporte = TotSubtSIva * DescGeneralPct / 100m;
+            TotSubtSIva *= factor;
+            TotIva      *= factor;
+            TotTotal    *= factor;
+        }
+
         return Page();
     }
 
     // Helper: resolve descRec for a single line (used in view)
     public decimal GetDescRec(PedidoDetalleItemDto l)
     {
-        if (Cabecera?.Descuento.HasValue == true)
+        // En modo por línea el desc/rec es siempre el de la línea (cab.Descuento es general)
+        if (!EsDescuentoGeneral && Cabecera?.Descuento.HasValue == true)
             return (Cabecera.Descuento ?? 0m) * -1m + (Cabecera.Recargo ?? 0m);
         return l.Descuento * -1m + l.Recargo;
     }

@@ -5,6 +5,7 @@ using Domain.Entities;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Text.Json;
 using static Domain.DTO.ClienteDTO;
 
 namespace Infrastructure.Services
@@ -112,6 +113,10 @@ namespace Infrastructure.Services
                 Cantidad = vm.Cantidad,
                 CantidadMinima = vm.CantidadMinima
             });
+
+            // Imágenes cargadas antes de guardar (aún no existía Id de producto).
+            // Se insertan en la misma transacción para no dejar el alta a mitad de camino.
+            _AgregarImagenesPendientes(producto.Id, vm.ImagenesNuevasJson);
 
             await _context.SaveChangesAsync();
             await tx.CommitAsync();
@@ -265,11 +270,179 @@ namespace Infrastructure.Services
                 producto.Precio = Math.Round(producto.Precio ?? 0, decCant);
                 producto.Costo = Math.Round(producto.Costo ?? 0, decCant);
                 producto.PrecioProveedor = Math.Round(producto.PrecioProveedor ?? 0, decCant);
+
+                producto.Imagenes = await GetImagenesAsync(producto.Id!.Value);
             }
 
             return producto;
 
         }
-       
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  Múltiples imágenes (imagenesProductos)
+        // ═══════════════════════════════════════════════════════════════════
+
+        public async Task<List<ImagenProductoDto>> GetImagenesAsync(int idProducto)
+        {
+            return await _context.ImagenesProductos
+                .Where(i => i.FkProducto == idProducto && !i.Baja)
+                .OrderBy(i => i.Orden).ThenBy(i => i.Id)
+                .Select(i => new ImagenProductoDto
+                {
+                    Id          = i.Id,
+                    EsPrincipal = i.EsPrincipal,
+                    Orden       = i.Orden
+                })
+                .ToListAsync();
+        }
+
+        public async Task<(byte[] Bytes, string? ContentType)?> ObtenerImagenItemAsync(int imagenId)
+        {
+            var img = await _context.ImagenesProductos
+                .Where(i => i.Id == imagenId && !i.Baja)
+                .Select(i => new { i.Imagen, i.ContentType })
+                .FirstOrDefaultAsync();
+
+            return img == null ? null : (img.Imagen, img.ContentType);
+        }
+
+        public async Task<ImagenProductoDto> AgregarImagenAsync(int idProducto, byte[] bytes, string? contentType, bool esPrincipal)
+        {
+            var activas = await _context.ImagenesProductos
+                .Where(i => i.FkProducto == idProducto && !i.Baja)
+                .ToListAsync();
+
+            // Si es la primera imagen del producto, siempre queda como principal.
+            bool nuevaEsPrincipal = esPrincipal || activas.Count == 0;
+
+            if (nuevaEsPrincipal)
+                foreach (var a in activas.Where(a => a.EsPrincipal))
+                    a.EsPrincipal = false;
+
+            int siguienteOrden = activas.Count == 0 ? 0 : activas.Max(a => a.Orden) + 1;
+
+            var nueva = new ImagenesProducto
+            {
+                FkProducto  = idProducto,
+                Imagen      = bytes,
+                ContentType = contentType,
+                EsPrincipal = nuevaEsPrincipal,
+                Orden       = siguienteOrden,
+                Baja        = false,
+                FechaAlta   = DateTime.Now
+            };
+            _context.ImagenesProductos.Add(nueva);
+            await _context.SaveChangesAsync();
+
+            return new ImagenProductoDto { Id = nueva.Id, EsPrincipal = nueva.EsPrincipal, Orden = nueva.Orden };
+        }
+
+        public async Task EliminarImagenAsync(int imagenId)
+        {
+            var img = await _context.ImagenesProductos.FirstOrDefaultAsync(i => i.Id == imagenId && !i.Baja);
+            if (img == null) return;
+
+            img.Baja = true;
+
+            // Si era la principal, promover a otra imagen activa restante (la de menor orden) para
+            // no dejar el producto sin imagen principal mientras tenga imágenes activas.
+            if (img.EsPrincipal)
+            {
+                var siguiente = await _context.ImagenesProductos
+                    .Where(i => i.FkProducto == img.FkProducto && !i.Baja && i.Id != imagenId)
+                    .OrderBy(i => i.Orden).ThenBy(i => i.Id)
+                    .FirstOrDefaultAsync();
+                if (siguiente != null)
+                    siguiente.EsPrincipal = true;
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task MarcarPrincipalAsync(int idProducto, int imagenId)
+        {
+            var activas = await _context.ImagenesProductos
+                .Where(i => i.FkProducto == idProducto && !i.Baja)
+                .ToListAsync();
+
+            var objetivo = activas.FirstOrDefault(i => i.Id == imagenId);
+            if (objetivo == null) return; // no pertenece al producto o está dada de baja
+
+            foreach (var a in activas)
+                a.EsPrincipal = a.Id == imagenId;
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task MoverImagenAsync(int idProducto, int imagenId, bool haciaArriba)
+        {
+            var activas = await _context.ImagenesProductos
+                .Where(i => i.FkProducto == idProducto && !i.Baja)
+                .OrderBy(i => i.Orden).ThenBy(i => i.Id)
+                .ToListAsync();
+
+            int idx = activas.FindIndex(i => i.Id == imagenId);
+            int destino = haciaArriba ? idx - 1 : idx + 1;
+            if (idx < 0 || destino < 0 || destino >= activas.Count) return; // ya está en el extremo
+
+            // Intercambiar Orden entre la imagen y su vecina.
+            (activas[idx].Orden, activas[destino].Orden) = (activas[destino].Orden, activas[idx].Orden);
+
+            await _context.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Persiste (dentro de la transacción de alta) las imágenes cargadas antes de que el
+        /// producto tuviera Id. Aplica la misma regla de "una sola principal" que AgregarImagenAsync.
+        /// </summary>
+        private void _AgregarImagenesPendientes(int idProducto, string? imagenesNuevasJson)
+        {
+            if (string.IsNullOrWhiteSpace(imagenesNuevasJson)) return;
+
+            List<ImagenProductoNuevaDto>? pendientes;
+            try
+            {
+                pendientes = JsonSerializer.Deserialize<List<ImagenProductoNuevaDto>>(
+                    imagenesNuevasJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+            catch { return; } // JSON inválido: no bloquea el alta del producto, simplemente no carga imágenes
+
+            if (pendientes == null || pendientes.Count == 0) return;
+
+            // No confiar en el cliente: garantizar una sola principal (la primera marcada, o la de orden 0).
+            int idxPrincipal = pendientes.FindIndex(p => p.EsPrincipal);
+            if (idxPrincipal < 0) idxPrincipal = 0;
+
+            for (int i = 0; i < pendientes.Count; i++)
+            {
+                var bytes = _Base64ABytes(pendientes[i].Imagen);
+                if (bytes == null) continue;
+
+                _context.ImagenesProductos.Add(new ImagenesProducto
+                {
+                    FkProducto  = idProducto,
+                    Imagen      = bytes,
+                    ContentType = _DetectarContentTypeImagen(bytes),
+                    EsPrincipal = i == idxPrincipal,
+                    Orden       = i,
+                    Baja        = false,
+                    FechaAlta   = DateTime.Now
+                });
+            }
+        }
+
+        private static string _DetectarContentTypeImagen(byte[] data)
+        {
+            if (data.Length >= 2)
+            {
+                if (data[0] == 0xFF && data[1] == 0xD8) return "image/jpeg";
+                if (data[0] == 0x89 && data[1] == 0x50) return "image/png";
+                if (data[0] == 0x47 && data[1] == 0x49) return "image/gif";
+                if (data.Length >= 12 && data[0] == 0x52 && data[1] == 0x49 &&
+                    data[8] == 0x57 && data[9] == 0x45) return "image/webp";
+            }
+            return "image/jpeg";
+        }
+
     }
 }

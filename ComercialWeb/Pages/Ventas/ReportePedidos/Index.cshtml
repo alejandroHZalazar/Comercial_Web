@@ -231,6 +231,7 @@
         <div class="totales-det" id="totalesDetalle" style="display:none;">
           <div class="tot-row"><span>Precio s/IVA</span><span id="tot-precioSIva"></span></div>
           <div class="tot-row"><span>Desc / Rec</span><span id="tot-descRec"></span></div>
+          <div class="tot-row" id="rowDescGeneral" style="display:none;"><span id="lbl-descGeneral">Desc. General</span><span id="tot-descGeneral"></span></div>
           <div class="tot-row"><span>Subtotal s/IVA</span><span id="tot-subtSIva"></span></div>
           <div class="tot-row"><span id="lbl-iva-pct">IVA</span><span id="tot-iva"></span></div>
           <div class="tot-row total"><span>TOTAL</span><span id="tot-total"></span></div>
@@ -256,6 +257,7 @@
     'use strict';
 
     // ── State ──────────────────────────────────────────────────────────────
+    const BONIF_POR_LINEA = @Model.BonificacionPorLinea;   // 1 = cab.descuento es descuento general
     let pedidoIdActual = 0;
     let ivaActual      = 0;
     let descGlobal     = null; // null = sin regla global
@@ -386,7 +388,9 @@
                 if (!res.ok) { alert('No se pudo cargar el pedido.'); return; }
                 const cab = res.cab;
                 ivaActual   = cab.iva ?? 0;
-                descGlobal  = cab.descuento != null ? (cab.descuento * -1 + (cab.recargo ?? 0)) : null;
+                // Modo por línea: cab.descuento es un descuento general sobre Total S/IVA (no reemplaza líneas)
+                descGlobal  = (BONIF_POR_LINEA !== 1 && cab.descuento != null) ? (cab.descuento * -1 + (cab.recargo ?? 0)) : null;
+                const descGeneralPct = (BONIF_POR_LINEA === 1 && cab.descuento != null && cab.descuento > 0) ? cab.descuento : 0;
                 document.getElementById('lbl-iva-pct').textContent = 'IVA ' + ivaActual + '%';
 
                 document.getElementById('det-cliente').textContent    = cab.nombreComercial ?? '';
@@ -431,6 +435,21 @@
                         <td style="text-align:right;font-weight:600;">$${fmt(pConIva * cant)}</td>`;
                     tbody.appendChild(tr);
                 });
+
+                // Descuento general: netea Subtotal s/IVA, IVA y Total (no altera las líneas)
+                const rowDG = document.getElementById('rowDescGeneral');
+                if (descGeneralPct > 0) {
+                    const factor = 1 - descGeneralPct / 100;
+                    const descGeneralImporte = totSub * descGeneralPct / 100;
+                    totSub    *= factor;
+                    totIvaAmt *= factor;
+                    totTotal  *= factor;
+                    document.getElementById('lbl-descGeneral').textContent = 'Desc. General ' + descGeneralPct + '%';
+                    document.getElementById('tot-descGeneral').textContent = '-$' + fmt(descGeneralImporte);
+                    rowDG.style.display = '';
+                } else {
+                    rowDG.style.display = 'none';
+                }
 
                 document.getElementById('tot-precioSIva').textContent = '$' + fmt(totPrecSIva);
                 document.getElementById('tot-descRec').textContent    = '$' + fmt(totDesc);

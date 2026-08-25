@@ -28,11 +28,15 @@ public class IndexModel : PageModel
     // ── Parámetros del sistema ────────────────────────────────────────────────
     public int HaceNotaVentaTK { get; private set; }
 
+    // 1 = desc/rec por línea; devolucion.descuento se interpreta como descuento general sobre Total S/IVA
+    public int BonificacionPorLinea { get; private set; }
+
     // ── Carga inicial ─────────────────────────────────────────────────────────
     public async Task OnGetAsync()
     {
         var prm = await _ventaService.GetParametrosAsync(Environment.MachineName);
-        HaceNotaVentaTK = prm.HaceNotaVentaTK;
+        HaceNotaVentaTK      = prm.HaceNotaVentaTK;
+        BonificacionPorLinea = prm.BonificacionPorLinea;
     }
 
     // ── Buscar devoluciones (GET → JSON) ──────────────────────────────────────

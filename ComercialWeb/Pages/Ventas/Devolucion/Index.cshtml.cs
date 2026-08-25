@@ -169,9 +169,16 @@ public class IndexModel : PageModel
             // Parámetros del sistema
             var prm = await _ventaService.GetParametrosAsync(Environment.MachineName);
 
-            // Desc/Rec global: si todas las filas tienen el mismo valor → se envía como global
+            // Desc/Rec de cabecera:
+            //  - Modo por línea (BonificacionPorLinea==1): descuento GENERAL sobre Total S/IVA
+            //    (heredado/editable de la venta), enviado en request.Descuento. Recargo = 0.
+            //  - Modo global: si todas las filas comparten el mismo desc/rec → se envía como global.
             decimal descuento = 0m, recargo = 0m;
-            if (request.Filas.Count > 0)
+            if (prm.BonificacionPorLinea == 1)
+            {
+                descuento = request.Descuento ?? 0m;
+            }
+            else if (request.Filas.Count > 0)
             {
                 var dr0     = request.Filas[0].DescRec;
                 bool mismo  = request.Filas.All(f => f.DescRec == dr0);

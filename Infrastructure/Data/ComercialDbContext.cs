@@ -27,6 +27,8 @@ public partial class ComercialDbContext : DbContext
 
     public virtual DbSet<DevolucionesDetalle> DevolucionesDetalles { get; set; }
 
+    public virtual DbSet<ImagenesProducto> ImagenesProductos { get; set; }
+
     public virtual DbSet<Impuesto> Impuestos { get; set; }
 
     public virtual DbSet<IvaPorcentaje> IvaPorcentajes { get; set; }
@@ -677,6 +679,41 @@ public partial class ComercialDbContext : DbContext
             entity.Property(e => e.Precio)
                 .HasPrecision(18, 2)
                 .HasColumnName("precio");
+        });
+
+        modelBuilder.Entity<ImagenesProducto>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("imagenesProductos");
+
+            entity.HasIndex(e => new { e.FkProducto, e.Baja, e.EsPrincipal, e.Orden }, "IX_imagenesProductos_lookup");
+
+            entity.Property(e => e.Id)
+                .HasColumnType("int(11)")
+                .HasColumnName("id");
+            entity.Property(e => e.FkProducto)
+                .HasColumnType("int(11)")
+                .HasColumnName("fk_producto");
+            entity.Property(e => e.Imagen)
+                .HasColumnType("longblob")
+                .HasColumnName("imagen");
+            entity.Property(e => e.ContentType)
+                .HasMaxLength(100)
+                .HasColumnName("contentType");
+            entity.Property(e => e.EsPrincipal)
+                .HasDefaultValueSql("'0'")
+                .HasColumnName("esPrincipal");
+            entity.Property(e => e.Orden)
+                .HasDefaultValueSql("'0'")
+                .HasColumnName("orden");
+            entity.Property(e => e.Baja)
+                .HasDefaultValueSql("'0'")
+                .HasColumnName("baja");
+            entity.Property(e => e.FechaAlta)
+                .HasColumnType("datetime")
+                .HasColumnName("fechaAlta")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
 
         modelBuilder.Entity<Producto>(entity =>

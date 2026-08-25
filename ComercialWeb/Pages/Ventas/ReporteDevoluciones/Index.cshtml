@@ -260,6 +260,9 @@
                 <div class="rd-tot-row" id="rowDR" style="display:none;">
                   <span id="det-lbl-dr">Desc/Rec</span><span id="det-drAmt"></span>
                 </div>
+                <div class="rd-tot-row" id="rowDescGeneral" style="display:none;">
+                  <span id="det-lbl-descGeneral">Desc. General</span><span id="det-descGeneralAmt"></span>
+                </div>
                 <div class="rd-tot-row"><span id="det-lbl-iva">IVA</span><span id="det-ivaAmt"></span></div>
                 <div class="rd-tot-row" id="rowIIBB" style="display:none;">
                   <span id="det-lbl-iibb">IIBB</span><span id="det-iibbAmt"></span>
@@ -533,8 +536,11 @@
 
     const iva        = d.iva      ?? 0;
     const imp        = d.impuesto ?? 0;
-    const descGlobal = d.descuento != null
+    // En modo por línea (BONIF===1) devolucion.descuento es un descuento general sobre el Total S/IVA.
+    const BONIF      = @Model.BonificacionPorLinea;
+    const descGlobal = (BONIF !== 1 && d.descuento != null)
       ? (d.descuento * -1 + (d.recargo ?? 0)) : null;
+    const descGeneralPct = (BONIF === 1 && d.descuento != null && d.descuento > 0) ? d.descuento : 0;
 
     const tbody = document.getElementById('tbodyDetModal');
     tbody.innerHTML = '';
@@ -562,12 +568,26 @@
       tbody.appendChild(tr);
     });
 
-    const ivaAmt  = subtSIva * iva / 100;
-    const iibbAmt = subtSIva * imp / 100;
+    // Descuento general: netea Subtotal s/IVA, IVA e IIBB (no altera las líneas)
+    const factorDG       = 1 - descGeneralPct / 100;
+    const descGeneralImp = subtSIva * descGeneralPct / 100;
+    const subtSIvaNeto   = subtSIva * factorDG;
+    const ivaAmt  = subtSIvaNeto * iva / 100;
+    const iibbAmt = subtSIvaNeto * imp / 100;
 
-    document.getElementById('det-subtSIva').textContent = '$' + fmt(subtSIva);
+    document.getElementById('det-subtSIva').textContent = '$' + fmt(subtSIvaNeto);
     document.getElementById('det-lbl-iva').textContent  = 'IVA ' + fmt(iva) + '%';
     document.getElementById('det-ivaAmt').textContent   = '$' + fmt(ivaAmt);
+
+    const rowDG = document.getElementById('rowDescGeneral');
+    if (descGeneralPct > 0) {
+      document.getElementById('det-lbl-descGeneral').textContent = 'Desc. General ' + fmt(descGeneralPct) + '%';
+      document.getElementById('det-descGeneralAmt').textContent  = '–$' + fmt(descGeneralImp);
+      document.getElementById('det-descGeneralAmt').style.color  = '#e74a3b';
+      rowDG.style.display = '';
+    } else {
+      rowDG.style.display = 'none';
+    }
 
     const rowIIBB = document.getElementById('rowIIBB');
     if (imp > 0) {

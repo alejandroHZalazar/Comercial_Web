@@ -100,7 +100,8 @@ else if (Model.Venta != null)
     @* ── Detalle ─────────────────────────────────────────── *@
     @{
       decimal ivaRate = v.Iva / 100m;
-      bool tieneGlobalDR = v.Descuento.HasValue;
+      // En modo descuento general (por línea) NO se usa la regla global: cada línea muestra su desc/rec propio
+      bool tieneGlobalDR = !Model.EsDescuentoGeneral && v.Descuento.HasValue;
       decimal globalDR = tieneGlobalDR ? (v.Descuento ?? 0m) * -1m + (v.Recargo ?? 0m) : 0m;
     }
     @foreach (var d in v.Detalle)
@@ -127,6 +128,15 @@ else if (Model.Venta != null)
     }
 
     <div class="sep-d"></div>
+
+    @* ── Descuento general (modo por línea) ───────────────── *@
+    @if (Model.EsDescuentoGeneral && Model.DescGeneralPct > 0)
+    {
+      <div class="row">
+        <span>Desc. Gral @fmt(Model.DescGeneralPct)%</span>
+        <span>-$@fmt(Model.TotDescGeneralImporte)</span>
+      </div>
+    }
 
     @* ── Total general ──────────────────────────────────── *@
     <div class="row total">

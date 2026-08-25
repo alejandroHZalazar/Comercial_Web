@@ -175,15 +175,40 @@
     }
     .img-drop-zone:hover { border-color: #4e73df; background: #f0f4ff; }
     .img-drop-zone.drag-over { border-color: #4e73df; background: #eef2ff; }
-    #imgPreviewContainer { position:relative; }
-    #imgPreviewContainer img { max-height:120px; border-radius:6px; object-fit:contain; border:1px solid #e3e6f0; }
-    .btn-quitar-img {
+
+    /* ---- GALERÍA DE IMÁGENES (múltiples) ---- */
+    #galeriaImagenes { display:flex; flex-wrap:wrap; gap:10px; margin-top:.6rem; }
+    .img-thumb { position:relative; width:84px; height:84px; }
+    .img-thumb img {
+        width:100%; height:100%; object-fit:cover; border-radius:8px;
+        border:2px solid #e3e6f0; padding:2px; background:#fff;
+    }
+    .img-thumb.es-principal img { border-color:#4e73df; box-shadow:0 0 0 2px rgba(78,115,223,.25); }
+    .img-thumb .badge-principal {
+        position:absolute; top:-6px; left:-6px;
+        background:#4e73df; color:#fff; border-radius:50%;
+        width:18px; height:18px; font-size:10px; line-height:1;
+        display:flex; align-items:center; justify-content:center;
+    }
+    .img-thumb .btn-quitar-img {
         position:absolute; top:-6px; right:-6px;
         background:#e74a3b; color:#fff; border:none;
         border-radius:50%; width:20px; height:20px;
         font-size:11px; line-height:1; cursor:pointer;
         display:flex; align-items:center; justify-content:center;
     }
+    .img-thumb .thumb-actions {
+        position:absolute; bottom:-6px; left:50%; transform:translateX(-50%);
+        display:flex; gap:2px; background:#fff; border-radius:10px;
+        box-shadow:0 1px 4px rgba(0,0,0,.15); padding:1px 3px;
+    }
+    .img-thumb .thumb-actions button {
+        border:none; background:none; cursor:pointer; font-size:11px;
+        line-height:1; padding:2px 3px; color:#5a5c69;
+    }
+    .img-thumb .thumb-actions button:hover { color:#4e73df; }
+    .img-thumb .thumb-actions button:disabled { opacity:.3; cursor:not-allowed; }
+    .img-thumb .btn-marcar-principal { color:#f6c23e; }
 </style>
 
 @* ---- HEADER ---- *@
@@ -502,16 +527,17 @@
                                   style="resize:vertical;font-size:.83rem;"></textarea>
                     </div>
 
-                    @* -- Imagen -- *@
+                    @* -- Imágenes (múltiples) -- *@
                     <div class="modal-section-label">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" class="me-1">
                             <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
                             <path d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-12zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1h12z"/>
                         </svg>
-                        Imagen
+                        Imágenes
                     </div>
 
-                    <input type="hidden" name="Producto.Imagen" id="ImagenUrl" />
+                    @* JSON de imágenes cargadas antes de guardar (solo se usa en alta, Id == 0) *@
+                    <input type="hidden" name="Producto.ImagenesNuevasJson" id="ImagenesNuevasJson" />
 
                     <div class="mb-2">
                         <div class="img-drop-zone" id="imgDropZone" onclick="document.getElementById('inputImagenFile').click()">
@@ -519,19 +545,14 @@
                                 <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
                                 <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
                             </svg>
-                            <div>Hacé clic o arrastrá una imagen</div>
-                            <div class="text-muted" style="font-size:.73rem;">JPG, PNG, GIF, WEBP · máx 2 MB</div>
+                            <div>Hacé clic o arrastrá una o varias imágenes</div>
+                            <div class="text-muted" style="font-size:.73rem;">JPG, PNG, GIF, WEBP · máx 5 MB c/u</div>
                         </div>
-                        <input type="file" id="inputImagenFile" accept=".jpg,.jpeg,.png,.gif,.webp" style="display:none;" />
+                        <input type="file" id="inputImagenFile" accept=".jpg,.jpeg,.png,.gif,.webp" multiple style="display:none;" />
                     </div>
 
-                    <div id="imgPreviewContainer" class="mb-2 d-flex justify-content-center d-none">
-                        <div style="position:relative;display:inline-block;">
-                            <img id="imgPreview" src="" alt="Imagen del producto"
-                                 style="max-height:120px;border-radius:6px;object-fit:contain;border:1px solid #e3e6f0;" />
-                            <button type="button" class="btn-quitar-img" onclick="quitarImagen()" title="Quitar imagen">✕</button>
-                        </div>
-                    </div>
+                    <div id="galeriaImagenes"></div>
+                    <div id="galeriaVacia" class="text-muted" style="font-size:.78rem;display:none;">Sin imágenes cargadas.</div>
                     <div id="imgUploadStatus" class="small text-muted mb-1" style="display:none;"></div>
                 </form>
             </div>
@@ -718,7 +739,7 @@ function abrirModalNuevoProducto() {
     document.getElementById('stockEditNote').style.display = 'none';
     // Sin proveedor seleccionado → sección de porcentajes por producto oculta
     toggleCamposPorcentaje(false);
-    _resetImagen();
+    _resetGaleria(0);
     _modalProd.show();
 }
 
@@ -750,9 +771,10 @@ async function abrirModalEditar(id) {
         // (no precargar defaults: respetar los valores ya guardados)
         toggleCamposPorcentaje(false);
 
-        // Imagen: la servimos desde BD vía handler (no base64 en la respuesta JSON)
-        _resetImagen();
-        if (prod.tieneImagen) _cargarImagenExistente(`/Productos/ABM?handler=Imagen&id=${id}`);
+        // Imágenes: la galería se sirve desde BD vía handler (no base64 en la respuesta JSON)
+        _resetGaleria(prod.id);
+        _imagenesExistentes = prod.imagenes || [];
+        renderGaleria();
 
         document.getElementById('inputCantidad').disabled         = true;
         document.getElementById('stockEditNote').style.display    = '';
@@ -847,83 +869,206 @@ function mostrarToastProd(msg, isError = false) {
 }
 
 // ================================================================
-//  IMAGEN — upload, preview, drag & drop
+//  IMÁGENES (múltiples) — galería, upload, drag & drop
 // ================================================================
+// Modo alta (Producto.Id == 0): _imagenesPendientes es una lista local (aún no
+//   persistida en BD) que viaja como JSON en el hidden field al hacer Guardar.
+// Modo edición (Producto.Id > 0): _imagenesExistentes refleja filas reales de
+//   imagenesProductos; cada acción (subir/eliminar/principal/mover) se aplica
+//   de inmediato vía AJAX — Guardar nunca toca las imágenes ya persistidas.
+let _idProductoGaleria  = 0;
+let _imagenesPendientes = [];   // [{dataUrl, esPrincipal, orden}]
+let _imagenesExistentes = [];   // [{id, esPrincipal, orden}]
+
 document.addEventListener('DOMContentLoaded', () => {
     const fileInput = document.getElementById('inputImagenFile');
     const dropZone  = document.getElementById('imgDropZone');
 
-    // Selección por clic en input
+    // Selección por clic en input (puede ser multi-archivo)
     fileInput.addEventListener('change', () => {
-        if (fileInput.files.length > 0) _subirImagen(fileInput.files[0]);
+        if (fileInput.files.length > 0) _subirImagenes([...fileInput.files]);
+        fileInput.value = '';
     });
 
-    // Drag & drop
+    // Drag & drop (multi-archivo)
     dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
     dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('drag-over'));
     dropZone.addEventListener('drop', e => {
         e.preventDefault();
         dropZone.classList.remove('drag-over');
-        if (e.dataTransfer.files.length > 0) _subirImagen(e.dataTransfer.files[0]);
+        if (e.dataTransfer.files.length > 0) _subirImagenes([...e.dataTransfer.files]);
     });
 });
 
-function _resetImagen() {
-    document.getElementById('ImagenUrl').value = '';
+function _resetGaleria(idProducto) {
+    _idProductoGaleria  = idProducto || 0;
+    _imagenesPendientes = [];
+    _imagenesExistentes = [];
+    document.getElementById('ImagenesNuevasJson').value = '';
     document.getElementById('inputImagenFile').value = '';
-    document.getElementById('imgPreview').src = '';
-    document.getElementById('imgPreviewContainer').classList.add('d-none');
-    document.getElementById('imgDropZone').classList.remove('d-none');
     const st = document.getElementById('imgUploadStatus');
     st.classList.add('d-none'); st.textContent = '';
+    renderGaleria();
 }
 
-// Muestra preview de la imagen ya guardada en BD (sirve vía handler).
-// Deja el drop zone visible para que el usuario pueda reemplazarla.
-function _cargarImagenExistente(url) {
-    document.getElementById('imgPreview').src = url;
-    document.getElementById('imgPreviewContainer').classList.remove('d-none');
-    // El drop zone queda visible → el usuario puede subir una imagen nueva encima
+function _actualizarImagenesNuevasJson() {
+    document.getElementById('ImagenesNuevasJson').value =
+        _imagenesPendientes.length ? JSON.stringify(_imagenesPendientes) : '';
 }
 
-function quitarImagen() {
-    _resetImagen();
-    // "BORRAR" le indica al servicio que debe poner null en BD
-    document.getElementById('ImagenUrl').value = 'BORRAR';
+// Dibuja la galería según el modo (alta = pendientes locales, edición = filas reales).
+function renderGaleria() {
+    const cont  = document.getElementById('galeriaImagenes');
+    const vacia = document.getElementById('galeriaVacia');
+    const esAlta = _idProductoGaleria === 0;
+    const lista = esAlta ? _imagenesPendientes : _imagenesExistentes;
+
+    cont.innerHTML = '';
+    vacia.style.display = lista.length ? 'none' : '';
+
+    lista.forEach((img, idx) => {
+        const src = esAlta ? img.dataUrl : `/Productos/ABM?handler=ImagenItem&id=${img.id}`;
+        const div = document.createElement('div');
+        div.className = 'img-thumb' + (img.esPrincipal ? ' es-principal' : '');
+        div.innerHTML =
+            `<img src="${src}" alt="Imagen producto" />` +
+            (img.esPrincipal ? `<span class="badge-principal" title="Principal">★</span>` : '') +
+            `<button type="button" class="btn-quitar-img" title="Quitar imagen">✕</button>` +
+            `<div class="thumb-actions">` +
+                `<button type="button" class="btn-mover" data-dir="arriba" title="Mover antes" ${idx === 0 ? 'disabled' : ''}>◀</button>` +
+                `<button type="button" class="btn-marcar-principal" title="Marcar como principal" ${img.esPrincipal ? 'disabled' : ''}>★</button>` +
+                `<button type="button" class="btn-mover" data-dir="abajo" title="Mover después" ${idx === lista.length - 1 ? 'disabled' : ''}>▶</button>` +
+            `</div>`;
+
+        div.querySelector('.btn-quitar-img').addEventListener('click', () => eliminarImagenGaleria(esAlta, idx, img));
+        div.querySelector('.btn-marcar-principal').addEventListener('click', () => marcarPrincipalGaleria(esAlta, idx, img));
+        div.querySelectorAll('.btn-mover').forEach(btn =>
+            btn.addEventListener('click', () => moverImagenGaleria(esAlta, idx, img, btn.dataset.dir)));
+
+        cont.appendChild(div);
+    });
 }
 
-async function _subirImagen(file) {
+async function _subirImagenes(files) {
     const st = document.getElementById('imgUploadStatus');
-    st.classList.remove('d-none'); st.textContent = 'Subiendo imagen…';
-    st.className = 'small text-muted mb-1';
-
     const token = document.getElementById('antiForgeryToken').value;
-    const form  = new FormData();
-    form.append('archivo', file);
+    let ok = 0, fallo = 0;
 
-    try {
-        const resp = await fetch('/Productos/ABM?handler=SubirImagen', {
-            method : 'POST',
-            headers: { 'RequestVerificationToken': token },
-            body   : form
-        });
-        const data = await resp.json();
+    st.classList.remove('d-none'); st.className = 'small text-muted mb-1';
+    st.textContent = files.length > 1 ? `Subiendo ${files.length} imágenes…` : 'Subiendo imagen…';
 
-        if (data.ok) {
-            // dataUrl = "data:image/...;base64,..." → va en el POST y el server lo guarda en BD
-            document.getElementById('ImagenUrl').value = data.dataUrl;
-            document.getElementById('imgPreview').src  = data.dataUrl;
-            document.getElementById('imgPreviewContainer').classList.remove('d-none');
-            document.getElementById('imgDropZone').classList.add('d-none');
-            st.textContent = 'Imagen cargada. Se guardará al presionar Guardar.';
-            st.className   = 'small text-success mb-1';
-        } else {
-            st.textContent = data.msg ?? 'Error al subir la imagen.';
-            st.className   = 'small text-danger mb-1';
+    for (const file of files) {
+        const form = new FormData();
+        form.append('archivo', file);
+        form.append('productoId', _idProductoGaleria);
+        // La primera imagen que se carga (sin ninguna otra existente/pendiente) queda como principal.
+        const yaHayImagenes = _idProductoGaleria === 0 ? _imagenesPendientes.length > 0 : _imagenesExistentes.length > 0;
+        form.append('esPrincipal', (!yaHayImagenes && ok === 0) ? 'true' : 'false');
+
+        try {
+            const resp = await fetch('/Productos/ABM?handler=SubirImagenProducto', {
+                method : 'POST',
+                headers: { 'RequestVerificationToken': token },
+                body   : form
+            });
+            const data = await resp.json();
+
+            if (data.ok) {
+                ok++;
+                if (_idProductoGaleria > 0) {
+                    // Edición: ya quedó persistida en BD.
+                    _imagenesExistentes.push({ id: data.id, esPrincipal: data.esPrincipal, orden: data.orden });
+                } else {
+                    // Alta: se guarda como pendiente hasta el submit del formulario.
+                    const esPrincipal = _imagenesPendientes.length === 0;
+                    _imagenesPendientes.push({ dataUrl: data.dataUrl, esPrincipal, orden: _imagenesPendientes.length });
+                    _actualizarImagenesNuevasJson();
+                }
+            } else {
+                fallo++;
+                st.textContent = data.msg ?? 'Error al subir la imagen.';
+            }
+        } catch {
+            fallo++;
+            st.textContent = 'Error de red al subir la imagen.';
         }
+    }
+
+    renderGaleria();
+    if (fallo === 0) {
+        st.className = 'small text-success mb-1';
+        st.textContent = _idProductoGaleria > 0 ? 'Imágenes cargadas.' : 'Imágenes cargadas. Se guardarán al presionar Guardar.';
+    } else {
+        st.className = 'small text-danger mb-1';
+    }
+}
+
+async function eliminarImagenGaleria(esAlta, idx, img) {
+    if (esAlta) {
+        _imagenesPendientes.splice(idx, 1);
+        // Si se quitó la principal, promover la primera restante para no quedar sin principal.
+        if (img.esPrincipal && _imagenesPendientes.length > 0) _imagenesPendientes[0].esPrincipal = true;
+        _imagenesPendientes.forEach((im, i) => im.orden = i);
+        _actualizarImagenesNuevasJson();
+        renderGaleria();
+        return;
+    }
+    const token = document.getElementById('antiForgeryToken').value;
+    try {
+        await fetch(`/Productos/ABM?handler=EliminarImagen&id=${img.id}`, {
+            method : 'POST',
+            headers: { 'RequestVerificationToken': token }
+        });
+        _imagenesExistentes.splice(idx, 1);
+        // Reflejar en el cliente la promoción automática de principal que hace el servidor.
+        if (img.esPrincipal && _imagenesExistentes.length > 0) _imagenesExistentes[0].esPrincipal = true;
+        renderGaleria();
     } catch {
-        st.textContent = 'Error de red al subir la imagen.';
-        st.className   = 'small text-danger mb-1';
+        mostrarToastProd('Error al eliminar la imagen', true);
+    }
+}
+
+async function marcarPrincipalGaleria(esAlta, idx, img) {
+    if (esAlta) {
+        _imagenesPendientes.forEach((im, i) => im.esPrincipal = i === idx);
+        _actualizarImagenesNuevasJson();
+        renderGaleria();
+        return;
+    }
+    const token = document.getElementById('antiForgeryToken').value;
+    try {
+        await fetch(`/Productos/ABM?handler=MarcarPrincipal&idProducto=${_idProductoGaleria}&id=${img.id}`, {
+            method : 'POST',
+            headers: { 'RequestVerificationToken': token }
+        });
+        _imagenesExistentes.forEach(im => im.esPrincipal = im.id === img.id);
+        renderGaleria();
+    } catch {
+        mostrarToastProd('Error al marcar la imagen como principal', true);
+    }
+}
+
+async function moverImagenGaleria(esAlta, idx, img, direccion) {
+    const destino = direccion === 'arriba' ? idx - 1 : idx + 1;
+    if (esAlta) {
+        if (destino < 0 || destino >= _imagenesPendientes.length) return;
+        [_imagenesPendientes[idx], _imagenesPendientes[destino]] = [_imagenesPendientes[destino], _imagenesPendientes[idx]];
+        _imagenesPendientes.forEach((im, i) => im.orden = i);
+        _actualizarImagenesNuevasJson();
+        renderGaleria();
+        return;
+    }
+    if (destino < 0 || destino >= _imagenesExistentes.length) return;
+    const token = document.getElementById('antiForgeryToken').value;
+    try {
+        await fetch(`/Productos/ABM?handler=MoverImagen&idProducto=${_idProductoGaleria}&id=${img.id}&direccion=${direccion}`, {
+            method : 'POST',
+            headers: { 'RequestVerificationToken': token }
+        });
+        [_imagenesExistentes[idx], _imagenesExistentes[destino]] = [_imagenesExistentes[destino], _imagenesExistentes[idx]];
+        renderGaleria();
+    } catch {
+        mostrarToastProd('Error al reordenar la imagen', true);
     }
 }
 </script>

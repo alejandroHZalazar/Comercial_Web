@@ -38,6 +38,9 @@ public class DevolverWebRequestDto
     public int                     FkVendedor         { get; set; }
     public decimal                 Comision           { get; set; }
     public decimal                 Total              { get; set; }
+    // Descuento general (%) sobre el Total S/IVA — solo modo bonificacionesPorDetalle = 1.
+    // Heredado de la venta original (editable). null/0 = sin descuento general.
+    public decimal?                Descuento          { get; set; }
     public List<DevolucionFilaDto> Filas              { get; set; } = new();
     // Datos NC fiscal (opcionales)
     public int?    NroFacturaAsociada { get; set; }

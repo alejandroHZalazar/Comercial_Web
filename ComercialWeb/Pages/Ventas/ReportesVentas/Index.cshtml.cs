@@ -15,25 +15,34 @@ public class IndexModel : PageModel
     private readonly IReporteVentasService _reporteService;
     private readonly IClienteService       _clienteService;
     private readonly IVentaService         _ventaService;
+    private readonly IParametroService     _parametroService;
 
     public IndexModel(
         IReporteVentasService reporteService,
         IClienteService       clienteService,
-        IVentaService         ventaService)
+        IVentaService         ventaService,
+        IParametroService     parametroService)
     {
         _reporteService = reporteService;
         _clienteService = clienteService;
         _ventaService   = ventaService;
+        _parametroService = parametroService;
     }
 
     public int HaceNotaVentaTK { get; private set; }
     public int AnchoTk         { get; private set; }
+
+    // 1 = desc/rec por línea; venta.descuento se interpreta como descuento general sobre Total S/IVA
+    public int BonificacionPorLinea { get; private set; }
 
     public async Task OnGetAsync()
     {
         var p = await _ventaService.GetParametrosAsync(Environment.MachineName);
         HaceNotaVentaTK = p.HaceNotaVentaTK;
         AnchoTk         = p.AnchoTk;
+
+        var bonStr = await _parametroService.ObtenerValorAsync("ventas", "bonificacionesPorDetalle");
+        BonificacionPorLinea = bonStr == "1" ? 1 : 0;
     }
 
     public async Task<List<SelectListItem>> GetClientesListAsync()

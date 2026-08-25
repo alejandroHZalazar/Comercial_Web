@@ -22,6 +22,14 @@ namespace Domain.Contracts
         Task<List<Producto>> GetByCodBarrasAsync(string codBarra);
         Task<ProductoDetallesDTO> traerDetalleAsync(int id, int decCant, int decStock);
         Task<byte[]?> ObtenerImagenAsync(int id);
+
+        // ── Múltiples imágenes (imagenesProductos) ────────────────────────
+        Task<List<ImagenProductoDto>> GetImagenesAsync(int idProducto);
+        Task<(byte[] Bytes, string? ContentType)?> ObtenerImagenItemAsync(int imagenId);
+        Task<ImagenProductoDto> AgregarImagenAsync(int idProducto, byte[] bytes, string? contentType, bool esPrincipal);
+        Task EliminarImagenAsync(int imagenId); // baja lógica
+        Task MarcarPrincipalAsync(int idProducto, int imagenId);
+        Task MoverImagenAsync(int idProducto, int imagenId, bool haciaArriba);
     }
 
 }

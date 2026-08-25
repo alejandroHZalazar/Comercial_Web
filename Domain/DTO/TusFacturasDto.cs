@@ -40,6 +40,10 @@ public class TfComprobante
     public string? periodo_facturado_desde        { get; set; }
     public string? periodo_facturado_hasta        { get; set; }
     public decimal total                          { get; set; }
+    // Bonificación general (importe SIN IVA) sobre el subtotal. Solo se serializa cuando es != 0
+    // para no alterar el payload de los comprobantes sin descuento general.
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
+    public decimal bonificacion                   { get; set; }
     public List<TfDetalle>?            detalle                  { get; set; }
     public List<TfTributo>?            tributos                 { get; set; }
     public List<TfComprobanteAsociado>? comprobantes_asociados  { get; set; }

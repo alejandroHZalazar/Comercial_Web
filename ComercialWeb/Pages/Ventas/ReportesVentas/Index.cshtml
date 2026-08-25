@@ -293,6 +293,7 @@
               <div class="rv-totales-box">
                 <div class="rv-tot-row"><span>Subtotal Bruto</span><span id="det-subtBruto"></span></div>
                 <div class="rv-tot-row" id="rowDescRec" style="display:none;"><span id="det-lbl-descRec">Desc/Rec</span><span id="det-descRecAmt"></span></div>
+                <div class="rv-tot-row" id="rowDescGeneral" style="display:none;"><span id="det-lbl-descGeneral">Desc. General</span><span id="det-descGeneral"></span></div>
                 <div class="rv-tot-row"><span>Subtotal s/IVA</span><span id="det-subtSIva"></span></div>
                 <div class="rv-tot-row"><span id="det-lbl-iva">IVA %</span><span id="det-ivaAmt"></span></div>
                 <div class="rv-tot-row"><span id="det-lbl-iibb">IIBB %</span><span id="det-iibbAmt"></span></div>
@@ -515,12 +516,14 @@
         document.getElementById('det-cliente').textContent = v.nombreCliente || '—';
         document.getElementById('det-condiva').textContent = v.condIvaDescripcion || '—';
 
-        // Desc/Rec global o por línea
-        // Si venta.descuento no es null → usa global: descuento * -1 + recargo
-        // Si venta.descuento es null    → usa por línea
-        const descGlobal = (v.descuento != null)
+        // Desc/Rec global o por línea.
+        // En modo por línea (BONIF===1) venta.descuento es un descuento general sobre el
+        // Total S/IVA (no reemplaza líneas); si no, se aplica la regla global clásica.
+        const BONIF = @Model.BonificacionPorLinea;
+        const descGlobal = (BONIF !== 1 && v.descuento != null)
           ? (v.descuento * -1 + (v.recargo ?? 0))
           : null;
+        const descGeneralPct = (BONIF === 1 && v.descuento != null && v.descuento > 0) ? v.descuento : 0;
 
         // Detalle de productos
         const tbody = document.getElementById('tbodyDetModal');
@@ -554,9 +557,15 @@
         });
 
         // ── Totales box ──────────────────────────────────────────────────────
-        const descRecNom = subtSIvaT - subtBruto;   // nominal (negativo=desc, positivo=rec)
-        const ivaAmt     = subtSIvaT * iva / 100;
-        const iibbAmt    = subtSIvaT * imp / 100;
+        const descRecNom = subtSIvaT - subtBruto;   // nominal por línea (negativo=desc, positivo=rec)
+
+        // Descuento general: netea Subtotal s/IVA, IVA e IIBB (no altera las líneas)
+        const factorDG      = 1 - descGeneralPct / 100;
+        const descGeneralImp = subtSIvaT * descGeneralPct / 100;
+        const subtSIvaNeto  = subtSIvaT * factorDG;
+
+        const ivaAmt     = subtSIvaNeto * iva / 100;
+        const iibbAmt    = subtSIvaNeto * imp / 100;
 
         document.getElementById('det-subtBruto').textContent  = '$' + fmt(subtBruto);
 
@@ -572,12 +581,22 @@
           rowDR.style.display = 'none';
         }
 
-        document.getElementById('det-subtSIva').textContent = '$' + fmt(subtSIvaT);
+        const rowDG = document.getElementById('rowDescGeneral');
+        if (descGeneralPct > 0) {
+          document.getElementById('det-lbl-descGeneral').textContent = 'Desc. General ' + fmt(descGeneralPct) + '%';
+          document.getElementById('det-descGeneral').textContent     = '–$' + fmt(descGeneralImp);
+          document.getElementById('det-descGeneral').style.color     = '#e74a3b';
+          rowDG.style.display = '';
+        } else {
+          rowDG.style.display = 'none';
+        }
+
+        document.getElementById('det-subtSIva').textContent = '$' + fmt(subtSIvaNeto);
         document.getElementById('det-lbl-iva').textContent  = 'IVA ' + fmt(iva) + '%';
         document.getElementById('det-ivaAmt').textContent   = '$' + fmt(ivaAmt);
         document.getElementById('det-lbl-iibb').textContent = 'IIBB ' + fmt(imp) + '%';
         document.getElementById('det-iibbAmt').textContent  = iibbAmt > 0 ? '$' + fmt(iibbAmt) : '—';
-        document.getElementById('det-total').textContent    = '$' + fmt(subtSIvaT + ivaAmt + iibbAmt);
+        document.getElementById('det-total').textContent    = '$' + fmt(subtSIvaNeto + ivaAmt + iibbAmt);
 
         // Formas de pago
         const secFP = document.getElementById('seccionFormasPago');

@@ -152,7 +152,8 @@ else if (Model.Devolucion != null)
     <tbody>
       @{
         decimal ivaRate = d.Iva / 100m;
-        bool tieneGlobalDR = d.Descuento.HasValue;
+        // En modo descuento general (por línea) NO se usa la regla global: cada línea muestra su desc/rec propio
+        bool tieneGlobalDR = !Model.EsDescuentoGeneral && d.Descuento.HasValue;
         decimal globalDR = tieneGlobalDR ? (d.Descuento ?? 0m) * -1m + (d.Recargo ?? 0m) : 0m;
       }
       @foreach (var det in d.Detalle)
@@ -179,7 +180,11 @@ else if (Model.Devolucion != null)
   @* ── Totales ── *@
   <div class="totales">
     <div class="tot-row"><span>Precio Bruto</span><span>$@fmt(Model.TotPrecioBruto)</span></div>
-    <div class="tot-row"><span>Desc./Rec.</span><span style="@(Model.TotSubtSIva - Model.TotPrecioBruto < 0 ? "color:#c0392b;" : Model.TotSubtSIva - Model.TotPrecioBruto > 0 ? "color:#1a7a45;" : "")">$@fmt(Model.TotSubtSIva - Model.TotPrecioBruto)</span></div>
+    <div class="tot-row"><span>Desc./Rec.</span><span style="@(Model.TotDescRec < 0 ? "color:#c0392b;" : Model.TotDescRec > 0 ? "color:#1a7a45;" : "")">$@fmt(Model.TotDescRec)</span></div>
+    @if (Model.EsDescuentoGeneral && Model.DescGeneralPct > 0)
+    {
+      <div class="tot-row"><span>Desc. General @fmt(Model.DescGeneralPct)%</span><span style="color:#c0392b;">-$@fmt(Model.TotDescGeneralImporte)</span></div>
+    }
     <div class="tot-row"><span>Subtotal s/IVA</span><span>$@fmt(Model.TotSubtSIva)</span></div>
     <div class="tot-row"><span>IVA @d.Iva.ToString("N2")%</span><span>$@fmt(Model.TotIva)</span></div>
     @if (d.Impuesto > 0)

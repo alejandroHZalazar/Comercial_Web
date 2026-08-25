@@ -304,6 +304,17 @@
     <span class="tot-lbl">Desc/Rec Total</span>
     <span class="tot-val" id="totDescRec">$ 0,00</span>
   </div>
+  <div class="tot-item" id="descGeneralWrap" style="display:none;">
+    <span class="tot-lbl">Desc. General %</span>
+    <input type="number" id="txtDescGeneralPct" class="form-control form-control-sm ped-input"
+           min="0" max="100" step="0.01" placeholder="0.00"
+           style="width:80px;text-align:right;"
+           oninput="onChangeDescuentoGeneral()" onchange="onChangeDescuentoGeneral()">
+  </div>
+  <div class="tot-item" id="totDescGeneralWrap" style="display:none;">
+    <span class="tot-lbl">Desc. General</span>
+    <span class="tot-val" id="totDescGeneral">$ 0,00</span>
+  </div>
   <div class="tot-item">
     <span class="tot-lbl">Total S/IVA</span>
     <span class="tot-val" id="totSIva">$ 0,00</span>
@@ -585,6 +596,9 @@ let _cliSelIdx  = -1;
     document.getElementById('descRecMsg').textContent = 'Se aplicará a todos los productos.';
   } else {
     document.getElementById('descRecMsg').textContent = 'Se aplicará solo a filas seleccionadas (Sel ✓).';
+    // Descuento general sobre Total S/IVA — solo disponible en modo por línea
+    document.getElementById('descGeneralWrap').style.display    = '';
+    document.getElementById('totDescGeneralWrap').style.display = '';
   }
 })();
 
@@ -1152,15 +1166,34 @@ function recalcularTodo() {
   renderGrilla();
   recalcularTotales();
 }
+// Descuento general (%) sobre el Total S/IVA — solo aplica en modo por línea (BONIF_POR_LINEA===1)
+function getDescGeneralPct() {
+  if (BONIF_POR_LINEA !== 1) return 0;
+  var el = document.getElementById('txtDescGeneralPct');
+  var v = el ? (parseFloat(el.value) || 0) : 0;
+  if (v < 0)   v = 0;
+  if (v > 100) v = 100;
+  return v;
+}
+function onChangeDescuentoGeneral() { recalcularTotales(); }
+
 function recalcularTotales() {
   var subSIva  = _rows.reduce(function(a,r) { return a + r.precioSinIva * r.cantidad; }, 0);
   var descRec  = _rows.reduce(function(a,r) { return a + (r.subtotalSinIva - r.precioSinIva) * r.cantidad; }, 0);
   var totSIva  = _rows.reduce(function(a,r) { return a + r.subtotalSinIva * r.cantidad; }, 0);
-  var totGral  = _rows.reduce(function(a,r) { return a + r.subtotal; }, 0);
+  var totGralBruto = _rows.reduce(function(a,r) { return a + r.subtotal; }, 0);
+
+  // Descuento general sobre el Total S/IVA (no altera las líneas)
+  var dGralPct = getDescGeneralPct();
+  var factor   = 1 - dGralPct / 100;
+  var descGeneralImporte = totSIva * dGralPct / 100;
+
   document.getElementById('totSubSIva').textContent = fmt(subSIva);
   document.getElementById('totDescRec').textContent = fmt(descRec);
-  document.getElementById('totSIva').textContent    = fmt(totSIva);
-  document.getElementById('totGeneral').textContent = fmt(totGral);
+  var tdg = document.getElementById('totDescGeneral');
+  if (tdg) tdg.textContent = fmt(descGeneralImporte);
+  document.getElementById('totSIva').textContent    = fmt(totSIva * factor);       // Total S/IVA neto
+  document.getElementById('totGeneral').textContent = fmt(totGralBruto * factor);   // Total C/IVA neto
 }
 
 // ======================================================================
@@ -1177,13 +1210,17 @@ async function guardarPedido() {
   document.getElementById('progressWrap').style.display='block';
   animProgress();
 
+  var dGralPct = getDescGeneralPct();
+  var factor   = 1 - dGralPct / 100;
+
   var dto = {
     pedidoId:    _pedidoId,
     fkCliente:   _clienteId,
     iva:         parseFloat(document.getElementById('selIva').value)||0,
     fkVendedor:  vendId,
     observacion: document.getElementById('txtObservacion').value.trim(),
-    total:       _rows.reduce(function(a,r){return a+r.subtotal;},0),
+    total:       _rows.reduce(function(a,r){return a+r.subtotal;},0) * factor,   // Total neto c/IVA
+    descuento:   dGralPct > 0 ? dGralPct : null,                                 // % descuento general
     detalle:     _rows.map(function(r) {
       return {
         fkProducto:    r.fkProducto,
@@ -1403,11 +1440,14 @@ async function bpToggleDetalle(trEl, pedidoId, fkCliente) {
     var d   = data.detalle || [];
     var iva = parseFloat(c.iva) || 0;
 
-    // Regla: si cabecera tiene descuento global, usarlo para toda las líneas
+    // Regla: si cabecera tiene descuento global, usarlo para toda las líneas.
+    // En modo por línea (BONIF_POR_LINEA===1) cab.descuento es un descuento general
+    // sobre el Total S/IVA (no se explota a las líneas).
     var descRecGlobalVis = null;
-    if (c.descuento != null) {
+    if (BONIF_POR_LINEA !== 1 && c.descuento != null) {
       descRecGlobalVis = (c.descuento || 0) * -1 + (c.recargo || 0);
     }
+    var descGeneralVis = (BONIF_POR_LINEA === 1 && c.descuento != null && c.descuento > 0) ? c.descuento : 0;
 
     var html = '<div style="display:flex;gap:1rem;padding:.75rem 1rem;flex-wrap:wrap;">';
     // Panel cliente
@@ -1427,6 +1467,8 @@ async function bpToggleDetalle(trEl, pedidoId, fkCliente) {
         ? '<span style="color:#e74a3b;font-weight:700;">Desc. ' + Math.abs(descRecGlobalVis).toFixed(2) + '% global</span>'
         : '<span style="color:#1cc88a;font-weight:700;">Rec. ' + descRecGlobalVis.toFixed(2) + '% global</span>';
       globalTag = ' &nbsp;(' + globalLbl + ')';
+    } else if (descGeneralVis > 0) {
+      globalTag = ' &nbsp;(<span style="color:#e74a3b;font-weight:700;">Desc. General ' + descGeneralVis.toFixed(2) + '%</span>)';
     }
 
     // Tabla de detalle con cálculos
@@ -1465,6 +1507,14 @@ async function bpToggleDetalle(trEl, pedidoId, fkCliente) {
         + '<td style="padding:.2rem .4rem;text-align:right;font-weight:600;">' + fmt(subtotal) + '</td>'
         + '</tr>';
     });
+    if (descGeneralVis > 0) {
+      var totNeto = totSubt * (1 - descGeneralVis / 100);
+      html += '<tr style="font-weight:600;color:#e74a3b;">'
+        + '<td colspan="6" style="padding:.2rem .4rem;text-align:right;">Desc. General (' + descGeneralVis.toFixed(2) + '%):</td>'
+        + '<td style="padding:.2rem .4rem;text-align:right;">-' + fmt(totSubt - totNeto) + '</td>'
+        + '</tr>';
+      totSubt = totNeto;
+    }
     html += '<tr style="background:#e8edf5;font-weight:700;">'
       + '<td colspan="6" style="padding:.3rem .4rem;text-align:right;">TOTAL:</td>'
       + '<td style="padding:.3rem .4rem;text-align:right;">' + fmt(totSubt) + '</td>'
@@ -1514,9 +1564,11 @@ async function cargarPedido(pedidoId, fkCliente) {
 
   var iva = parseFloat(document.getElementById('selIva').value)||0;
 
-  // Regla: si pedido tiene descuento global (cabecera), aplicarlo a todas las líneas
+  // Regla: si pedido tiene descuento global (cabecera), aplicarlo a todas las líneas.
+  // En modo por línea (BONIF_POR_LINEA===1) cab.descuento es el "descuento general"
+  // sobre el Total S/IVA: NO se explota a las líneas (se precarga el control aparte).
   var descRecGlobal = null;
-  if (c.descuento != null) {
+  if (BONIF_POR_LINEA !== 1 && c.descuento != null) {
     descRecGlobal = (c.descuento || 0) * -1 + (c.recargo || 0);
   }
 
@@ -1552,8 +1604,12 @@ async function cargarPedido(pedidoId, fkCliente) {
     return row;
   });
 
-  // Si había descuento global, pre-cargar la barra Desc/Rec con ese valor
-  if (descRecGlobal !== null) {
+  if (BONIF_POR_LINEA === 1) {
+    // Modo por línea: precargar el descuento general (cab.descuento) en su propio control
+    var dg = document.getElementById('txtDescGeneralPct');
+    if (dg) dg.value = (c.descuento != null && c.descuento > 0) ? c.descuento : '';
+  } else if (descRecGlobal !== null) {
+    // Modo global: pre-cargar la barra Desc/Rec con ese valor
     var absPct = Math.abs(descRecGlobal);
     document.getElementById('txtDescRecPct').value = absPct > 0 ? absPct : '';
     document.getElementById(descRecGlobal < 0 ? 'rdDescuento' : 'rdRecargo').checked = true;

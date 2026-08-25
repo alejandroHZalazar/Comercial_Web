@@ -138,7 +138,14 @@ else if (Model.Cabecera != null)
       <label>IVA</label>
       <span>@((cab.Iva ?? 0).ToString("N0"))%</span>
     </div>
-    @if (cab.Descuento.HasValue || cab.Recargo.HasValue)
+    @if (Model.EsDescuentoGeneral && Model.DescGeneralPct > 0)
+    {
+      <div class="cab-item">
+        <label>Descuento general</label>
+        <span>@($"{fmt(Model.DescGeneralPct)}% s/ Total S/IVA")</span>
+      </div>
+    }
+    else if (!Model.EsDescuentoGeneral && (cab.Descuento.HasValue || cab.Recargo.HasValue))
     {
       <div class="cab-item">
         <label>Desc / Rec global</label>
@@ -212,6 +219,10 @@ else if (Model.Cabecera != null)
   <div class="totales">
     <div class="tot-row"><span>Precio s/IVA</span><span>$@fmt(Model.TotPrecioSIva)</span></div>
     <div class="tot-row"><span>Desc / Rec</span><span>$@fmt(Model.TotDescRec)</span></div>
+    @if (Model.EsDescuentoGeneral && Model.DescGeneralPct > 0)
+    {
+      <div class="tot-row"><span>Desc. General @fmt(Model.DescGeneralPct)%</span><span>-$@fmt(Model.TotDescGeneralImporte)</span></div>
+    }
     <div class="tot-row"><span>Subtotal s/IVA</span><span>$@fmt(Model.TotSubtSIva)</span></div>
     <div class="tot-row"><span>IVA @((cab.Iva ?? 0).ToString("N0"))%</span><span>$@fmt(Model.TotIva)</span></div>
     <div class="tot-row total"><span>TOTAL</span><span>$@fmt(Model.TotTotal)</span></div>

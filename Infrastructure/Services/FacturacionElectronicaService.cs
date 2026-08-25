@@ -121,6 +121,19 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
                 ivaTotal += Math.Round(recargoRedondeado * (alicuotaRec / 100m), 2);
             }
 
+            // ── Bonificación general (descuento general sobre Total S/IVA) ────
+            // Solo en modo por línea: el descuento general es aditivo (no está en las líneas).
+            // Se aplica sobre el neto sin IVA y sobre ese nuevo neto se recalcula el IVA;
+            // los tributos y el total (más abajo) ya usan 'neto', por lo que quedan netos.
+            decimal bonifGeneral = 0m;
+            if (prm.BonificacionPorLinea && (ventaData.Descuento ?? 0m) > 0m)
+            {
+                decimal alicIva = ventaData.Iva == 0 ? 21m : ventaData.Iva;
+                bonifGeneral = Math.Round(neto * (ventaData.Descuento!.Value / 100m), 2);
+                neto    -= bonifGeneral;
+                ivaTotal = Math.Round(neto * (alicIva / 100m), 2);
+            }
+
             // ── Tributos (Ingresos Brutos) ───────────────────────────────────
             decimal tributosTotal = 0m;
             List<TfTributo>? tributos = null;
@@ -176,6 +189,7 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
                     rubro                   = prm.RubroFE,
                     rubro_grupo_contable    = $"{DateTime.Now.Month}/{DateTime.Now.Year}",
                     total                   = totalFinal,
+                    bonificacion            = bonifGeneral,
                     detalle                 = detalleFE,
                     tributos                = tributos
                 }
@@ -285,6 +299,7 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
             // ── Construir detalle según origen ───────────────────────────────
             decimal neto;
             decimal ivaTotal;
+            decimal bonifGeneral = 0m;
             List<TfDetalle> detalleFE;
 
             if (dto.IdDevolucion > 0)
@@ -338,6 +353,23 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
                             rg5329                  = "N"
                         }
                     });
+                }
+
+                // ── Bonificación general (descuento general de la devolución) ──
+                // Solo en modo por línea: se aplica sobre el neto sin IVA y sobre ese
+                // nuevo neto se recalcula el IVA. Mismo % que quedó en la venta original.
+                if (prm.BonificacionPorLinea)
+                {
+                    var descDev = await _db.Devoluciones
+                        .Where(x => x.Id == dto.IdDevolucion)
+                        .Select(x => x.Descuento)
+                        .FirstOrDefaultAsync();
+                    if ((descDev ?? 0m) > 0m)
+                    {
+                        bonifGeneral = Math.Round(neto * (descDev!.Value / 100m), 2);
+                        neto    -= bonifGeneral;
+                        ivaTotal = Math.Round(neto * (alicuotaIva / 100m), 2);
+                    }
                 }
             }
             else
@@ -405,6 +437,7 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
                     rubro                   = prm.RubroFE,
                     rubro_grupo_contable    = $"{DateTime.Now.Month}/{DateTime.Now.Year}",
                     total                   = dto.Importe,   // se recalcula abajo
+                    bonificacion            = bonifGeneral,
                     comprobantes_asociados = new List<TfComprobanteAsociado>
                     {
                         new()
@@ -559,7 +592,8 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
             TributoIIBB   = Get("facturacionElectronica", "tributoIIBB")           ?? "",
             EnviarMail    = Get("facturacionElectronica", "enviarFacturaPorMail") == "S",
             CodigoDetalle = Get("facturacionElectronica", "CodigoDetalle")         ?? "Descripcion",
-            ClienteCFId   = int.TryParse(Get("ventas", "clienteConsumidorFinal"), out var cf) ? cf : 0
+            ClienteCFId   = int.TryParse(Get("ventas", "clienteConsumidorFinal"), out var cf) ? cf : 0,
+            BonificacionPorLinea = Get("ventas", "bonificacionesPorDetalle") == "1"
         };
     }
 
@@ -650,6 +684,7 @@ public class FacturacionElectronicaService : IFacturacionElectronicaService
         public bool   EnviarMail    { get; set; }
         public string CodigoDetalle { get; set; } = "";
         public int    ClienteCFId   { get; set; }
+        public bool   BonificacionPorLinea { get; set; }
     }
 
     // ── Descarga automática de PDF ───────────────────────────────────────────────

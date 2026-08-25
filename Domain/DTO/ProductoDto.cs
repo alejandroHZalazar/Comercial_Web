@@ -39,13 +39,40 @@ namespace Domain.DTO
         public decimal? Descuento { get; set; }
         public string? DescripcionLarga { get; set; }
         /// <summary>
+        /// Legacy: columna Productos.imagen (una sola imagen). Se mantiene sin cambios por
+        /// transición segura; el ABM ya no la usa en la UI, reemplazada por Imagenes (imagenesProductos).
         /// En POST: base64 de la imagen nueva (vacío = no cambiar en edición).
-        /// En GET (OnGetProductoAsync): no se usa; ver TieneImagen.
         /// </summary>
         public string? Imagen { get; set; }
-        /// <summary>True si el producto ya tiene una imagen guardada en BD.</summary>
+        /// <summary>Legacy: true si el producto tiene imagen guardada en Productos.imagen. Ver Imagenes.</summary>
         public bool TieneImagen { get; set; }
+
+        /// <summary>Metadatos (sin blob) de las imágenes activas del producto, ordenadas por Orden.</summary>
+        public List<ImagenProductoDto> Imagenes { get; set; } = new();
+
+        /// <summary>
+        /// Solo en ALTA (Id == 0): JSON con las imágenes cargadas antes de guardar el producto
+        /// (aún no existe FK). Se persisten en la misma transacción que crea el producto.
+        /// Lista de <see cref="ImagenProductoNuevaDto"/> serializada.
+        /// </summary>
+        public string? ImagenesNuevasJson { get; set; }
     }
 
+    /// <summary>Metadatos (sin blob) de una imagen ya persistida en imagenesProductos.</summary>
+    public class ImagenProductoDto
+    {
+        public int Id { get; set; }
+        public bool EsPrincipal { get; set; }
+        public int Orden { get; set; }
+    }
+
+    /// <summary>Imagen pendiente de persistir, cargada durante el alta de un producto nuevo (aún sin Id).</summary>
+    public class ImagenProductoNuevaDto
+    {
+        /// <summary>Base64 con o sin prefijo data:mime;base64,...</summary>
+        public string Imagen { get; set; } = "";
+        public bool EsPrincipal { get; set; }
+        public int Orden { get; set; }
+    }
 
 }

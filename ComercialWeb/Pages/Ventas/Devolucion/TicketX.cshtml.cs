@@ -32,6 +32,11 @@ public class TicketXModel : PageModel
     // Total
     public decimal TotTotal { get; private set; }
 
+    // Descuento general sobre Total S/IVA (modo bonificacionesPorDetalle = 1)
+    public bool    EsDescuentoGeneral    { get; private set; }
+    public decimal DescGeneralPct        { get; private set; }
+    public decimal TotDescGeneralImporte { get; private set; }
+
     public async Task<IActionResult> OnGetAsync(long id)
     {
         if (id <= 0) { Error = "ID de devolución inválido."; return Page(); }
@@ -49,23 +54,36 @@ public class TicketXModel : PageModel
         var anchoStr = await _parametroService.ObtenerValorAsync("ventas", "anchoTk") ?? "";
         if (int.TryParse(anchoStr, out var a) && a > 0) AnchoMm = a;
 
+        // Modo de bonificación: 1 = por línea (Devolucion.Descuento es descuento general sobre Total S/IVA)
+        var bonStr = await _parametroService.ObtenerValorAsync("ventas", "bonificacionesPorDetalle");
+        EsDescuentoGeneral = bonStr == "1";
+        DescGeneralPct = (EsDescuentoGeneral && Devolucion.Descuento.HasValue) ? Devolucion.Descuento.Value : 0m;
+
         // Total
         decimal ivaRate = Devolucion.Iva / 100m;
-        decimal totSin  = 0m;
+        decimal totSin    = 0m;   // subtotal s/IVA bruto (por línea)
+        decimal totConIva = 0m;   // subtotal c/IVA bruto (por línea)
         foreach (var det in Devolucion.Detalle)
         {
             decimal descPct = det.Recargo.HasValue && det.Recargo > 0   ?  det.Recargo.Value
                             : det.Descuento.HasValue && det.Descuento > 0 ? -det.Descuento.Value
                             : 0m;
-            if (Devolucion.Descuento.HasValue)
+            // Regla global clásica SOLO en modo global (no en descuento general)
+            if (!EsDescuentoGeneral && Devolucion.Descuento.HasValue)
                 descPct = Devolucion.Descuento.Value * -1m + (Devolucion.Recargo ?? 0m);
 
             decimal sub    = det.PrecioSinIva * (1m + descPct / 100m);
             decimal conIva = sub * (1m + ivaRate);
             totSin    += sub * det.Cantidad;
-            TotTotal  += conIva * det.Cantidad;
+            totConIva += conIva * det.Cantidad;
         }
-        TotTotal += totSin * (Devolucion.Impuesto / 100m);
+
+        // Descuento general: netea el total (no altera las líneas)
+        decimal factor = (EsDescuentoGeneral && DescGeneralPct > 0) ? (1m - DescGeneralPct / 100m) : 1m;
+        TotDescGeneralImporte = totSin * (1m - factor);
+        totSin    *= factor;
+        totConIva *= factor;
+        TotTotal = totConIva + totSin * (Devolucion.Impuesto / 100m);
 
         return Page();
     }

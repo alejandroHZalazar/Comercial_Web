@@ -314,6 +314,9 @@ public class PedidoService : IPedidoService
                 pedido.Iva         = dto.Iva;
                 pedido.FkVendedor  = dto.FkVendedor;
                 pedido.Observacion = dto.Observacion;
+                // Descuento general (%) sobre Total S/IVA — modo bonificacionesPorDetalle = 1.
+                pedido.Descuento   = dto.Descuento;
+                pedido.Recargo     = null;
 
                 var detalleViejo = _db.PedidoDetalles.Where(d => d.FkPedido == dto.PedidoId);
                 _db.PedidoDetalles.RemoveRange(detalleViejo);
@@ -328,7 +331,8 @@ public class PedidoService : IPedidoService
                     FkCliente   = dto.FkCliente,
                     Iva         = dto.Iva,
                     Recargo     = null,
-                    Descuento   = null,
+                    // Descuento general (%) sobre Total S/IVA — modo bonificacionesPorDetalle = 1.
+                    Descuento   = dto.Descuento,
                     FkVendedor  = dto.FkVendedor,
                     Observacion = dto.Observacion,
                     Impreso     = false,

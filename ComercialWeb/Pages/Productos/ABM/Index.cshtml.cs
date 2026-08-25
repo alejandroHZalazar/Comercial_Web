@@ -16,8 +16,8 @@ using Microsoft.AspNetCore.Http;
 namespace Comercial_Web.Pages.Productos.ABM
 {
     [Authorize]
-    [RequestSizeLimit(20 * 1024 * 1024)]   // 20 MB — cubre base64 de imagen de hasta ~14 MB original
-    [RequestFormLimits(MultipartBodyLengthLimit = 20 * 1024 * 1024)]
+    [RequestSizeLimit(60 * 1024 * 1024)]   // 60 MB — cubre varias imágenes en base64 cargadas antes de guardar un alta
+    [RequestFormLimits(MultipartBodyLengthLimit = 60 * 1024 * 1024)]
     public class IndexModel : PageModel
     {
         private readonly IParametroService _parametroService;
@@ -129,14 +129,29 @@ namespace Comercial_Web.Pages.Productos.ABM
                 ? $"<span class='badge-stock-bajo'>Stock bajo ({producto.Cantidad})</span>"
                 : $"<span class='badge-stock-ok'>En stock ({producto.Cantidad})</span>";
 
-            // Imagen (servida desde BD vía handler, no desde archivo)
-            var imagenHtml = !producto.TieneImagen
-                ? ""
-                : $@"<div class='detail-section text-center'>
-                        <img src='/Productos/ABM?handler=Imagen&amp;id={producto.Id}'
-                             alt='Imagen producto'
-                             style='max-width:100%;max-height:180px;border-radius:8px;object-fit:contain;border:1px solid #e3e6f0;padding:4px;' />
-                     </div>";
+            // Galería de imágenes (imagenesProductos, servidas desde BD vía handler ImagenItem).
+            // Fallback: si el producto todavía no tiene ninguna imagen en la galería nueva pero sí
+            // tiene la imagen legacy (Productos.imagen), se sigue mostrando para no perderla de vista
+            // durante la transición (la columna legacy no se toca, ver ObtenerImagenAsync/handler=Imagen).
+            var imagenHtml = producto.Imagenes.Count > 0
+                ? $@"<div class='detail-section text-center'>
+                        <div style='display:flex;gap:6px;flex-wrap:wrap;justify-content:center;'>
+                            {string.Join("", producto.Imagenes.Select(im => $@"
+                            <div style='position:relative;'>
+                                <img src='/Productos/ABM?handler=ImagenItem&amp;id={im.Id}'
+                                     alt='Imagen producto'
+                                     style='width:72px;height:72px;border-radius:8px;object-fit:cover;border:2px solid {(im.EsPrincipal ? "#4e73df" : "#e3e6f0")};padding:2px;' />
+                                {(im.EsPrincipal ? "<span style='position:absolute;top:-4px;right:-4px;background:#4e73df;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;display:flex;align-items:center;justify-content:center;' title='Principal'>★</span>" : "")}
+                            </div>"))}
+                        </div>
+                     </div>"
+                : !producto.TieneImagen
+                    ? ""
+                    : $@"<div class='detail-section text-center'>
+                            <img src='/Productos/ABM?handler=Imagen&amp;id={producto.Id}'
+                                 alt='Imagen producto'
+                                 style='max-width:100%;max-height:180px;border-radius:8px;object-fit:contain;border:1px solid #e3e6f0;padding:4px;' />
+                         </div>";
 
             // Descripción larga
             var descLargaHtml = string.IsNullOrWhiteSpace(producto.DescripcionLarga)
@@ -323,6 +338,88 @@ namespace Comercial_Web.Pages.Productos.ABM
             {
                 PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
             });
+        }
+
+        // ══════════════════════════════════════════════════════════════════
+        //  Múltiples imágenes (imagenesProductos)
+        // ══════════════════════════════════════════════════════════════════
+
+        /// <summary>Sirve el binario de una imagen puntual de imagenesProductos (por su Id de fila).</summary>
+        public async Task<IActionResult> OnGetImagenItemAsync(int id)
+        {
+            var item = await _productoService.ObtenerImagenItemAsync(id);
+            if (item == null || item.Value.Bytes.Length == 0)
+                return NotFound();
+
+            var contentType = item.Value.ContentType;
+            if (string.IsNullOrWhiteSpace(contentType))
+                contentType = _DetectarContentType(item.Value.Bytes);
+
+            return File(item.Value.Bytes, contentType);
+        }
+
+        /// <summary>
+        /// Sube una imagen para la galería de un producto.
+        /// - productoId > 0 (edición): se persiste de inmediato en imagenesProductos y se devuelve su Id.
+        /// - productoId == 0 (alta): el producto todavía no existe; se devuelve el dataUrl para que el
+        ///   cliente lo mantenga en una lista pendiente y se envíe con el resto del formulario al Guardar.
+        /// </summary>
+        public async Task<IActionResult> OnPostSubirImagenProductoAsync(IFormFile archivo, int productoId, bool esPrincipal)
+        {
+            if (archivo == null || archivo.Length == 0)
+                return new JsonResult(new { ok = false, msg = "No se recibió archivo." });
+
+            var ext = Path.GetExtension(archivo.FileName).ToLowerInvariant();
+            var extPermitidas = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+            if (!extPermitidas.Contains(ext))
+                return new JsonResult(new { ok = false, msg = "Extensión no permitida. Use JPG, PNG, GIF o WEBP." });
+
+            if (archivo.Length > 5 * 1024 * 1024)
+                return new JsonResult(new { ok = false, msg = "El archivo supera el límite de 5 MB." });
+
+            using var ms = new MemoryStream();
+            await archivo.CopyToAsync(ms);
+            var bytes = ms.ToArray();
+            var mime  = _DetectarContentType(bytes);
+
+            if (productoId > 0)
+            {
+                var img = await _productoService.AgregarImagenAsync(productoId, bytes, mime, esPrincipal);
+                return new JsonResult(new
+                {
+                    ok = true,
+                    id = img.Id,
+                    esPrincipal = img.EsPrincipal,
+                    orden = img.Orden,
+                    url = $"/Productos/ABM?handler=ImagenItem&id={img.Id}"
+                });
+            }
+
+            // Alta: todavía no hay producto; devolvemos el dataUrl para la lista pendiente del cliente.
+            var b64     = Convert.ToBase64String(bytes);
+            var dataUrl = $"data:{mime};base64,{b64}";
+            return new JsonResult(new { ok = true, dataUrl });
+        }
+
+        /// <summary>Baja lógica de una imagen (edición de producto existente).</summary>
+        public async Task<IActionResult> OnPostEliminarImagenAsync(int id)
+        {
+            await _productoService.EliminarImagenAsync(id);
+            return new JsonResult(new { ok = true });
+        }
+
+        /// <summary>Marca una imagen como principal, garantizando que sea la única para ese producto.</summary>
+        public async Task<IActionResult> OnPostMarcarPrincipalAsync(int idProducto, int id)
+        {
+            await _productoService.MarcarPrincipalAsync(idProducto, id);
+            return new JsonResult(new { ok = true });
+        }
+
+        /// <summary>Mueve una imagen un lugar hacia arriba o abajo dentro del orden de la galería.</summary>
+        public async Task<IActionResult> OnPostMoverImagenAsync(int idProducto, int id, string direccion)
+        {
+            await _productoService.MoverImagenAsync(idProducto, id, direccion == "arriba");
+            return new JsonResult(new { ok = true });
         }
     }
 }

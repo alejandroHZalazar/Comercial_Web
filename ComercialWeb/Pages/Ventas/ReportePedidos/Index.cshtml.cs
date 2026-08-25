@@ -15,18 +15,24 @@ public class IndexModel : PageModel
     private readonly IPedidoService   _pedidoService;
     private readonly IUsuarioService  _usuarioService;
     private readonly IClienteService  _clienteService;
+    private readonly IParametroService _parametroService;
 
     public IndexModel(
         IPedidoService  pedidoService,
         IUsuarioService usuarioService,
-        IClienteService clienteService)
+        IClienteService clienteService,
+        IParametroService parametroService)
     {
         _pedidoService  = pedidoService;
         _usuarioService = usuarioService;
         _clienteService = clienteService;
+        _parametroService = parametroService;
     }
 
     public List<SelectListItem> ListaVendedores { get; private set; } = new();
+
+    // 1 = descuentos/recargos por línea; cab.Descuento se interpreta como descuento general sobre Total S/IVA
+    public int BonificacionPorLinea { get; private set; }
 
     public async Task OnGetAsync()
     {
@@ -36,6 +42,9 @@ public class IndexModel : PageModel
             .OrderBy(u => u.Nombre)
             .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Nombre ?? "" })
             .ToList();
+
+        var bonStr = await _parametroService.ObtenerValorAsync("ventas", "bonificacionesPorDetalle");
+        BonificacionPorLinea = bonStr == "1" ? 1 : 0;
     }
 
     public async Task<List<SelectListItem>> GetClientesListAsync()

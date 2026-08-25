@@ -100,6 +100,9 @@ public class GuardarPedidoRequestDto
     public int     FkVendedor  { get; set; }
     public string? Observacion { get; set; }
     public decimal Total       { get; set; }
+    // Descuento general (%) sobre el Total S/IVA — solo aplica en modo bonificacionesPorDetalle = 1.
+    // Se persiste en Pedido.Descuento (null = sin descuento general).
+    public decimal? Descuento  { get; set; }
     public List<GuardarPedidoDetalleDto> Detalle { get; set; } = new();
 }
 

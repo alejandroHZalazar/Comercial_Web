@@ -30,10 +30,16 @@ public class ComprobanteXModel : PageModel
 
     // Totales calculados
     public decimal TotPrecioBruto { get; private set; }
+    public decimal TotDescRec   { get; private set; }
     public decimal TotSubtSIva  { get; private set; }
     public decimal TotIva       { get; private set; }
     public decimal TotImpuesto  { get; private set; }
     public decimal TotTotal     { get; private set; }
+
+    // Descuento general sobre Total S/IVA (modo bonificacionesPorDetalle = 1)
+    public bool    EsDescuentoGeneral    { get; private set; }
+    public decimal DescGeneralPct        { get; private set; }
+    public decimal TotDescGeneralImporte { get; private set; }
 
     public async Task<IActionResult> OnGetAsync(long id)
     {
@@ -67,16 +73,22 @@ public class ComprobanteXModel : PageModel
             LogoHtml = $"<img src=\"data:{mime};base64,{Convert.ToBase64String(img)}\" style=\"max-height:70px;max-width:180px;\" />";
         }
 
-        // Calcular totales
+        // Modo de bonificación: 1 = por línea (Venta.Descuento es descuento general sobre Total S/IVA)
+        var bonStr = await _parametroService.ObtenerValorAsync("ventas", "bonificacionesPorDetalle");
+        EsDescuentoGeneral = bonStr == "1";
+        DescGeneralPct = (EsDescuentoGeneral && Venta.Descuento.HasValue) ? Venta.Descuento.Value : 0m;
+
+        // Calcular totales (base bruta por línea)
         decimal ivaRate = Venta.Iva / 100m;
+        decimal subtSIvaBruto = 0m;
         foreach (var d in Venta.Detalle)
         {
             // desc/rec por línea
             decimal descPct = d.Recargo.HasValue && d.Recargo > 0  ? d.Recargo.Value
                             : d.Descuento.HasValue && d.Descuento > 0 ? -d.Descuento.Value
                             : 0m;
-            // Si existe desc/rec global en la venta
-            if (Venta.Descuento.HasValue)
+            // Regla global clásica SOLO en modo global (no en descuento general)
+            if (!EsDescuentoGeneral && Venta.Descuento.HasValue)
                 descPct = Venta.Descuento.Value * -1m + (Venta.Recargo ?? 0m);
 
             decimal sub      = d.PrecioSinIva * (1m + descPct / 100m);
@@ -84,8 +96,22 @@ public class ComprobanteXModel : PageModel
             decimal cant     = d.Cantidad;
 
             TotPrecioBruto += d.PrecioSinIva * cant;
-            TotSubtSIva += sub * cant;
-            TotIva      += (conIva - sub) * cant;
+            subtSIvaBruto  += sub * cant;
+            TotIva         += (conIva - sub) * cant;
+        }
+        TotDescRec  = subtSIvaBruto - TotPrecioBruto;   // desc/rec por línea (nominal)
+
+        // Descuento general: netea Subtotal s/IVA e IVA (no altera las líneas)
+        if (EsDescuentoGeneral && DescGeneralPct > 0)
+        {
+            decimal factor = 1m - DescGeneralPct / 100m;
+            TotDescGeneralImporte = subtSIvaBruto * DescGeneralPct / 100m;
+            TotSubtSIva = subtSIvaBruto * factor;
+            TotIva     *= factor;
+        }
+        else
+        {
+            TotSubtSIva = subtSIvaBruto;
         }
         TotImpuesto = TotSubtSIva * (Venta.Impuesto / 100m);
         TotTotal    = TotSubtSIva + TotIva + TotImpuesto;
