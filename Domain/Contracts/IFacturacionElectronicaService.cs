@@ -11,8 +11,9 @@ public interface IFacturacionElectronicaService
     Task<FacturaElectronicaResultDto> EmitirFacturaVentaAsync(long ventaId);
 
     /// <summary>
-    /// Emite nota de crédito electrónica manual (sin devolución asociada).
-    /// Corresponde a la rama "else" del escritorio (unaDevolucion == 0).
+    /// Emite nota de crédito electrónica manual (sin devolución asociada), o real si
+    /// dto.IdDevolucion > 0. Si el detalle supera 130 ítems, se emiten varias NC y el
+    /// resultado incluye cada una en Comprobantes.
     /// </summary>
-    Task<(bool ok, string? error, string? pdfUrl)> EmitirNotaCreditoManualAsync(NotaCreditoRequestDto dto, int puntoVenta);
+    Task<NotaCreditoElectronicaResultDto> EmitirNotaCreditoManualAsync(NotaCreditoRequestDto dto, int puntoVenta);
 }

@@ -214,8 +214,12 @@ public class IndexModel : PageModel
                 return new JsonResult(new { ok = false, error = "Error al guardar la devolución en la base de datos." });
 
             // Facturación electrónica: emitir NC si se indicó comprobante asociado
+            // (si la devolución supera 130 ítems, EmitirNotaCreditoManualAsync devuelve
+            // varios comprobantes; se exponen todos en "comprobantes" para que la UI
+            // no muestre solo el último PDF/CAE).
             string? warningFE = null;
             string? pdfUrlFE  = null;
+            List<ComprobanteEmitidoResultItemDto>? comprobantesFE = null;
             if (prm.FacturaElectronica == 1
                 && request.NroFacturaAsociada.HasValue
                 && request.NroFacturaAsociada.Value > 0)
@@ -232,14 +236,19 @@ public class IndexModel : PageModel
                     IdDevolucion     = (int)devolucionId
                 };
 
-                var (okFe, errorFe, pdfFe) = await _feService.EmitirNotaCreditoManualAsync(ncDto, prm.PuntoVenta);
-                if (okFe)
-                    pdfUrlFE = pdfFe;
+                var feResult = await _feService.EmitirNotaCreditoManualAsync(ncDto, prm.PuntoVenta);
+                comprobantesFE = feResult.Comprobantes;
+                if (feResult.Ok)
+                    pdfUrlFE = feResult.PdfUrl;
                 else
-                    warningFE = $"Devolución guardada, pero ocurrió un error al emitir la Nota de Crédito fiscal: {errorFe}";
+                    warningFE = $"Devolución guardada, pero ocurrió un error al emitir la Nota de Crédito fiscal: {feResult.Error}";
             }
 
-            return new JsonResult(new { ok = true, devolucionId, warning = warningFE, pdfUrl = pdfUrlFE });
+            return new JsonResult(new
+            {
+                ok = true, devolucionId, warning = warningFE, pdfUrl = pdfUrlFE,
+                comprobantes = comprobantesFE
+            });
         }
         catch (Exception ex)
         {

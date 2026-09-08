@@ -37,6 +37,7 @@ namespace Domain.DTO
         // Porcentajes por producto (solo se persisten si el proveedor tiene preciosPorProducto = 1).
         public decimal? Ganancia { get; set; }
         public decimal? Descuento { get; set; }
+        public decimal? CantidadMinimaVenta { get; set; }
         public string? DescripcionLarga { get; set; }
         /// <summary>
         /// Legacy: columna Productos.imagen (una sola imagen). Se mantiene sin cambios por

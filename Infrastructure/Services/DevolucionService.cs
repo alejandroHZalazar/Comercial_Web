@@ -184,9 +184,12 @@ public class DevolucionService : IDevolucionService
 
         if (rows.Count == 0) return new List<DevolucionReporteItemDto>();
 
-        // Buscar NC asociadas en comprobantes_fiscales
+        // Buscar NC asociadas en comprobantes_fiscales.
+        // Una devolución puede tener más de una NC si se dividió por superar el límite
+        // de 130 ítems de la API (ver NroParte en ComprobanteFiscal) — se agrupa en vez
+        // de usar ToDictionaryAsync (que lanzaría excepción ante una clave duplicada).
         var devIds = rows.Select(r => r.Id).ToList();
-        var ncMap  = await _db.ComprobantesFiscales
+        var ncPorDevolucion = (await _db.ComprobantesFiscales
             .Where(cf => cf.TipoComprobante == "Nota de Crédito"
                       && cf.NroReferencia != null
                       && devIds.Contains(cf.NroReferencia.Value))
@@ -194,13 +197,18 @@ public class DevolucionService : IDevolucionService
             {
                 NroRef  = cf.NroReferencia!.Value,
                 Numero  = $"{cf.PuntoVenta:D4}-{cf.Numero:D8}",
+                cf.NroParte,
                 cf.LinkPdf
             })
-            .ToDictionaryAsync(x => x.NroRef);
+            .ToListAsync())
+            .GroupBy(x => x.NroRef)
+            .ToDictionary(
+                g => g.Key,
+                g => g.OrderBy(x => x.NroParte ?? 0).ToList());
 
         return rows.Select(r =>
         {
-            ncMap.TryGetValue(r.Id, out var nc);
+            ncPorDevolucion.TryGetValue(r.Id, out var ncs);
             return new DevolucionReporteItemDto
             {
                 Id              = r.Id,
@@ -212,9 +220,10 @@ public class DevolucionService : IDevolucionService
                 Recargo         = r.Recargo,
                 Impuesto        = r.Impuesto        ?? 0m,
                 TotalDevolucion = r.TotalDevolucion ?? 0m,
-                TieneNC         = nc != null,
-                NumeroNC        = nc?.Numero,
-                LinkPdfNC       = nc?.LinkPdf
+                TieneNC         = ncs is { Count: > 0 },
+                // Si se dividió en varios comprobantes, se listan todos separados por coma.
+                NumeroNC        = ncs is { Count: > 0 } ? string.Join(", ", ncs.Select(x => x.Numero)) : null,
+                LinkPdfNC       = ncs is { Count: > 0 } ? ncs[0].LinkPdf : null
             };
         }).ToList();
     }

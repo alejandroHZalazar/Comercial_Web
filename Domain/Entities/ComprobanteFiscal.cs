@@ -16,7 +16,14 @@ public class ComprobanteFiscal
     public DateTime? FechaVencimientoCae  { get; set; }
     public string?   Estado               { get; set; }
     public int?      FiscalStatus         { get; set; }
-    public int?      NumeroJornada        { get; set; }
+
+    /// <summary>
+    /// Número de parte (1-based) cuando una venta/devolución con más de 130 ítems se divide
+    /// en varios comprobantes fiscales. null = comprobante no dividido (comportamiento normal).
+    /// Reutiliza la columna física "numero_jornada" (sin uso previo en el sistema); no representa
+    /// una jornada de caja pese al nombre de columna heredado.
+    /// </summary>
+    public int?      NroParte             { get; set; }
     public DateTime  CreatedAt            { get; set; }
     public string?   AfipQr               { get; set; }
     public string?   LinkPdf              { get; set; }

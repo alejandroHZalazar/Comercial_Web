@@ -167,6 +167,10 @@ public class ProductoPrecioActualDto
 // ── Resultado factura electrónica ────────────────────────────────────────────
 public class FacturaElectronicaResultDto
 {
+    // Campos "legacy" (un solo comprobante). Si la venta se dividió en varias partes
+    // (> 130 ítems), reflejan el ÚLTIMO comprobante emitido con éxito, para no romper
+    // código que todavía no fue actualizado para leer Comprobantes. Ok = true solo si
+    // se emitieron correctamente TODOS los comprobantes esperados.
     public bool          Ok              { get; set; }
     public string?       Cae             { get; set; }
     public string?       VencimientoCae  { get; set; }
@@ -174,4 +178,7 @@ public class FacturaElectronicaResultDto
     public string?       PdfUrl          { get; set; }
     public string?       QrAfip          { get; set; }
     public List<string>  Errores         { get; set; } = new();
+
+    /// <summary>Un elemento por cada comprobante fiscal emitido para esta venta (normalmente 1).</summary>
+    public List<ComprobanteEmitidoResultItemDto> Comprobantes { get; set; } = new();
 }

@@ -1952,9 +1952,14 @@ async function grabarVenta(){
       var fR = await fResp.json();
       progCerrar();
       if (fR.ok){
-        if (fR.pdfUrl) window.open(fR.pdfUrl,'_blank');
-        showInfo('Factura electrónica emitida. CAE: '+(fR.cae||'')
-          +(fR.pdfUrl?' — <a href="'+fR.pdfUrl+'" target="_blank">Ver PDF</a>':''));
+        // Venta con más de 130 ítems → varios comprobantes; se abren y listan todos.
+        var comprobantes = (fR.comprobantes && fR.comprobantes.length) ? fR.comprobantes : [{cae:fR.cae, numeroComprobante:fR.nroComprobante, pdfUrl:fR.pdfUrl}];
+        comprobantes.forEach(function(c){ if (c.pdfUrl) window.open(c.pdfUrl,'_blank'); });
+        var detalle = comprobantes.map(function(c){
+          var etiqueta = comprobantes.length>1 ? ('Parte '+c.parte+'/'+c.totalPartes+' — ') : '';
+          return etiqueta+'CAE: '+(c.cae||'')+(c.pdfUrl?' — <a href="'+c.pdfUrl+'" target="_blank">Ver PDF</a>':'');
+        }).join('<br>');
+        showInfo((comprobantes.length>1?('Se emitieron '+comprobantes.length+' comprobantes.<br>'):'Factura electrónica emitida.<br>')+detalle);
       } else {
         showAlert('Error en factura electrónica: '+((fR.errores||[]).join(', ')||fR.msg||'Error'));
       }

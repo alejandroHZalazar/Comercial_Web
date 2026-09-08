@@ -364,7 +364,10 @@ public class IndexModel : PageModel
                 vencimientoCae = result.VencimientoCae,
                 nroComprobante = result.NumeroComprobante,
                 pdfUrl         = result.PdfUrl,
-                errores        = result.Errores
+                errores        = result.Errores,
+                // Si la venta superó 130 ítems se emitió más de un comprobante; acá van todos
+                // (cae/pdfUrl arriba solo reflejan el último, por compatibilidad).
+                comprobantes   = result.Comprobantes
             });
         }
         catch (Exception ex)

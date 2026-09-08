@@ -33,6 +33,8 @@ public partial class Producto
 
     public decimal? Descuento { get; set; }
 
+    public decimal? CantidadMinimaVenta { get; set; }
+
     public string? DescripcionLarga { get; set; }
 
     public byte[]? Imagen { get; set; }

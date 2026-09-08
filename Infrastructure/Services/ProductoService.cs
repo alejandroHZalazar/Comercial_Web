@@ -69,6 +69,9 @@ namespace Infrastructure.Services
 
         public async Task CrearAsync(ProductoDetallesDTO vm)
         {
+            if (vm.CantidadMinimaVenta.HasValue && vm.CantidadMinimaVenta.Value < 1)
+                throw new ArgumentException("La cantidad mínima de venta debe ser mayor o igual a 1.", nameof(vm.CantidadMinimaVenta));
+
             using var tx = await _context.Database.BeginTransactionAsync();
 
             var producto = new Producto
@@ -82,6 +85,7 @@ namespace Infrastructure.Services
                 Baja             = false,
                 Ganancia         = vm.Ganancia,
                 Descuento        = vm.Descuento,
+                CantidadMinimaVenta = vm.CantidadMinimaVenta,
                 DescripcionLarga = vm.DescripcionLarga?.Trim(),
                 Imagen           = _Base64ABytes(vm.Imagen)
             };
@@ -125,6 +129,9 @@ namespace Infrastructure.Services
 
         public async Task ActualizarAsync(ProductoDetallesDTO producto)
         {
+            if (producto.CantidadMinimaVenta.HasValue && producto.CantidadMinimaVenta.Value < 1)
+                throw new ArgumentException("La cantidad mínima de venta debe ser mayor o igual a 1.", nameof(producto.CantidadMinimaVenta));
+
             using var tx = await _context.Database.BeginTransactionAsync();
 
             var existente = await _context.Productos.FirstOrDefaultAsync(p => p.Id == producto.Id);
@@ -138,6 +145,7 @@ namespace Infrastructure.Services
             existente.FkProveedor      = producto.FkProveedor;
             existente.Ganancia         = producto.Ganancia;
             existente.Descuento        = producto.Descuento;
+            existente.CantidadMinimaVenta = producto.CantidadMinimaVenta;
             existente.DescripcionLarga = producto.DescripcionLarga?.Trim();
 
             // Lógica de imagen:
@@ -256,6 +264,7 @@ namespace Infrastructure.Services
                 FkProveedor      = p.FkProveedor,
                 Ganancia         = p.Ganancia,
                 Descuento        = p.Descuento,
+                CantidadMinimaVenta = p.CantidadMinimaVenta,
                 DescripcionLarga = p.DescripcionLarga,
                 // El blob no se incluye en el DTO general; se sirve vía OnGetImagenAsync.
                 // Solo indicamos si tiene imagen para que la UI decida qué mostrar.
@@ -270,6 +279,8 @@ namespace Infrastructure.Services
                 producto.Precio = Math.Round(producto.Precio ?? 0, decCant);
                 producto.Costo = Math.Round(producto.Costo ?? 0, decCant);
                 producto.PrecioProveedor = Math.Round(producto.PrecioProveedor ?? 0, decCant);
+                if (producto.CantidadMinimaVenta.HasValue)
+                    producto.CantidadMinimaVenta = Math.Round(producto.CantidadMinimaVenta.Value, decStock);
 
                 producto.Imagenes = await GetImagenesAsync(producto.Id!.Value);
             }

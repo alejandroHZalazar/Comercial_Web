@@ -755,6 +755,9 @@ public partial class ComercialDbContext : DbContext
             entity.Property(e => e.Descuento)
                 .HasPrecision(18, 2)
                 .HasColumnName("descuento");
+            entity.Property(e => e.CantidadMinimaVenta)
+                .HasPrecision(10, 2)
+                .HasColumnName("cantidadMinimaVenta");
             entity.Property(e => e.DescripcionLarga)
                 .HasColumnType("text")
                 .HasColumnName("descripcionLarga");
@@ -1475,7 +1478,8 @@ public partial class ComercialDbContext : DbContext
             entity.Property(e => e.FechaVencimientoCae).HasColumnType("datetime").HasDefaultValue(null).HasColumnName("fecha_vencimiento_cae");
             entity.Property(e => e.Estado).HasMaxLength(20).HasDefaultValue(null).HasColumnName("estado");
             entity.Property(e => e.FiscalStatus).HasColumnType("int").HasDefaultValue(null).HasColumnName("fiscal_status");
-            entity.Property(e => e.NumeroJornada).HasColumnType("int").HasDefaultValue(null).HasColumnName("numero_jornada");
+            // Reutilizada para trackear la "parte" de un comprobante dividido (ver ComprobanteFiscal.NroParte).
+            entity.Property(e => e.NroParte).HasColumnType("int").HasDefaultValue(null).HasColumnName("numero_jornada");
             entity.Property(e => e.CreatedAt).HasColumnType("datetime").HasColumnName("created_at");
             entity.Property(e => e.AfipQr).HasMaxLength(500).HasDefaultValue(null).HasColumnName("afip_qr");
             entity.Property(e => e.LinkPdf).HasMaxLength(500).HasDefaultValue(null).HasColumnName("linkPDF");

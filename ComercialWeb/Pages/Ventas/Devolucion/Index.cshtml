@@ -1427,16 +1427,27 @@
         return;
       }
 
+      // Si la devolución superó 130 ítems, se emitió más de una NC electrónica.
+      var comprobantesNC = (res.comprobantes && res.comprobantes.length) ? res.comprobantes : [];
+
       if (res.warning){
         // Devolución OK pero error FE
         alert('Devolución N° ' + res.devolucionId + ' registrada.\n\n⚠ ' + res.warning);
+      } else if (comprobantesNC.length > 1){
+        var detalleNC = comprobantesNC.map(function(c){
+          return 'Parte ' + c.parte + '/' + c.totalPartes + ' — CAE: ' + (c.cae || '');
+        }).join('\n');
+        alert('Devolución N° ' + res.devolucionId + ' registrada correctamente.\n\nSe emitieron ' +
+          comprobantesNC.length + ' notas de crédito:\n' + detalleNC);
       } else {
         alert('Devolución N° ' + res.devolucionId + ' registrada correctamente.');
       }
 
-      // Si se generó comprobante fiscal (NC electrónica), abrir el PDF fiscal.
+      // Si se generaron comprobantes fiscales (NC electrónica), abrir todos los PDFs fiscales.
       // Si no, abrir el comprobante interno (X).
-      if (res.pdfUrl){
+      if (comprobantesNC.length > 1){
+        comprobantesNC.forEach(function(c){ if (c.pdfUrl) window.open(c.pdfUrl, '_blank'); });
+      } else if (res.pdfUrl){
         window.open(res.pdfUrl, '_blank');
       } else {
         var printUrl = HACE_TK===1

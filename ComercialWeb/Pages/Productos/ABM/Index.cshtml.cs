@@ -205,6 +205,7 @@ namespace Comercial_Web.Pages.Productos.ABM
         </div>
         <div class='detail-item'><label>Stock actual</label><span>{producto.Cantidad}</span></div>
         <div class='detail-item'><label>Stock mínimo</label><span>{producto.CantidadMinima}</span></div>
+        <div class='detail-item'><label>Cant. mínima de venta</label><span>{producto.CantidadMinimaVenta?.ToString() ?? "—"}</span></div>
         <div class='detail-item'><label>Rubro</label><span>{H(producto.Rubro)}</span></div>
         <div class='detail-item'><label>Proveedor</label><span>{H(producto.Proveedor)}</span></div>
     </div>
@@ -290,6 +291,13 @@ namespace Comercial_Web.Pages.Productos.ABM
                 // Si hay errores de validaci�n, volvemos a mostrar la p�gina con la grilla y combos
                 await CargarCombosAsync();
                 //await CargarGrillaAsync();
+                return Page();
+            }
+
+            if (Producto.CantidadMinimaVenta.HasValue && Producto.CantidadMinimaVenta.Value < 1)
+            {
+                ModelState.AddModelError(nameof(Producto.CantidadMinimaVenta), "La cantidad mínima de venta debe ser mayor o igual a 1.");
+                await CargarCombosAsync();
                 return Page();
             }
 
