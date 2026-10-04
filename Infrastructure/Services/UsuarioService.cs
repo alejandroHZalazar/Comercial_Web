@@ -28,15 +28,12 @@ public class UsuarioService : IUsuarioService
 
     public async Task<int> CreateAsync(string nombre, string password, int tipoUsuarioId)
     {
-        var hashed = HashPassword(password);
         var nuevo = new Usuario
         {
             Nombre = nombre,
-            Password = hashed,
+            Password = password,
             Tipo = tipoUsuarioId,
-            Baja = false,
-            PasswordHash = hashed,
-            PasswordMigrated = true
+            Baja = false
         };
         _context.Usuarios.Add(nuevo);
         await _context.SaveChangesAsync();
@@ -52,12 +49,7 @@ public class UsuarioService : IUsuarioService
         existente.Tipo = tipoUsuarioId;
 
         if (!string.IsNullOrEmpty(password))
-        {
-            var hashed = HashPassword(password);
-            existente.Password = hashed;
-            existente.PasswordHash = hashed;
-            existente.PasswordMigrated = true;
-        }
+            existente.Password = password;
 
         await _context.SaveChangesAsync();
     }
@@ -68,14 +60,6 @@ public class UsuarioService : IUsuarioService
         if (usuario is null) return;
         usuario.Baja = true; // baja lógica
         await _context.SaveChangesAsync();
-    }
-
-    private string HashPassword(string password)
-    {
-        using var sha256 = SHA256.Create();
-        var bytes = Encoding.UTF8.GetBytes(password);
-        var hash = sha256.ComputeHash(bytes);
-        return Convert.ToBase64String(hash);
     }
 
     public async Task<List<UsuarioGridABMItem>> GetUsuarioGrillaABM()

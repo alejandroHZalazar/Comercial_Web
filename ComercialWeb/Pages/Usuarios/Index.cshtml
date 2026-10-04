@@ -552,6 +552,10 @@ function validar() {
         if (!pass)  { markInvalid('uPass',  'errPass',  'Ingrese una contraseña'); return false; }
         if (!pass2) { markInvalid('uPass2', 'errPass2', 'Repita la contraseña');   return false; }
     }
+    if (pass && pass.length < 6) {
+        markInvalid('uPass', 'errPass', 'La contraseña debe tener al menos 6 caracteres');
+        return false;
+    }
     if (pass && pass !== pass2) {
         markInvalid('uPass2', 'errPass2', 'Las contraseñas no coinciden');
         return false;

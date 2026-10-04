@@ -11,6 +11,8 @@ namespace Comercial_Web.Pages.Usuarios;
 [ValidateAntiForgeryToken]
 public class IndexModel : PageModel
 {
+    private const int LongitudMinimaPassword = 6;
+
     private readonly IUsuarioService     _usuarioService;
     private readonly ITipoUsuarioService _tipoUsuarioService;
 
@@ -68,6 +70,19 @@ public class IndexModel : PageModel
     // ----------------------------------------------------------------
     public async Task<JsonResult> OnPostGuardarAsync([FromBody] GuardarRequest req)
     {
+        // Mismas validaciones que /Cuenta/CambiarPassword (la contraseña es obligatoria solo en el alta).
+        var esAlta   = !(req.Id.HasValue && req.Id.Value > 0);
+        var password = req.Password?.Trim();
+        if (esAlta && string.IsNullOrEmpty(password))
+            return new JsonResult(new { error = "Ingrese una contraseña." }, JsonOpts) { StatusCode = 400 };
+        if (!string.IsNullOrEmpty(password))
+        {
+            if (password.Length < LongitudMinimaPassword)
+                return new JsonResult(new { error = $"La contraseña debe tener al menos {LongitudMinimaPassword} caracteres." }, JsonOpts) { StatusCode = 400 };
+            if (password != req.Password2?.Trim())
+                return new JsonResult(new { error = "La contraseña y su confirmación no coinciden." }, JsonOpts) { StatusCode = 400 };
+        }
+
         try
         {
             if (req.Id.HasValue && req.Id.Value > 0)
