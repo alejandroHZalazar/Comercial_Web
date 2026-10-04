@@ -24,8 +24,10 @@ public class GestionStockService : IGestionStockService
         var rubList  = rubroIds?.ToList();
         var txt      = texto?.Trim();
 
+        // Sin filtro de Baja: la pestaña Ajuste de Stock necesita ver también los productos
+        // dados de baja (para poder reactivarlos); la pestaña Consulta filtra el flag en el cliente.
         var query =
-            from p  in _db.Productos.Where(p => p.Baja != true)
+            from p  in _db.Productos
             join s  in _db.StockProductos     on p.Id equals s.FkProducto  into sG  from s  in sG.DefaultIfEmpty()
             join c  in _db.CostosProductos    on p.Id equals c.FkProducto  into cG  from c  in cG.DefaultIfEmpty()
             join pl in _db.PreciosProductos   on p.Id equals pl.FkProducto into plG from pl in plG.DefaultIfEmpty()
@@ -61,7 +63,8 @@ public class GestionStockService : IGestionStockService
                 CantidadMinima = x.s  != null ? x.s.CantidadMinima  : (decimal?)null,
                 PrecioCosto    = x.c  != null ? x.c.Costo            : (decimal?)null,
                 PrecioProveedor= x.pp != null ? x.pp.Precio          : (decimal?)null,
-                PrecioLista    = x.pl != null ? x.pl.Precio          : (decimal?)null
+                PrecioLista    = x.pl != null ? x.pl.Precio          : (decimal?)null,
+                x.p.Baja
             })
             .ToListAsync();
 
@@ -75,8 +78,32 @@ public class GestionStockService : IGestionStockService
             CantidadMinima   = x.CantidadMinima ?? 0m,
             PrecioCosto      = x.PrecioCosto    ?? 0m,
             PrecioProveedor  = x.PrecioProveedor ?? 0m,
-            PrecioLista      = x.PrecioLista    ?? 0m
+            PrecioLista      = x.PrecioLista    ?? 0m,
+            Baja             = x.Baja           ?? false
         }).ToList();
+    }
+
+    // ---------------------------------------------------------------
+    // Cambiar Baja de un producto (marcar baja o reactivar): Productos.Baja = 0/1
+    // ---------------------------------------------------------------
+    public async Task<AjusteStockResultDto> CambiarBajaProductoAsync(int productoId, bool baja)
+    {
+        var producto = await _db.Productos.FirstOrDefaultAsync(p => p.Id == productoId);
+        if (producto == null)
+            return new AjusteStockResultDto
+            {
+                Success = false,
+                Mensaje = $"Producto ID {productoId} no encontrado."
+            };
+
+        producto.Baja = baja;
+        await _db.SaveChangesAsync();
+
+        return new AjusteStockResultDto
+        {
+            Success = true,
+            Mensaje = baja ? "Producto dado de baja." : "Producto reactivado."
+        };
     }
 
     // ---------------------------------------------------------------

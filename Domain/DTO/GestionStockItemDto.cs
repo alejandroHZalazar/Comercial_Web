@@ -11,12 +11,19 @@ public class GestionStockItemDto
     public decimal PrecioCosto     { get; set; }
     public decimal PrecioProveedor { get; set; }
     public decimal PrecioLista     { get; set; }
+    public bool    Baja            { get; set; }
 }
 
 public class AjusteStockRequest
 {
     public int     ProductoId { get; set; }
     public decimal NuevoStock { get; set; }
+}
+
+public class CambiarBajaProductoRequest
+{
+    public int  ProductoId { get; set; }
+    public bool Baja       { get; set; }
 }
 
 public class AjusteStockResultDto

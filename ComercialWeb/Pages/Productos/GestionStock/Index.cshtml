@@ -427,6 +427,7 @@
                         <th>Descripción</th>
                         <th class="num">Stock Actual</th>
                         <th class="num">Nuevo Stock</th>
+                        <th style="text-align:center;">Baja</th>
                         <th>Estado</th>
                         <th style="width:36px;"></th>
                     </tr>
@@ -581,11 +582,15 @@ async function buscar() {
 
         let agr = 0, omit = 0;
         items.forEach(item => {
-            if (!gConsulta.has(item.productoId)) {
-                gConsulta.set(item.productoId, item);
-                agregarFilaConsulta(item);
-                agr++;
-            } else omit++;
+            // Consulta y Exportación: se mantiene el comportamiento actual (solo productos activos).
+            if (!item.baja) {
+                if (!gConsulta.has(item.productoId)) {
+                    gConsulta.set(item.productoId, item);
+                    agregarFilaConsulta(item);
+                    agr++;
+                } else omit++;
+            }
+            // Ajuste de Stock: incluye también los productos dados de baja (para poder reactivarlos).
             if (!gAjuste.has(item.productoId)) {
                 gAjuste.set(item.productoId, item);
                 agregarFilaAjuste(item);
@@ -658,6 +663,7 @@ function actualizarEstadoConsulta() {
 function agregarFilaAjuste(item) {
     const tr = document.createElement('tr');
     tr.id = `ar-${item.productoId}`;
+    if (item.baja) tr.classList.add('stock-bajo');
     tr.innerHTML = `
         <td><code style="font-size:.78rem;">${esc(item.codProveedor)}</code></td>
         <td style="max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(item.descripcion)}">${esc(item.descripcion)}</td>
@@ -666,6 +672,11 @@ function agregarFilaAjuste(item) {
           <input type="number" class="input-stock" id="ns-${item.productoId}"
                  min="0" step="0.0001" placeholder="${fmt(item.stock)}"
                  oninput="onStockInput(${item.productoId},this)" />
+        </td>
+        <td style="text-align:center;">
+          <input type="checkbox" id="bj-${item.productoId}" title="Marcar para dar de baja el producto / desmarcar para reactivarlo"
+                 ${item.baja ? 'checked' : ''}
+                 onchange="onBajaToggle(${item.productoId}, this)" />
         </td>
         <td id="est-${item.productoId}"><span style="font-size:.72rem;color:#aaa;">—</span></td>
         <td>
@@ -704,6 +715,42 @@ function contarPendientes() {
         lbl.style.display = 'none';
     }
     document.getElementById('btnActualizarStock').disabled = cnt === 0 || procesando;
+}
+
+async function onBajaToggle(id, chk) {
+    const nuevaBaja = chk.checked;
+    const anterior  = !nuevaBaja;
+
+    chk.disabled = true;
+    try {
+        const resp = await fetch('/Productos/GestionStock?handler=CambiarBajaProducto', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ productoId: id, baja: nuevaBaja })
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const result = await resp.json();
+
+        if (result.success) {
+            const item = gAjuste.get(id);
+            if (item) item.baja = nuevaBaja;
+            const itemConsulta = gConsulta.get(id);
+            if (itemConsulta) itemConsulta.baja = nuevaBaja;
+            const tr = document.getElementById(`ar-${id}`);
+            if (tr) tr.classList.toggle('stock-bajo', nuevaBaja);
+            mostrarToast(
+                `Producto ${nuevaBaja ? 'dado de baja' : 'reactivado'}: ${esc(item ? item.descripcion : id)}`,
+                true);
+        } else {
+            chk.checked = anterior;
+            mostrarToast('No se pudo actualizar el producto: ' + result.mensaje, false);
+        }
+    } catch (err) {
+        chk.checked = anterior;
+        mostrarToast('Error al actualizar el producto: ' + err.message, false);
+    } finally {
+        chk.disabled = false;
+    }
 }
 
 function eliminarAjuste(id) {

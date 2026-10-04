@@ -10,4 +10,6 @@ public interface IGestionStockService
         string?           texto);
 
     Task<AjusteStockResultDto> AjustarStockAsync(int productoId, decimal nuevoStock);
+
+    Task<AjusteStockResultDto> CambiarBajaProductoAsync(int productoId, bool baja);
 }

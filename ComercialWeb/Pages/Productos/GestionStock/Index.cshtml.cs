@@ -89,6 +89,17 @@ public class IndexModel : PageModel
     }
 
     // ---------------------------------------------------------------
+    // POST CambiarBajaProducto → JSON (da de baja o reactiva un producto)
+    // ---------------------------------------------------------------
+    public async Task<JsonResult> OnPostCambiarBajaProductoAsync(
+        [FromBody] CambiarBajaProductoRequest req)
+    {
+        var result = await _service.CambiarBajaProductoAsync(req.ProductoId, req.Baja);
+        return new JsonResult(result,
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+    }
+
+    // ---------------------------------------------------------------
     // POST ExportarExcel → descarga .xls con encabezado de empresa
     // ---------------------------------------------------------------
     public async Task<IActionResult> OnPostExportarExcelAsync(
