@@ -46,6 +46,29 @@ public class LoginService : ILoginService
         return new(true, null, tipoNombre);
     }
 
+    public async Task<(bool Ok, string? Error)> CambiarPasswordAsync(
+        string usuario, string passwordActual, string passwordNueva)
+    {
+        var user = await _context.Usuarios
+            .FirstOrDefaultAsync(u => u.Nombre == usuario);
+
+        if (user == null)
+            return (false, "Usuario no encontrado.");
+
+        // Misma verificación que LoginAsync (hash de Identity o legacy en texto plano).
+        var actualOk = _passwordService.IsHash(user.Password)
+            ? _passwordService.Verify(user.Password, passwordActual)
+            : user.Password == passwordActual;
+
+        if (!actualOk)
+            return (false, "La contraseña actual es incorrecta.");
+
+        user.Password = passwordNueva;
+
+        await _context.SaveChangesAsync();
+        return (true, null);
+    }
+
 
 
 
