@@ -236,6 +236,22 @@ public class VentaService : IVentaService
                 await _db.SaveChangesAsync();
             }
 
+            // ── 3b. Relación pedido ↔ venta (pedidos_ventas) ───────────────────
+            var pedidosRelacionados = dto.Detalle
+                .Where(i => i.FkPedido > 0)
+                .Select(i => i.FkPedido)
+                .Append(dto.PedidoCargado)
+                .Where(p => p > 0)
+                .Distinct()
+                .ToList();
+            if (pedidosRelacionados.Count > 0)
+            {
+                var ahora = DateTime.Now;
+                foreach (var pedidoId in pedidosRelacionados)
+                    _db.PedidosVentas.Add(new PedidoVenta { FkPedido = pedidoId, FkVenta = ventaId, Fecha = ahora });
+                await _db.SaveChangesAsync();
+            }
+
             // ── 4. Cuenta corriente: Documento FA + MovimientoCC D ─────────────
             if (dto.LlevaCC)
             {

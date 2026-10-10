@@ -47,6 +47,8 @@ public partial class ComercialDbContext : DbContext
 
     public virtual DbSet<PedidoDetalle> PedidoDetalles { get; set; }
 
+    public virtual DbSet<PedidoVenta> PedidosVentas { get; set; }
+
     public virtual DbSet<Permiso> Permisos { get; set; }
 
     public virtual DbSet<PreciosProducto> PreciosProductos { get; set; }
@@ -679,6 +681,30 @@ public partial class ComercialDbContext : DbContext
             entity.Property(e => e.Precio)
                 .HasPrecision(18, 2)
                 .HasColumnName("precio");
+        });
+
+        modelBuilder.Entity<PedidoVenta>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("pedidos_ventas");
+
+            entity.HasIndex(e => new { e.FkPedido, e.FkVenta }, "uk_pedido_venta").IsUnique();
+            entity.HasIndex(e => e.FkVenta, "idx_pv_venta");
+
+            entity.Property(e => e.Id)
+                .HasColumnType("int(11)")
+                .HasColumnName("id");
+            entity.Property(e => e.FkPedido)
+                .HasColumnType("int(11)")
+                .HasColumnName("fk_pedido");
+            entity.Property(e => e.FkVenta)
+                .HasColumnType("bigint")
+                .HasColumnName("fk_venta");
+            entity.Property(e => e.Fecha)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("fecha");
         });
 
         modelBuilder.Entity<ImagenesProducto>(entity =>
