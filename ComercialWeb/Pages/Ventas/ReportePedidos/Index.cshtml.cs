@@ -69,7 +69,7 @@ public class IndexModel : PageModel
         var listCli  = string.IsNullOrWhiteSpace(clientes)  ? new List<int>()
             : clientes.Split(',').Select(v => int.TryParse(v.Trim(), out var x) ? x : 0).Where(x => x > 0).ToList();
 
-        var lista = await _pedidoService.BuscarPedidosAsync(dDesde, dHasta, listVend, listCli);
+        var lista = await _pedidoService.BuscarPedidosAsync(dDesde, dHasta, listVend, listCli, soloEcommerceConfirmados: true);
         return new JsonResult(lista);
     }
 

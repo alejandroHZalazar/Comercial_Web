@@ -10,10 +10,15 @@ public interface IPedidoService
     /// <summary>Obtiene un cliente por ID (para cargar consumidor final automático).</summary>
     Task<PedidoClienteItem?> GetClientePorIdAsync(int clienteId);
 
-    /// <summary>Busca pedidos con filtros (emula sp_pedidosTraerParaEditar).</summary>
+    /// <summary>
+    /// Busca pedidos con filtros (emula sp_pedidosTraerParaEditar).
+    /// soloEcommerceConfirmados: si es true, los pedidos ecommerce (esEcommerce = 1) solo se
+    /// incluyen cuando su estado es "Confirmado"; los demás pedidos no se ven afectados.
+    /// </summary>
     Task<List<PedidoBuscarItem>> BuscarPedidosAsync(
         DateTime? desde, DateTime? hasta,
-        List<int> vendedores, List<int> clientes);
+        List<int> vendedores, List<int> clientes,
+        bool soloEcommerceConfirmados = false);
 
     /// <summary>Trae la cabecera + datos del cliente de un pedido.</summary>
     Task<PedidoCabeceraDto?> GetCabeceraAsync(int pedidoId);

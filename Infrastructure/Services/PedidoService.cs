@@ -80,7 +80,8 @@ public class PedidoService : IPedidoService
     // ── Buscar pedidos (emula sp_pedidosTraerParaEditar) ─────────────────
     public async Task<List<PedidoBuscarItem>> BuscarPedidosAsync(
         DateTime? desde, DateTime? hasta,
-        List<int> vendedores, List<int> clientes)
+        List<int> vendedores, List<int> clientes,
+        bool soloEcommerceConfirmados = false)
     {
         // LEFT JOINs para incluir pedidos Ecommerce con fk_cliente o fk_vendedor nulos
         var q = from p in _db.Pedidos
@@ -95,6 +96,11 @@ public class PedidoService : IPedidoService
                     ClienteNombre  = c != null ? c.NombreComercial : p.NombreCliente,
                     VendedorNombre = u != null ? u.Nombre          : null
                 };
+
+        // Pedidos ecommerce: solo los "Confirmado" (total > 0 ya se exige arriba para todos).
+        // Los pedidos no ecommerce (esEcommerce = 0 o NULL) no tienen restricciones adicionales.
+        if (soloEcommerceConfirmados)
+            q = q.Where(x => x.p.EsEcommerce != 1 || x.p.EstadoEcommerce == "Confirmado");
 
         if (desde.HasValue)
             q = q.Where(x => x.p.Fecha >= desde.Value);
