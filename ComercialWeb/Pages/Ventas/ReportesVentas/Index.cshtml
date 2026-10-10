@@ -193,6 +193,7 @@
           <th style="width:90px;">Fecha</th>
           <th>Cliente</th>
           <th style="width:110px;">Factura</th>
+          <th style="text-align:center;width:80px;">Ecommerce</th>
           <th style="text-align:right;width:100px;">Total Gral.</th>
           <th style="text-align:right;width:90px;">Costo</th>
           <th style="text-align:right;width:65px;">IVA %</th>
@@ -202,12 +203,12 @@
       </thead>
       <tbody id="tbodyResultados">
         <tr id="loadingRow">
-          <td colspan="9" style="text-align:center;padding:1.5rem;color:#6c757d;">
+          <td colspan="10" style="text-align:center;padding:1.5rem;color:#6c757d;">
             <div class="spinner-border spinner-border-sm me-2"></div>Buscando...
           </td>
         </tr>
         <tr id="emptyRow">
-          <td colspan="9" style="text-align:center;padding:1.8rem;color:#aaa;font-size:.82rem;">
+          <td colspan="10" style="text-align:center;padding:1.8rem;color:#aaa;font-size:.82rem;">
             <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="28" height="28" style="display:block;margin:.5rem auto;opacity:.3;">
               <path d="M0 0h1v15h15v1H0V0zm14.817 3.113a.5.5 0 0 1 .07.704l-4.5 5.5a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61 4.15-5.073a.5.5 0 0 1 .704-.07z"/>
             </svg>
@@ -217,7 +218,7 @@
       </tbody>
       <tfoot id="tfootTotales" style="display:none;">
         <tr>
-          <td colspan="4" style="font-size:.8rem;">TOTALES</td>
+          <td colspan="5" style="font-size:.8rem;">TOTALES</td>
           <td style="text-align:right;" id="ftTotal"></td>
           <td style="text-align:right;" id="ftCosto"></td>
           <td style="text-align:right;" id="ftIva"></td>
@@ -454,6 +455,7 @@
             '<td>' + fmtDate(v.fecha) + '</td>' +
             '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(v.nombreCliente || '') + '">' + esc(v.nombreCliente || '—') + '</td>' +
             '<td>' + (hasFac ? '<span class="badge-factura">' + esc(v.factura) + '</span>' : '<span class="badge-sinfac">—</span>') + '</td>' +
+            '<td style="text-align:center;"><input type="checkbox" disabled' + (v.esEcommerce ? ' checked' : '') + ' /></td>' +
             '<td style="text-align:right;font-weight:700;color:#1a3a5c;">$' + fmt(v.totalGeneral) + '</td>' +
             '<td style="text-align:right;color:#555;">$' + fmt(v.totalCosto) + '</td>' +
             '<td style="text-align:right;color:#2e6da4;">' + fmt(v.ivaPct) + '%</td>' +

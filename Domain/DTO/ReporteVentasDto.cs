@@ -11,6 +11,7 @@ public class ReporteVentaItem
     public decimal   TotalCosto    { get; set; }
     public decimal   IvaPct        { get; set; }
     public decimal   IibbPct       { get; set; }
+    public bool      EsEcommerce   { get; set; }
     public List<ReporteVentaFormaPago> FormasPago { get; set; } = new();
 }
 

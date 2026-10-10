@@ -56,6 +56,16 @@ public class ReporteVentasService : IReporteVentasService
             }
         ).ToListAsync();
 
+        // Ventas generadas desde un pedido ecommerce (pedidos_ventas → pedidos.esEcommerce = 1).
+        // Se resuelve aparte, solo como conjunto de ids, para no duplicar ventas con varias relaciones.
+        var ventasEcommerce = (await (
+            from pv in _db.PedidosVentas
+            where ventaIds.Contains(pv.FkVenta)
+            join p in _db.Pedidos on pv.FkPedido equals p.Id
+            where p.EsEcommerce == 1
+            select pv.FkVenta
+        ).Distinct().ToListAsync()).ToHashSet();
+
         return ventas.Select(v =>
         {
             return new ReporteVentaItem
@@ -69,6 +79,7 @@ public class ReporteVentasService : IReporteVentasService
                 TotalCosto    = v.TotalCosto ?? 0m,
                 IvaPct        = v.Iva      ?? 0m,
                 IibbPct       = v.Impuesto ?? 0m,
+                EsEcommerce   = ventasEcommerce.Contains(v.Id),
                 FormasPago    = fps
                     .Where(fp => fp.FkVenta == (int)v.Id)
                     .Select(fp => new ReporteVentaFormaPago
