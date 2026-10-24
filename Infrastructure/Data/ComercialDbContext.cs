@@ -955,6 +955,9 @@ public partial class ComercialDbContext : DbContext
             entity.Property(e => e.Descripcion)
                 .HasMaxLength(150)
                 .HasColumnName("descripcion");
+            entity.Property(e => e.FkRubroPadre)
+                .HasColumnType("int(11)")
+                .HasColumnName("fk_rubroPadre");
         });
 
         modelBuilder.Entity<StockProducto>(entity =>

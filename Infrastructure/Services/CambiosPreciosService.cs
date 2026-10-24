@@ -22,7 +22,7 @@ public class CambiosPreciosService : ICambiosPreciosService
         string?           texto)
     {
         var provList = proveedorIds?.ToList();
-        var rubList  = rubroIds?.ToList();
+        var rubList  = rubroIds != null ? await RubroJerarquia.ExpandirConDescendientesAsync(_db, rubroIds) : null;
 
         // LINQ equivalente al SP (INNER JOINs sobre las 3 tablas de precios)
         // LEFT JOIN a Proveedores para obtener ganancia/descuento

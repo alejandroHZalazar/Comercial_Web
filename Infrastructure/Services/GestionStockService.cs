@@ -21,7 +21,7 @@ public class GestionStockService : IGestionStockService
         string?           texto)
     {
         var provList = proveedorIds?.ToList();
-        var rubList  = rubroIds?.ToList();
+        var rubList  = rubroIds != null ? await RubroJerarquia.ExpandirConDescendientesAsync(_db, rubroIds) : null;
         var txt      = texto?.Trim();
 
         // Sin filtro de Baja: la pestaña Ajuste de Stock necesita ver también los productos

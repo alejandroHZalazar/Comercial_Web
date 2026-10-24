@@ -8,4 +8,6 @@ public partial class Rubro
     public int Id { get; set; }
 
     public string? Descripcion { get; set; }
+
+    public int? FkRubroPadre { get; set; }
 }

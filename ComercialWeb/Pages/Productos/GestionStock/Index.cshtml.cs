@@ -51,12 +51,9 @@ public class IndexModel : PageModel
                 p.Id.ToString()))
             .ToList();
 
-        var rubs = await _rubroService.GetAllAsync();
+        var rubs = await _rubroService.GetAllConRutaAsync();
         Rubros = rubs
-            .OrderBy(r => r.Descripcion)
-            .Select(r => new SelectListItem(
-                r.Descripcion ?? r.Id.ToString(),
-                r.Id.ToString()))
+            .Select(r => new SelectListItem(r.Ruta, r.Id.ToString()))
             .ToList();
     }
 

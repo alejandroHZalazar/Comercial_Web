@@ -17,7 +17,7 @@ public class ImpresionEtiquetasService : IImpresionEtiquetasService
         string?           texto)
     {
         var provList = proveedorIds?.ToList();
-        var rubList  = rubroIds?.ToList();
+        var rubList  = rubroIds != null ? await RubroJerarquia.ExpandirConDescendientesAsync(_db, rubroIds) : null;
 
         var query =
             from p    in _db.Productos

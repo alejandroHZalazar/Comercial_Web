@@ -282,6 +282,9 @@ namespace Infrastructure.Services
                 if (producto.CantidadMinimaVenta.HasValue)
                     producto.CantidadMinimaVenta = Math.Round(producto.CantidadMinimaVenta.Value, decStock);
 
+                // Rubro con su cadena completa ("Rubro > Subrubro > ...").
+                producto.Rubro = await RubroJerarquia.RutaAsync(_context, producto.FkRubro) ?? producto.Rubro;
+
                 producto.Imagenes = await GetImagenesAsync(producto.Id!.Value);
             }
 

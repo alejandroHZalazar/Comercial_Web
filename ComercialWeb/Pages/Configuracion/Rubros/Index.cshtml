@@ -13,6 +13,11 @@
         Rubros
     </div>
 
+    @if (!string.IsNullOrEmpty(Model.Error))
+    {
+        <div class="alert alert-danger mx-3 mt-3 mb-0 py-2" role="alert">@Model.Error</div>
+    }
+
     @if (Model.MostrarFormulario)
     {
         @await Html.PartialAsync("_FormularioConfiguracion",
@@ -26,7 +31,8 @@
             MostrarFormulario = Model.MostrarFormulario,
             Campos = new List<Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.CampoVm>
             {
-                new() { Nombre = "Descripcion", Label = "Descripcion", Tipo = Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Texto, Valor = Model.Descripcion }
+                new() { Nombre = "Descripcion", Label = "Descripcion", Tipo = Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Texto, Valor = Model.Descripcion },
+                new() { Nombre = "FkRubroPadre", Label = "Rubro padre", Tipo = Comercial_Web.Pages.Shared.Components.FormularioConfiguracion.TipoCampo.Select, Valor = Model.FkRubroPadre.HasValue ? Model.FkRubroPadre.Value.ToString() : string.Empty, Opciones = Model.Padres }
             }
         })
     }
@@ -46,11 +52,11 @@
         @await Html.PartialAsync("_GrillaConfiguracion",
                  new Comercial_Web.Pages.Shared.Components.GrillaConfiguracion.GrillaVm
         {
-            Columnas = new List<string> { "Id", "Descripcion" },
+            Columnas = new List<string> { "Id", "Rubro / Subrubro" },
             Filas = Model.Items.Select(r => new Comercial_Web.Pages.Shared.Components.GrillaConfiguracion.FilaVm
             {
                 Id = r.Id,
-                Valores = new List<string> { r.Id.ToString(), r.Descripcion }
+                Valores = new List<string> { r.Id.ToString(), r.Ruta }
             }).ToList()
         })
     </div>

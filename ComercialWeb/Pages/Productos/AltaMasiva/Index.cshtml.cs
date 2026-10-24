@@ -32,8 +32,8 @@ namespace Comercial_Web.Pages.Productos.AltaMasiva
 
         public async Task OnGetAsync()
         {
-            Rubros = (await _rubroService.GetAllAsync())
-                .Select(r => new SelectListItem { Value = r.Id.ToString(), Text = r.Descripcion })
+            Rubros = (await _rubroService.GetAllConRutaAsync())
+                .Select(r => new SelectListItem { Value = r.Id.ToString(), Text = r.Ruta })
                 .ToList();
 
             Proveedores = (await _proveedorService.GetAllAsync())

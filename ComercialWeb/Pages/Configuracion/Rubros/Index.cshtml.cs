@@ -1,8 +1,9 @@
 using Domain.Contracts;
-using Domain.Entities;
+using Domain.DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Comercial_Web.Pages.Configuracion.Rubros
 {
@@ -12,74 +13,128 @@ namespace Comercial_Web.Pages.Configuracion.Rubros
         private readonly IRubroService _service;
         public IndexModel(IRubroService service) => _service = service;
 
-        public List<Rubro> Items { get; private set; } = new();
+        public List<RubroNodoDto> Items { get; private set; } = new();
+        public List<SelectListItem> Padres { get; private set; } = new();
 
         [BindProperty] public int? Id { get; set; }
         [BindProperty] public string Descripcion { get; set; } = string.Empty;
+        [BindProperty] public int? FkRubroPadre { get; set; }
 
-       public bool MostrarFormulario { get; set; }
+        [TempData] public string? Error { get; set; }
+
+        public bool MostrarFormulario { get; set; }
 
         public async Task OnGetAsync()
         {
-            Items = await _service.GetAllAsync();
+            await CargarAsync();
         }
 
         public async Task<IActionResult> OnGetEditarAsync(int id)
         {
-            Items = await _service.GetAllAsync();
-
             var rubro = await _service.GetByIdAsync(id);
             if (rubro is null) return NotFound();
 
             Id = rubro.Id;
-            Descripcion = rubro.Descripcion;
-            MostrarFormulario = true; 
+            Descripcion = rubro.Descripcion ?? string.Empty;
+            FkRubroPadre = rubro.FkRubroPadre;
+            MostrarFormulario = true;
 
+            await CargarAsync();
             return Page();
         }
 
         public async Task<IActionResult> OnPostNuevoAsync()
-        {            
+        {
             MostrarFormulario = true;
-            Items = await _service.GetAllAsync();
+            await CargarAsync();
             return Page();
         }
 
         public async Task<IActionResult> OnPostGuardarNuevoAsync()
         {
             if (!FormularioValido())
-            {
-                Items = await _service.GetAllAsync();
-                MostrarFormulario = true; 
-                return Page();
-            }
+                return await VolverAlFormularioAsync();
 
-            await _service.CreateAsync(Descripcion);
+            try
+            {
+                await _service.CreateAsync(Descripcion, PadreNormalizado());
+            }
+            catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+            {
+                ModelState.AddModelError(nameof(Descripcion), ex.Message);
+                return await VolverAlFormularioAsync();
+            }
             return RedirectToPage();
         }
 
         public async Task<IActionResult> OnPostGuardarEdicionAsync()
         {
             if (!Id.HasValue || !FormularioValido())
-            {
-                Items = await _service.GetAllAsync();
-                MostrarFormulario = true;
-                return Page();
-            }
+                return await VolverAlFormularioAsync();
 
-            await _service.UpdateAsync(Id.Value, Descripcion);
+            try
+            {
+                await _service.UpdateAsync(Id.Value, Descripcion, PadreNormalizado());
+            }
+            catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+            {
+                ModelState.AddModelError(nameof(Descripcion), ex.Message);
+                return await VolverAlFormularioAsync();
+            }
             return RedirectToPage();
         }
 
         public async Task<IActionResult> OnPostEliminarAsync(int id)
         {
-            await _service.DeleteAsync(id);
+            try
+            {
+                await _service.DeleteAsync(id);
+            }
+            catch (InvalidOperationException ex)
+            {
+                Error = ex.Message;
+            }
             return RedirectToPage();
         }
 
-        public async Task<IActionResult> OnPostCancelarAsync()
-        {           
+        public IActionResult OnPostCancelar()
+        {
             return RedirectToPage();
+        }
+
+        private int? PadreNormalizado() => FkRubroPadre is > 0 ? FkRubroPadre : null;
+
+        private async Task<IActionResult> VolverAlFormularioAsync()
+        {
+            MostrarFormulario = true;
+            await CargarAsync();
+            return Page();
+        }
+
+        // Grilla + opciones del combo "Rubro padre". Al editar se excluyen el propio rubro y sus
+        // subrubros (el SP también lo valida, esto solo evita ofrecer opciones inválidas).
+        private async Task CargarAsync()
+        {
+            Items = await _service.GetAllConRutaAsync();
+
+            var excluidos = new HashSet<int>();
+            if (Id.HasValue)
+            {
+                excluidos.Add(Id.Value);
+                var agregado = true;
+                while (agregado)
+                {
+                    agregado = false;
+                    foreach (var n in Items)
+                        if (n.FkRubroPadre.HasValue && excluidos.Contains(n.FkRubroPadre.Value) && excluidos.Add(n.Id))
+                            agregado = true;
+                }
+            }
+
+            Padres = new List<SelectListItem> { new("(Rubro principal)", "") };
+            Padres.AddRange(Items
+                .Where(n => !excluidos.Contains(n.Id))
+                .Select(n => new SelectListItem(n.Ruta, n.Id.ToString())));
         }
 
         private bool FormularioValido()
@@ -88,7 +143,7 @@ namespace Comercial_Web.Pages.Configuracion.Rubros
 
             if (string.IsNullOrWhiteSpace(Descripcion))
             {
-                ModelState.AddModelError(nameof(Descripcion), "Debe indicar una descripci�n");
+                ModelState.AddModelError(nameof(Descripcion), "Debe indicar una descripción");
                 return false;
             }
 

@@ -24,7 +24,7 @@ public class ListaPreciosService : IListaPreciosService
         string?           texto)
     {
         var provList = proveedorIds?.ToList();
-        var rubList  = rubroIds?.ToList();
+        var rubList  = rubroIds != null ? await RubroJerarquia.ExpandirConDescendientesAsync(_db, rubroIds) : null;
         var txt      = texto?.Trim();
 
         // ---- LINQ: LEFT JOIN Productos → PreciosProductos ----

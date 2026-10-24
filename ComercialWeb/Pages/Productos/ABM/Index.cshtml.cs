@@ -53,8 +53,8 @@ namespace Comercial_Web.Pages.Productos.ABM
 
         private async Task CargarCombosAsync()
         {
-            Rubros = (await _rubroService.GetAllAsync())
-                .Select(c => new SelectListItem { Value = c.Id.ToString(), Text = c.Descripcion }).ToList();
+            Rubros = (await _rubroService.GetAllConRutaAsync())
+                .Select(c => new SelectListItem { Value = c.Id.ToString(), Text = c.Ruta }).ToList();
 
             Proveedores = (await _proveedorService.GetAllAsync())
                             .Select(v => new ProovedoresSelectProductoDTO
