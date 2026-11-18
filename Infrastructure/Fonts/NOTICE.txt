@@ -1,0 +1,4 @@
+Lato-Regular.ttf and Lato-Bold.ttf
+Copyright (c) 2010-2014 by tyPoland Lukasz Dziedzic (http://www.typoland.com/) with Reserved Font Name "Lato".
+Licensed under the SIL Open Font License, Version 1.1 (https://openfontlicense.org).
+The fonts are embedded unmodified and used only to generate PDF reports (no system fonts are available in the Linux container).

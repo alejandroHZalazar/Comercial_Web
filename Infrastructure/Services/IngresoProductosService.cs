@@ -15,15 +15,22 @@ namespace Infrastructure.Services
     public class IngresoProductosService: IIngresoProductosService
     {
         private readonly ComercialDbContext _context;
+        private readonly IVariantesProductoService _variantes;
 
-        public IngresoProductosService(ComercialDbContext context)
+        public IngresoProductosService(ComercialDbContext context, IVariantesProductoService variantes)
         {
-            _context = context;
+            _context   = context;
+            _variantes = variantes;
         }
         public async Task<List<ProductosPorProveedorDTO>> TraerProductosProveedorAsync(int proveedorId, int decCant, int decStock)
         {
+            // Con variantes habilitadas se ofrecen las variantes y no la ficha principal (que no tiene stock propio).
+            IQueryable<Producto> productosVisibles = _context.Productos;
+            if (await _variantes.HabilitadoAsync())
+                productosVisibles = productosVisibles.Where(p => !_context.ProductosPrincipales.Any(f => f.FkProducto == p.Id));
+
             var producto = await (
-            from p in _context.Productos
+            from p in productosVisibles
             join s in _context.StockProductos on p.Id equals s.FkProducto
             join pp in _context.PreciosProductos on p.Id equals pp.FkProducto
             join cp in _context.CostosProductos on p.Id equals cp.FkProducto

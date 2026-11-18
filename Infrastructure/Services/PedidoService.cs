@@ -9,8 +9,15 @@ namespace Infrastructure.Services;
 public class PedidoService : IPedidoService
 {
     private readonly ComercialDbContext _db;
+    private readonly IVariantesProductoService _variantes;
+    private readonly IPromocionDescuentosService _promos;
 
-    public PedidoService(ComercialDbContext db) => _db = db;
+    public PedidoService(ComercialDbContext db, IVariantesProductoService variantes, IPromocionDescuentosService promos)
+    {
+        _db        = db;
+        _variantes = variantes;
+        _promos    = promos;
+    }
 
     // ── Autocomplete clientes ────────────────────────────────────────────
     public async Task<List<PedidoClienteItem>> BuscarClientesAsync(string q)
@@ -209,6 +216,7 @@ public class PedidoService : IPedidoService
             orderby pd.CodProveedor
             select new
             {
+                pd.Linea,
                 pd.FkProducto, pd.CodBarras, pd.CodProveedor, pd.Descripcion, pd.Observ,
                 Stock          = s    != null ? (s.Cantidad    ?? 0m) : 0m,
                 pd.PrecioSinIva, pd.PrecioConIva, pd.PrecioOrig, pd.Costo, pd.Cantidad,
@@ -221,8 +229,12 @@ public class PedidoService : IPedidoService
             }
         ).ToListAsync();
 
+        // Promoción registrada por línea (vacío si el motor está apagado: no se consulta ninguna tabla nueva)
+        var promoPorLinea = await _promos.ReglaPorLineaPedidoAsync(rows.Select(r => r.Linea));
+
         return rows.Select(r => new PedidoDetalleItemDto
         {
+            FkPromoRegla   = promoPorLinea.TryGetValue(r.Linea, out var reglaId) ? reglaId : (int?)null,
             FkProducto     = r.FkProducto     ?? 0,
             CodBarras      = r.CodBarras,
             CodProveedor   = r.CodProveedor,
@@ -263,7 +275,13 @@ public class PedidoService : IPedidoService
             query = query.Where(p => p.FkProveedor.HasValue && proveedores.Contains(p.FkProveedor.Value));
         }
 
+        // Con variantes habilitadas solo se ofrecen las variantes: la ficha principal (stock 0) no se vende. Se excluye
+        // dentro de la consulta (antes del límite de 30) para que no le quite lugar a las variantes.
+        if (await _variantes.HabilitadoAsync())
+            query = query.Where(p => !_db.ProductosPrincipales.Any(f => f.FkProducto == p.Id));
+
         var prods = await query.OrderBy(p => p.Descripcion).Take(30).ToListAsync();
+
         if (prods.Count == 0) return new List<PedidoProductoItem>();
 
         var ids = prods.Select(p => p.Id).ToList();
@@ -307,6 +325,23 @@ public class PedidoService : IPedidoService
     // ── Guardar / actualizar pedido ──────────────────────────────────────
     public async Task<int> GuardarPedidoAsync(GuardarPedidoRequestDto dto)
     {
+        await _variantes.ValidarNoSonFichasAsync(dto.Detalle.Select(i => i.FkProducto));
+
+        // ── Promociones por cantidad / porcentaje (ver VentaService.GrabarVentaAsync) ──
+        var detalleFinal = dto.Detalle;
+        List<PromoAplicadaDto?>? promoFinal = null;
+        if (await _promos.HabilitadoAsync())
+        {
+            var lineasPromo = dto.Detalle.Select((d, i) => new PromoGuardarLinea
+            {
+                Indice = i, FkProducto = d.FkProducto, Cantidad = d.Cantidad, PrecioSinIva = d.PrecioSinIva,
+                DescRec = -d.Descuento + d.Recargo, FkPromoRegla = d.FkPromoRegla
+            }).ToList();
+            var segmentos = await _promos.ResolverParaGuardarAsync(lineasPromo);
+            (detalleFinal, promoFinal) = ExpandirPromos(dto, segmentos);
+        }
+        var detallesPromo = new List<(PedidoDetalle Ent, PromoAplicadaDto Promo)>();
+
         await using var tx = await _db.Database.BeginTransactionAsync();
         try
         {
@@ -348,9 +383,9 @@ public class PedidoService : IPedidoService
                 await _db.SaveChangesAsync();
             }
 
-            foreach (var item in dto.Detalle)
+            foreach (var (item, idx) in detalleFinal.Select((x, i) => (x, i)))
             {
-                _db.PedidoDetalles.Add(new PedidoDetalle
+                var detEnt = new PedidoDetalle
                 {
                     FkPedido       = pedido.Id,
                     FkProducto     = item.FkProducto,
@@ -370,9 +405,25 @@ public class PedidoService : IPedidoService
                     Descuento      = item.Descuento > 0 ? item.Descuento : (decimal?)null,
                     Recargo        = item.Recargo   > 0 ? item.Recargo   : (decimal?)null,
                     SubtotalSinIva = item.SubtotalSinIva
-                });
+                };
+                _db.PedidoDetalles.Add(detEnt);
+                if (promoFinal != null && promoFinal[idx] != null) detallesPromo.Add((detEnt, promoFinal[idx]!));
             }
             await _db.SaveChangesAsync();
+
+            // Auditoría de promociones aplicadas (las líneas ya tienen id)
+            if (detallesPromo.Count > 0)
+            {
+                foreach (var (ent, p) in detallesPromo)
+                    _db.PedidosPromoDetalle.Add(new PedidoPromoDetalle
+                    {
+                        FkPedidoDetalle = ent.Linea, FkRegla = p.FkRegla, Nombre = p.Nombre, Tipo = p.Tipo,
+                        Porcentaje = p.Porcentaje, Lleva = p.Lleva, Paga = p.Paga,
+                        CantBonificada = p.Tipo == "NXM" ? p.CantBonificada : (decimal?)null, Ahorro = p.Ahorro
+                    });
+                await _db.SaveChangesAsync();
+            }
+
             await tx.CommitAsync();
             return pedido.Id;
         }
@@ -381,6 +432,43 @@ public class PedidoService : IPedidoService
             await tx.RollbackAsync();
             throw;
         }
+    }
+
+    // ── Promociones: aplica los segmentos resueltos sobre el detalle recibido (ver VentaService) ──
+    private static (List<GuardarPedidoDetalleDto> Detalle, List<PromoAplicadaDto?> Promos) ExpandirPromos(
+        GuardarPedidoRequestDto dto, List<PromoGuardarSegmento> segmentos)
+    {
+        var detalle = new List<GuardarPedidoDetalleDto>();
+        var promos  = new List<PromoAplicadaDto?>();
+        foreach (var seg in segmentos)
+        {
+            var o = dto.Detalle[seg.Indice];
+            if (seg.DescuentoPct == null) { detalle.Add(o); promos.Add(null); continue; }
+
+            var pct    = seg.DescuentoPct.Value;
+            var subSin = o.PrecioSinIva * (1m - pct / 100m);
+            var conIva = subSin * (1m + dto.Iva / 100m);
+            detalle.Add(new GuardarPedidoDetalleDto
+            {
+                FkProducto     = o.FkProducto,
+                CodBarras      = o.CodBarras,
+                CodProveedor   = o.CodProveedor,
+                Descripcion    = o.Descripcion,
+                PrecioSinIva   = o.PrecioSinIva,
+                Cantidad       = seg.Cantidad,
+                PrecioOrig     = o.PrecioOrig,
+                Costo          = o.Costo,
+                PrecioConIva   = conIva,
+                Observ         = o.Observ,
+                Descuento      = pct,
+                Recargo        = 0m,
+                SubtotalSinIva = subSin,
+                Subtotal       = seg.Cantidad * conIva,
+                FkPromoRegla   = seg.Promo?.FkRegla
+            });
+            promos.Add(seg.Promo);
+        }
+        return (detalle, promos);
     }
 
     // ── Crear cliente rápido ─────────────────────────────────────────────

@@ -22,6 +22,8 @@ public class IndexModel : PageModel
     private readonly IProveedorService    _proveedorService;
     private readonly IRubroService        _rubroService;
     private readonly IParametroService    _parametroService;
+    private readonly IStockExistenciaPdfService _pdfStock;
+    private readonly ILogger<IndexModel>  _logger;
 
     public List<SelectListItem> Proveedores { get; private set; } = new();
     public List<SelectListItem> Rubros      { get; private set; } = new();
@@ -30,12 +32,16 @@ public class IndexModel : PageModel
         IListaPreciosService service,
         IProveedorService    proveedorService,
         IRubroService        rubroService,
-        IParametroService    parametroService)
+        IParametroService    parametroService,
+        IStockExistenciaPdfService pdfStock,
+        ILogger<IndexModel>  logger)
     {
         _service          = service;
         _proveedorService = proveedorService;
         _rubroService     = rubroService;
         _parametroService = parametroService;
+        _pdfStock         = pdfStock;
+        _logger           = logger;
     }
 
     // ---------------------------------------------------------------
@@ -76,6 +82,65 @@ public class IndexModel : PageModel
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             });
+    }
+
+    // ---------------------------------------------------------------
+    // GET StockExistenciaPdf → PDF "Listado de Stock en Existencia" (stock > 0)
+    // Se devuelve sin nombre de archivo para que el navegador lo muestre en la pestaña (no lo descargue).
+    // ---------------------------------------------------------------
+    public async Task<IActionResult> OnGetStockExistenciaPdfAsync()
+    {
+        try
+        {
+            var filas     = await _service.StockExistenciaAsync();
+            var cantStock = await _parametroService.ObtenerCantidadDecimalesStockAsync();
+
+            var nombre      = await _parametroService.ObtenerValorAsync("empresa", "nombre")      ?? "";
+            var razonSocial = await _parametroService.ObtenerValorAsync("empresa", "razonSocial") ?? "";
+            var direccion   = await _parametroService.ObtenerValorAsync("empresa", "direccion")   ?? "";
+            var localidad   = await _parametroService.ObtenerValorAsync("empresa", "localidad")   ?? "";
+            var cuit        = await _parametroService.ObtenerValorAsync("empresa", "cuit")        ?? "";
+            var telefono    = await _parametroService.ObtenerValorAsync("empresa", "telefono")    ?? "";
+            var email       = await _parametroService.ObtenerValorAsync("empresa", "email")       ?? "";
+            var logo        = await _parametroService.GetLogoAsync();
+
+            var datos = new StockExistenciaReporteDto
+            {
+                EmpresaNombre    = nombre,
+                EmpresaRazon     = razonSocial,
+                EmpresaDireccion = string.Join(" | ", new[] { direccion, localidad }.Where(s => !string.IsNullOrWhiteSpace(s))),
+                EmpresaContacto  = string.Join(" | ", new[]
+                {
+                    string.IsNullOrWhiteSpace(cuit)     ? null : $"CUIT: {cuit}",
+                    string.IsNullOrWhiteSpace(telefono) ? null : $"Tel: {telefono}",
+                    string.IsNullOrWhiteSpace(email)    ? null : email
+                }.Where(s => s != null)),
+                Logo             = logo?.Imagen,
+                FechaGeneracion  = HoraArgentina(),
+                DecimalesStock   = cantStock,
+                Filas            = filas
+            };
+
+            // Sin nombre de archivo: el navegador lo muestra en la pestaña en lugar de descargarlo.
+            return File(_pdfStock.Generar(datos), "application/pdf");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al generar el PDF de stock en existencia");
+            return StatusCode(500, "No se pudo generar el reporte.");
+        }
+    }
+
+    // El servidor (contenedor Linux) corre en UTC: el reporte muestra la hora de Argentina.
+    private static DateTime HoraArgentina()
+    {
+        foreach (var id in new[] { "America/Argentina/Buenos_Aires", "Argentina Standard Time" })
+        {
+            try { return TimeZoneInfo.ConvertTime(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById(id)); }
+            catch (TimeZoneNotFoundException) { }
+            catch (InvalidTimeZoneException) { }
+        }
+        return DateTime.Now;
     }
 
     // ---------------------------------------------------------------

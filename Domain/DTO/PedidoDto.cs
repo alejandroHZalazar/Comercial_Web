@@ -89,6 +89,7 @@ public class PedidoDetalleItemDto
     public decimal Subtotal       { get; set; }   // total de línea c/IVA (preserva importe fraccionado)
     public bool    Fraccionado   { get; set; }
     public bool    Dolarizado    { get; set; }
+    public int?    FkPromoRegla  { get; set; }   // promoción registrada en la línea (solo con el motor activo)
 }
 
 // ── Request guardar pedido ───────────────────────────────────────────────
@@ -122,6 +123,7 @@ public class GuardarPedidoDetalleDto
     public decimal Recargo       { get; set; }
     public decimal SubtotalSinIva { get; set; }
     public decimal Subtotal       { get; set; }   // total de línea c/IVA (preserva importe fraccionado)
+    public int?    FkPromoRegla   { get; set; }   // promoción registrada en la línea (solo con el motor activo)
 }
 
 // ── Crear cliente rápido desde el formulario de pedidos ──────────────────

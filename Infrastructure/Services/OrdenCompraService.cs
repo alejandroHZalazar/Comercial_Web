@@ -13,10 +13,24 @@ namespace Application.Services
     public class OrdenCompraService : IOrdenCompraService
     {
         private readonly ComercialDbContext _context;
+        private readonly IVariantesProductoService _variantes;
 
-        public OrdenCompraService(ComercialDbContext context)
+        public OrdenCompraService(ComercialDbContext context, IVariantesProductoService variantes)
         {
-            _context = context;
+            _context   = context;
+            _variantes = variantes;
+        }
+
+        /// <summary>
+        /// Productos para armar una orden: con variantes habilitadas se excluyen las fichas principales (se compra cada
+        /// variante). Con el parámetro apagado es exactamente _context.Productos.
+        /// </summary>
+        private async Task<IQueryable<Producto>> ProductosSinFichasAsync()
+        {
+            IQueryable<Producto> q = _context.Productos;
+            if (await _variantes.HabilitadoAsync())
+                q = q.Where(p => !_context.ProductosPrincipales.Any(f => f.FkProducto == p.Id));
+            return q;
         }
 
         public async Task<List<OrdenCompra>> GetOrdenesAsync()
@@ -131,7 +145,7 @@ namespace Application.Services
                 .Select(t => t.Id)
                 .FirstOrDefaultAsync();
 
-            var query = await _context.Productos
+            var query = await (await ProductosSinFichasAsync())
                 .Where(p => p.FkProveedor == proveedorId && p.Baja == false)
                 .Select(p => new ProductoAPedirOCDto
                 {
@@ -212,7 +226,7 @@ namespace Application.Services
                 .Select(t => t.Id)
                 .FirstOrDefaultAsync();
 
-            var query = await _context.Productos
+            var query = await (await ProductosSinFichasAsync())
                 .Where(p => p.FkProveedor == proveedorId && p.Baja == false)
                 .Select(p => new ProductoAPedirImprimirOCDto
                 {
@@ -404,7 +418,7 @@ namespace Application.Services
         {
             var codigo = codProveedor?.Trim();
 
-            var query = from p in _context.Productos
+            var query = from p in await ProductosSinFichasAsync()
                         join pr in _context.PreciosProveedores
                             on p.Id equals pr.FkProducto into precios
                         join s in _context.StockProductos on p.Id equals s.FkProducto
@@ -428,7 +442,7 @@ namespace Application.Services
 
         public async Task<ProductoLineaOCDto?> BuscarPorCodBarrasOCAsync(string codBarras, int proveedorId)
         {
-            var query = from p in _context.Productos
+            var query = from p in await ProductosSinFichasAsync()
                         join pr in _context.PreciosProveedores
                             on p.Id equals pr.FkProducto into precios
                         join s in _context.StockProductos on p.Id equals s.FkProducto
@@ -453,7 +467,7 @@ namespace Application.Services
         public async Task<ProductoLineaOCDto?> BuscarPorDescripcionExactaAsync(string descripcion, int proveedorId)
         {
 
-            var query = from p in _context.Productos
+            var query = from p in await ProductosSinFichasAsync()
                         join pr in _context.PreciosProveedores
                             on p.Id equals pr.FkProducto into precios
                         join s in _context.StockProductos on p.Id equals s.FkProducto

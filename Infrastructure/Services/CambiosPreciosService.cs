@@ -9,8 +9,13 @@ namespace Infrastructure.Services;
 public class CambiosPreciosService : ICambiosPreciosService
 {
     private readonly ComercialDbContext _db;
+    private readonly IVariantesProductoService _variantes;
 
-    public CambiosPreciosService(ComercialDbContext db) => _db = db;
+    public CambiosPreciosService(ComercialDbContext db, IVariantesProductoService variantes)
+    {
+        _db = db;
+        _variantes = variantes;
+    }
 
     /// <summary>
     /// Emula sp_ProductosTraerParaCambioPrecio con filtros opcionales.
@@ -35,6 +40,11 @@ public class CambiosPreciosService : ICambiosPreciosService
             join prov in _db.Proveedores        on p.FkProveedor equals (int?)prov.Id into provG
             from prov in provG.DefaultIfEmpty()
             select new { p, pp, prp, cp, prov };
+
+        // Con variantes habilitadas se muestran solo las variantes: la ficha principal no tiene stock, precio ni
+        // código propios para operar. Con el parámetro apagado la consulta no cambia (ni nombra la tabla).
+        if (await _variantes.HabilitadoAsync())
+            query = query.Where(x => !_db.ProductosPrincipales.Any(f => f.FkProducto == x.p.Id));
 
         // Filtro por proveedor(es)
         if (provList != null && provList.Count > 0)

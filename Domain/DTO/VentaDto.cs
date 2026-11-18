@@ -88,6 +88,8 @@ public class GrabarVentaDetalleDto
     public decimal DescRec        { get; set; }   // negativo = descuento, positivo = recargo
     public decimal SubtotalSinIva { get; set; }
     public int     FkPedido       { get; set; }   // 0 = sin pedido
+    public int?    FkPromoRegla   { get; set; }   // promoción por cantidad/porcentaje que el navegador aplicó (null = ninguna)
+    public bool    PromoBloqueada { get; set; }   // línea cargada desde un pedido: precio pactado, no participa del motor de promociones
 }
 
 public class GrabarVentaFormaPagoDto

@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Globalization;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using Microsoft.AspNetCore.Http;
@@ -17,18 +18,24 @@ namespace Comercial_Web.Pages.Productos.ABM
 {
     [Authorize]
     [RequestSizeLimit(60 * 1024 * 1024)]   // 60 MB — cubre varias imágenes en base64 cargadas antes de guardar un alta
-    [RequestFormLimits(MultipartBodyLengthLimit = 60 * 1024 * 1024)]
+    [RequestFormLimits(MultipartBodyLengthLimit = 60 * 1024 * 1024, ValueLengthLimit = 60 * 1024 * 1024)]
     public class IndexModel : PageModel
     {
         private readonly IParametroService _parametroService;
         private readonly IRubroService _rubroService;
         private readonly IProveedorService _proveedorService;
         private readonly IProductoService _productoService;
+        private readonly IVarianteAdminService _variantes;
+
+        /// <summary>true solo con ecommerce/HabilitarVariantesProducto = '1' y las tablas de variantes creadas.</summary>
+        public bool VariantesHabilitadas { get; private set; }
+
         public List<Producto> Productos { get; set; } = new();
         public List<SelectListItem> Rubros { get; set; } = new();
         public List<ProovedoresSelectProductoDTO> Proveedores { get; set; } = new();
-        public IndexModel(IParametroService parametroService, IRubroService rubroService, IProveedorService proveedorService, IProductoService productoService)
+        public IndexModel(IParametroService parametroService, IRubroService rubroService, IProveedorService proveedorService, IProductoService productoService, IVarianteAdminService variantes)
         {
+            _variantes = variantes;
             _parametroService = parametroService;
             _rubroService = rubroService;
             _proveedorService = proveedorService;
@@ -53,6 +60,8 @@ namespace Comercial_Web.Pages.Productos.ABM
 
         private async Task CargarCombosAsync()
         {
+            VariantesHabilitadas = await _variantes.HabilitadoAsync();
+
             Rubros = (await _rubroService.GetAllConRutaAsync())
                 .Select(c => new SelectListItem { Value = c.Id.ToString(), Text = c.Ruta }).ToList();
 
@@ -81,6 +90,11 @@ namespace Comercial_Web.Pages.Productos.ABM
                 default: productos = Enumerable.Empty<Producto>(); break;
             }
 
+            // Con variantes habilitadas: una fila por producto principal (las variantes se ven por su ficha).
+            // Con el parámetro apagado devuelve la lista igual y no consulta nada.
+            var listado = await _variantes.ResolverListadoAsync(productos.ToList());
+            productos = listado.Productos;
+
             const string editSvg = "<svg xmlns='http://www.w3.org/2000/svg' fill='currentColor' viewBox='0 0 16 16'>" +
                 "<path d='M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708l-3-3zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207l6.5-6.5zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.499.499 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11l.178-.178z'/></svg>";
 
@@ -95,12 +109,15 @@ namespace Comercial_Web.Pages.Productos.ABM
                 var codProv = System.Net.WebUtility.HtmlEncode(p.CodProveedor ?? "");
                 var codBar  = System.Net.WebUtility.HtmlEncode(p.CodBarras    ?? "");
                 var descJs  = (p.Descripcion ?? "").Replace("\\", "\\\\").Replace("'", "\\'");
+                var insignia = listado.VariantesPorFicha.TryGetValue(p.Id, out var nVar)
+                    ? $"<span style='margin-left:.45rem;background:#e7f1ff;color:#0a58ca;border:1px solid #b6d4fe;border-radius:10px;padding:.08rem .45rem;font-size:.68rem;font-weight:600;white-space:nowrap;' title='Producto con variantes (medidas/colores)'>Posee variantes ({nVar})</span>"
+                    : "";
 
                 html.AppendLine($@"
 <tr onclick=""mostrarDetalle({p.Id}, this)"" data-id=""{p.Id}"">
     <td>{codProv}</td>
     <td>{codBar}</td>
-    <td>{desc}</td>
+    <td>{desc}{insignia}</td>
     <td onclick=""event.stopPropagation()"">
         <div class=""d-flex gap-1 justify-content-center"">
             <button class=""btn-accion btn-edit"" title=""Editar"" onclick=""abrirModalEditar({p.Id})"">{editSvg}</button>
@@ -124,10 +141,42 @@ namespace Comercial_Web.Pages.Productos.ABM
             // Helpers
             static string H(string? s) => System.Net.WebUtility.HtmlEncode(s ?? "—");
 
+            // Con variantes habilitadas: si es una ficha, el stock es de cada variante (la ficha no tiene stock propio).
+            FichaVariantesDto? fichaVar = null;
+            if (producto.Id.HasValue && await _variantes.HabilitadoAsync())
+            {
+                var f = await _variantes.ObtenerFichaAsync(producto.Id.Value);
+                if (f.TieneVariantes) fichaVar = f;
+            }
+
             var stockBajo   = producto.CantidadMinima.HasValue && producto.Cantidad < producto.CantidadMinima;
-            var stockBadge  = stockBajo
-                ? $"<span class='badge-stock-bajo'>Stock bajo ({producto.Cantidad})</span>"
-                : $"<span class='badge-stock-ok'>En stock ({producto.Cantidad})</span>";
+            var stockBadge  = fichaVar != null
+                ? "<span class='badge-stock-ok'>Ficha con variantes</span>"
+                : stockBajo
+                    ? $"<span class='badge-stock-bajo'>Stock bajo ({producto.Cantidad})</span>"
+                    : $"<span class='badge-stock-ok'>En stock ({producto.Cantidad})</span>";
+
+            var variantesHtml = "";
+            if (fichaVar != null)
+            {
+                var filasVar = string.Join("", fichaVar.Variantes.Select(v =>
+                {
+                    var etiqueta = string.Join(" / ", new[] { v.MedidaNombre, v.ColorNombre }.Where(x => !string.IsNullOrWhiteSpace(x)));
+                    var apagada  = v.Habilitada ? "" : " style='color:#999;'";
+                    return $@"<tr{apagada}><td>{H(etiqueta)}{(v.Habilitada ? "" : " <em>(deshab.)</em>")}</td>
+                              <td>{H(v.CodBarras)}</td>
+                              <td style='text-align:right;'>{v.Stock.ToString("N" + cantStock)}</td>
+                              <td style='text-align:right;'>{(v.Precio.HasValue ? v.Precio.Value.ToString("N2") : "—")}</td></tr>";
+                }));
+                variantesHtml = $@"<div class='detail-section'>
+                    <div class='detail-section-title'>Variantes ({fichaVar.Variantes.Count})</div>
+                    <div style='overflow-x:auto;'>
+                    <table style='width:100%;font-size:.72rem;border-collapse:collapse;'>
+                        <thead><tr style='color:#6c757d;text-align:left;'><th>Variante</th><th>Cód. barras</th><th style='text-align:right;'>Stock</th><th style='text-align:right;'>Precio</th></tr></thead>
+                        <tbody>{filasVar}</tbody>
+                    </table></div>
+                </div>";
+            }
 
             // Galería de imágenes (imagenesProductos, servidas desde BD vía handler ImagenItem).
             // Fallback: si el producto todavía no tiene ninguna imagen en la galería nueva pero sí
@@ -209,6 +258,8 @@ namespace Comercial_Web.Pages.Productos.ABM
         <div class='detail-item'><label>Rubro</label><span>{H(producto.Rubro)}</span></div>
         <div class='detail-item'><label>Proveedor</label><span>{H(producto.Proveedor)}</span></div>
     </div>
+
+    {variantesHtml}
 
     {descLargaHtml}
 
@@ -294,32 +345,16 @@ namespace Comercial_Web.Pages.Productos.ABM
                 return Page();
             }
 
-            if (Producto.CantidadMinimaVenta.HasValue && Producto.CantidadMinimaVenta.Value < 1)
+            var errorRegla = await AplicarReglasDeGuardadoAsync();
+            if (errorRegla != null)
             {
-                ModelState.AddModelError(nameof(Producto.CantidadMinimaVenta), "La cantidad mínima de venta debe ser mayor o igual a 1.");
+                ModelState.AddModelError(string.Empty, errorRegla);
                 await CargarCombosAsync();
                 return Page();
             }
 
-            // Regla de porcentajes por producto: solo se persisten si el proveedor
-            // tiene preciosPorProducto = 1. En cualquier otro caso se fuerzan a NULL
-            // (no se confía en el cliente; se valida contra la BD).
-            var proveedorSel = Producto.FkProveedor.HasValue
-                ? await _proveedorService.GetByIdAsync(Producto.FkProveedor.Value)
-                : null;
-            if (proveedorSel?.PreciosPorProducto != true)
-            {
-                Producto.Ganancia  = null;
-                Producto.Descuento = null;
-            }
-
             if (Producto.Id == 0)
             {
-                Producto.PrecioProveedor = decimal.Parse(Request.Form["Producto.PrecioProveedor"], CultureInfo.InvariantCulture);
-                Producto.PrecioProveedor = decimal.Parse(Request.Form["Producto.PrecioProveedor"], new CultureInfo("es-AR"));
-
-
-
                 // Alta
                 await _productoService.CrearAsync(Producto);
             }
@@ -331,6 +366,177 @@ namespace Comercial_Web.Pages.Productos.ABM
 
             // Recargamos la grilla y volvemos a la p�gina principal
             return RedirectToPage();
+        }
+
+        // ══════════════════════════════════════════════════════════════════
+        //  Productos con variantes (medidas/colores) — misma lógica que LitoralMarket.
+        //  Todo responde "no habilitado" salvo con el parámetro en '1' y las tablas creadas.
+        // ══════════════════════════════════════════════════════════════════
+        private static readonly JsonSerializerOptions _camel =
+            new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
+        /// <summary>Estado de variantes de un producto + maestros activos de medidas y colores.</summary>
+        public async Task<IActionResult> OnGetVariantesFichaAsync(int id)
+        {
+            if (!await _variantes.HabilitadoAsync()) return new JsonResult(new { ok = false }, _camel);
+            var ficha   = id > 0 ? await _variantes.ObtenerFichaAsync(id) : new FichaVariantesDto();
+            var medidas = await _variantes.ListarMedidasAsync(soloActivas: true);
+            var colores = await _variantes.ListarColoresAsync(soloActivas: true);
+            return new JsonResult(new { ok = true, ficha, medidas, colores }, _camel);
+        }
+
+        public class AtributoRequest
+        {
+            public string? Tipo   { get; set; }   // "medida" | "color"
+            public string? Nombre { get; set; }
+            public string? Hex    { get; set; }
+        }
+
+        /// <summary>Crea una medida o un color en línea desde el editor.</summary>
+        public async Task<IActionResult> OnPostVarianteAtributoAsync([FromBody] AtributoRequest? req)
+        {
+            if (req is null || !await _variantes.HabilitadoAsync())
+                return new JsonResult(new { ok = false, error = "Variantes no habilitadas." }, _camel);
+
+            var r = string.Equals(req.Tipo, "color", StringComparison.OrdinalIgnoreCase)
+                ? await _variantes.GuardarColorAsync(null, req.Nombre ?? "", req.Hex, 0, true)
+                : await _variantes.GuardarMedidaAsync(null, req.Nombre ?? "", 0, true);
+            return new JsonResult(new { ok = r.Ok, id = r.Id, error = r.Error }, _camel);
+        }
+
+        /// <summary>Qué variantes seguirían el nuevo costo/precio común (para confirmar antes de guardar).</summary>
+        public async Task<IActionResult> OnGetVariantesVistaPreviaAsync(int id, string? costo, string? precio)
+        {
+            if (!await _variantes.HabilitadoAsync()) return new JsonResult(new { ok = false }, _camel);
+            var vp = await _variantes.VistaPreviaPrecioComunAsync(id, ParseDecimal(costo), ParseDecimal(precio));
+            return new JsonResult(new { ok = true, vp }, _camel);
+        }
+
+        private static decimal ParseDecimal(string? s) =>
+            decimal.TryParse(s?.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out var d) ? d : 0m;
+
+        /// <summary>Guarda la ficha principal y sus variantes en una transacción (respuesta JSON).</summary>
+        public async Task<IActionResult> OnPostGuardarVariantesAsync()
+        {
+            if (!await _variantes.HabilitadoAsync())
+                return new JsonResult(new { ok = false, errores = new[] { "Las variantes de producto no están habilitadas." } }, _camel);
+
+            GuardarVariantesRequest? req = null;
+            try
+            {
+                req = JsonSerializer.Deserialize<GuardarVariantesRequest>(
+                    Request.Form["variantesJson"].ToString(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+            catch (JsonException) { }
+            if (req is null)
+                return new JsonResult(new { ok = false, errores = new[] { "Solicitud de variantes inválida." } }, _camel);
+
+            if (!ModelState.IsValid)
+                return new JsonResult(new
+                {
+                    ok = false,
+                    errores = ModelState.Values.SelectMany(v => v.Errors)
+                        .Select(e => string.IsNullOrWhiteSpace(e.ErrorMessage) ? "Hay un dato con formato inválido." : e.ErrorMessage)
+                        .Distinct().ToArray()
+                }, _camel);
+
+            // Mismas reglas que el alta/edición de un producto simple
+            if (Producto.CantidadMinimaVenta.HasValue && Producto.CantidadMinimaVenta.Value < 1)
+                return new JsonResult(new { ok = false, errores = new[] { "La cantidad mínima de venta debe ser mayor o igual a 1." } }, _camel);
+
+            var proveedorSel = Producto.FkProveedor.HasValue
+                ? await _proveedorService.GetByIdAsync(Producto.FkProveedor.Value)
+                : null;
+            if (proveedorSel?.PreciosPorProducto != true)
+            {
+                Producto.Ganancia  = null;
+                Producto.Descuento = null;
+            }
+
+            var eraNuevo = (Producto.Id ?? 0) == 0;
+            try
+            {
+                var rv = await _variantes.GuardarFichaAsync(Producto, req);
+                if (!rv.Ok)
+                    return new JsonResult(new { ok = false, errores = rv.Errores }, _camel);
+
+                var partes = new List<string> { eraNuevo ? "Producto con variantes creado." : "Producto con variantes actualizado." };
+                if (rv.Creadas > 0)           partes.Add($"{rv.Creadas} variante(s) nueva(s).");
+                if (rv.Habilitadas > 0)       partes.Add($"{rv.Habilitadas} habilitada(s).");
+                if (rv.Deshabilitadas > 0)    partes.Add($"{rv.Deshabilitadas} deshabilitada(s).");
+                if (rv.PreciosPropagados > 0) partes.Add($"Precio común aplicado a {rv.PreciosPropagados} variante(s).");
+                if (rv.PreciosOmitidos > 0)   partes.Add($"{rv.PreciosOmitidos} variante(s) conservan su precio propio.");
+                return new JsonResult(new { ok = true, productoId = rv.ProductoId, mensaje = string.Join(" ", partes) }, _camel);
+            }
+            catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+            {
+                return new JsonResult(new { ok = false, errores = new[] { ex.Message } }, _camel);
+            }
+            catch (Exception)
+            {
+                return new JsonResult(new { ok = false, errores = new[] { "No se pudo guardar el producto con variantes. Intentá nuevamente." } }, _camel);
+            }
+        }
+
+        // Reglas comunes del guardado de un producto simple (alta o edición). Devuelve un mensaje de error o null.
+        private async Task<string?> AplicarReglasDeGuardadoAsync()
+        {
+            if (Producto.CantidadMinimaVenta.HasValue && Producto.CantidadMinimaVenta.Value < 1)
+                return "La cantidad mínima de venta debe ser mayor o igual a 1.";
+
+            // Regla de porcentajes por producto: solo se persisten si el proveedor tiene preciosPorProducto = 1.
+            // En cualquier otro caso se fuerzan a NULL (no se confía en el cliente; se valida contra la BD).
+            var proveedorSel = Producto.FkProveedor.HasValue
+                ? await _proveedorService.GetByIdAsync(Producto.FkProveedor.Value)
+                : null;
+            if (proveedorSel?.PreciosPorProducto != true)
+            {
+                Producto.Ganancia  = null;
+                Producto.Descuento = null;
+            }
+
+            // En el alta el precio de proveedor se interpreta con formato argentino (coma decimal).
+            if ((Producto.Id ?? 0) == 0)
+            {
+                var txt = Request.Form["Producto.PrecioProveedor"].ToString();
+                Producto.PrecioProveedor = decimal.TryParse(txt, NumberStyles.Number, new CultureInfo("es-AR"), out var pp) ? pp : null;
+            }
+            return null;
+        }
+
+        private static string[] ErroresDeModelo(Microsoft.AspNetCore.Mvc.ModelBinding.ModelStateDictionary ms) =>
+            ms.Values.SelectMany(v => v.Errors)
+              .Select(e => string.IsNullOrWhiteSpace(e.ErrorMessage) ? "Hay un dato con formato inválido." : e.ErrorMessage)
+              .Distinct().ToArray();
+
+        /// <summary>
+        /// Guarda un producto simple (alta o edición) y responde JSON. A diferencia del envío clásico del formulario,
+        /// ante un error la pantalla no se recarga: el modal conserva lo cargado, imágenes incluidas.
+        /// </summary>
+        public async Task<IActionResult> OnPostGuardarSimpleAsync()
+        {
+            if (!ModelState.IsValid)
+                return new JsonResult(new { ok = false, errores = ErroresDeModelo(ModelState) }, _camel);
+
+            var errorRegla = await AplicarReglasDeGuardadoAsync();
+            if (errorRegla != null)
+                return new JsonResult(new { ok = false, errores = new[] { errorRegla } }, _camel);
+
+            var eraNuevo = (Producto.Id ?? 0) == 0;
+            try
+            {
+                if (eraNuevo) await _productoService.CrearAsync(Producto);
+                else          await _productoService.ActualizarAsync(Producto);
+                return new JsonResult(new { ok = true, productoId = Producto.Id, mensaje = eraNuevo ? "Producto creado correctamente." : "Producto actualizado correctamente." }, _camel);
+            }
+            catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+            {
+                return new JsonResult(new { ok = false, errores = new[] { ex.Message } }, _camel);
+            }
+            catch (Exception)
+            {
+                return new JsonResult(new { ok = false, errores = new[] { "No se pudo guardar el producto. Intentá nuevamente." } }, _camel);
+            }
         }
 
         public async Task<IActionResult> OnGetProductoAsync(int id)

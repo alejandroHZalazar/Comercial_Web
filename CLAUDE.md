@@ -177,6 +177,28 @@ public class IndexModel : PageModel
 }
 ```
 
+### Promociones por cantidad (NxM) y porcentaje
+
+Módulo independiente de los combos por slots (`IPromocionService`). Un único motor en el servidor que usan Ventas, Venta minorista y Pedidos.
+
+- **Activación:** parámetro `promociones/descuentos = '1'` **y** tablas creadas con `scripts/promociones_reglas.sql` (lo ejecuta el usuario). Con el parámetro apagado o sin tablas el comportamiento es idéntico al anterior (no se consulta ninguna tabla nueva). Estado cacheado 60 s en `PromocionDescuentosService`.
+- **Tablas:** `promociones_reglas` (PORC|NXM, vigencia DATETIME hora Argentina), `promociones_reglas_productos`, y auditoría `ventas_promo_detalle` / `pedidos_promo_detalle`. `ventasDetalle` y `pedidoDetalle` NO se modifican.
+- **Motor puro:** `Domain/Promociones/MotorPromociones.cs`. Evalúa por producto con la cantidad total; elige la regla de **menor importe final** (no se acumulan); desempate = menor `Id`. NxM: `grupos = floor(q/N)`, bonificadas = `grupos × (N−M)`.
+- **Servidor manda:** `IPromocionDescuentosService.EvaluarAsync` (handler `?handler=EvaluarPromos` en Ventas/Minorista/Pedidos) y `ResolverParaGuardarAsync` (llamado desde `VentaService.GrabarVentaAsync` y `PedidoService.GuardarPedidoAsync`): valida lo que envía el navegador (lanza `InvalidOperationException` si no coincide) y **expande NxM en dos líneas** (cobradas a precio normal + bonificadas con 100 % de descuento) con su registro de auditoría.
+- **Navegador:** `wwwroot/js/promo-descuentos.js` solo envía líneas y pinta el resultado; no tiene reglas de cálculo. Un Desc/Rec manual (≠ 0 sin promoción) gana sobre la promoción; las líneas cargadas desde un pedido quedan bloqueadas (precio pactado) y los productos fraccionados no participan.
+- **ABM:** `/Productos/PromocionesDescuentos` (menú 213). Búsqueda de productos reutiliza `IImpresionEtiquetasService.BuscarAsync` (respeta la regla de variantes: sin fichas).
+- **Acumular variantes (NxM):** columna `promociones_reglas.agrupaVariantes` (TINYINT(1) NOT NULL DEFAULT 0; solo NxM). Con la opción activa, las cantidades de las variantes de una misma ficha (`productosVariantes.fk_principal`) que estén en la lista de la regla se suman para completar el grupo; no se mezclan fichas ni variantes fuera de la lista. El motor recibe la ficha en `LineaPromoEntrada.FichaId` (la carga `PromocionDescuentosService.AsignarFichasAsync`, solo si hay una regla vigente que acumula y el módulo de variantes está habilitado). Una regla que acumula solo se usa si su ahorro supera al de las ofertas individuales de esas líneas. Sin reglas que acumulen el cálculo es idéntico al anterior (prueba de equivalencia). Si falta la columna el módulo queda inerte (el estado la verifica en `information_schema`).
+- **Aviso de proximidad:** `MotorPromociones.Proximas` (misma carga de reglas que `Evaluar`, devuelto en `EvaluarAsync` → `proximas`). Avisa solo cuando falta **exactamente 1 unidad** para completar un grupo NxM y esa NxM ganaría al agregarla (sin avisar si ya se alcanzó el beneficio, si otra promoción mejor seguiría ganando o con cantidades decimales). Es solo informativo: etiqueta ámbar en la fila + aviso flotante (`PromoDesc.toast`) una vez por combinación producto/promoción/cantidad; no modifica importes.
+- **Hora:** vigencia siempre en hora argentina (`HoraArgentina.Ahora()`), el servidor Linux corre en UTC.
+- **Pruebas:** `Tests/Promociones.Tests` (xUnit, base EF en memoria): `dotnet test "Tests/Promociones.Tests"`.
+
+### Escaneo de productos (Ventas y Venta minorista)
+
+- **Un solo circuito de alta por código:** `procesarCodigoBarras(raw, desdeEscaner)` en cada página (balanza, prefijo `cantidad*código`, búsqueda por `?handler=BuscarProductos` → `PedidoService.BuscarProductosAsync`, `_agregarOSumar` → promociones). Lo usan el Enter de `txtBusqCB` (teclado o lector Bluetooth/USB tipo teclado) y la cámara. Desde la cámara siempre agrega 1 unidad (o suma).
+- **Códigos repetidos:** si un código corresponde a varios productos se muestra `ElegirProducto.mostrar(lista, codigo)` (nunca se toma el primero).
+- **Cámara:** `wwwroot/js/escaner-productos.js` (`Escaner.abrir({ onCodigo })`): `getUserMedia` (cámara trasera, requiere HTTPS), `BarcodeDetector` nativo o polyfill `barcode-detector` 3.2.3 + `zxing_reader.wasm` (zxing-wasm 3.1.6) alojados en `wwwroot/lib/barcode-detector/` (sin CDN). Anti-duplicados (mismo código 1,5 s), feedback sonoro/vibración, linterna/cambio de cámara si existen; libera la cámara al cerrar, al ocultar la pestaña y en `pagehide`. No envía imágenes.
+- **Modo lector:** botón 🔫 pone `inputmode="none"` en `txtBusqCB` (sin teclado virtual del celular).
+
 ### Tabla de Parámetros del Sistema
 
 - **Tabla `parametros`**: almacena configuraciones clave-valor por módulo

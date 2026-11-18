@@ -249,9 +249,14 @@
   <div class="row g-2 align-items-end">
     <div class="col-md-2">
       <label class="vt-label">Cód. Barras</label>
-      <input type="text" id="txtBusqCB" class="form-control form-control-sm vt-input"
-             placeholder="@(p.TieneLectoraCB == 1 ? "Lector de cód. barras…" : "Código de barras…")" autocomplete="off"
-             onkeydown="onBusqCBKeydown(event)" />
+      <div class="input-group input-group-sm">
+        <input type="text" id="txtBusqCB" class="form-control form-control-sm vt-input"
+               placeholder="@(p.TieneLectoraCB == 1 ? "Lector de cód. barras…" : "Código de barras…")" autocomplete="off"
+               onkeydown="onBusqCBKeydown(event)" />
+        <button type="button" class="btn btn-outline-secondary" id="btnModoLector" aria-pressed="false"
+                title="Modo lector Bluetooth/USB: no abre el teclado del celular" onclick="alternarModoLector()">🔫</button>
+        <button type="button" class="btn btn-primary" title="Escanear producto con la cámara" onclick="abrirEscaner()">📷<span class="d-md-none ms-1">Escanear</span></button>
+      </div>
     </div>
     <div class="col-md-2">
       <label class="vt-label">Cód. Proveedor</label>
@@ -672,6 +677,8 @@
 </div>
 
 @section Scripts {
+<script src="~/js/promo-descuentos.js" asp-append-version="true"></script>
+<script src="~/js/escaner-productos.js" asp-append-version="true"></script>
 <script>
 (function(){
 'use strict';
@@ -856,7 +863,7 @@ async function _buscarProducto(q, tipo){
 }
 
 function _agregarOSumar(prod, cantidad){
-  var existente = _rows.find(r=>r.fkProducto===prod.productoId);
+  var existente = _rows.find(r=>r.fkProducto===prod.productoId && !r.promoLocked);
   if (existente){
     existente.cantidad = (+existente.cantidad||0) + (+cantidad||0);
     recalcularFila(existente);
@@ -879,6 +886,7 @@ function _agregarOSumar(prod, cantidad){
     _rows.push(row);
   }
   renderGrilla();
+  PromoDesc.recalcular();
 }
 
 // ── Fetch stock para filas cargadas (pedido) ─────────────────────────────
@@ -932,27 +940,31 @@ function extraerPorPosicion(codigo, posicion){
 // ────────────────────────────────────────────────────────────────────────────
 
 // ── Cód. Barras ────────────────────────────────────────────────────────────
-window.onBusqCBKeydown = async function(e){
-  if (e.key === 'Escape'){ e.target.value=''; return; }
-  if (e.key !== 'Enter') return;
-  e.preventDefault();
-  var inp = document.getElementById('txtBusqCB');
-  var raw = inp.value.trim();
-  if (!raw) return;
+// Busca por código de barras. Si el código pertenece a VARIOS productos (códigos repetidos en la base) el usuario
+// elige cuál agregar: nunca se toma uno al azar. Las fichas principales ya vienen excluidas por el servidor.
+async function _buscarUnicoPorCodigo(codigo){
+  var lista = await _buscarProducto(codigo, 'codBarras');
+  if (!lista.length) return { prod: null };
+  if (lista.length === 1) return { prod: lista[0] };
+  var elegido = await ElegirProducto.mostrar(lista, codigo);
+  return elegido ? { prod: elegido } : { prod: null, cancelado: true };
+}
 
+// Un único circuito de alta por código de barras: lo usan el Enter del campo (teclado o lector Bluetooth/USB) y la
+// cámara. Devuelve { ok, mensaje, cancelado, prod, cantidad, accion: 'agregado' | 'cantidad' }.
+async function procesarCodigoBarras(raw, desdeEscaner){
   // ── Balanza: detectar código de balanza antes de cualquier otro parseo ──────
   // Tiene prioridad sobre la lógica de * y sobre la lógica estándar de CB.
   if (TIENE_CB === 1 && TIENE_PRODUCTOS_BALANZA === 1 && esCodigoBalanza(raw, PREFIJO_BALANZA)){
-    if (!PREFIJO_BALANZA || !POSICION_PRODUCTO || !POSICION_PRECIO || DIVISOR_PRECIO <= 0){
-      showAlert('Para operar con productos de balanza debe parametrizar: Prefijo, Posición de Producto, Posición de Importe y Divisor de Importe.');
-      return;
-    }
+    if (!PREFIJO_BALANZA || !POSICION_PRODUCTO || !POSICION_PRECIO || DIVISOR_PRECIO <= 0)
+      return { ok:false, mensaje:'Para operar con productos de balanza debe parametrizar: Prefijo, Posición de Producto, Posición de Importe y Divisor de Importe.' };
     var codProdBal = extraerPorPosicion(raw, POSICION_PRODUCTO);
-    if (!codProdBal){ showAlert('No se pudo extraer el código de producto del código de balanza.'); return; }
+    if (!codProdBal) return { ok:false, mensaje:'No se pudo extraer el código de producto del código de balanza.' };
 
-    var listaBal = await _buscarProducto(codProdBal.trim(), 'codBarras');
-    if (!listaBal.length){ showAlert('Producto de balanza no encontrado: ' + codProdBal.trim()); inp.select(); return; }
-    var prodBal = listaBal[0];
+    var rb = await _buscarUnicoPorCodigo(codProdBal.trim());
+    if (rb.cancelado) return { ok:false, cancelado:true, mensaje:'Selección cancelada.' };
+    if (!rb.prod) return { ok:false, mensaje:'Producto de balanza no encontrado: ' + codProdBal.trim() };
+    var prodBal = rb.prod;
 
     var precioStrBal  = extraerPorPosicion(raw, POSICION_PRECIO);
     var precioBalanza = precioStrBal ? parseFloat(precioStrBal) / DIVISOR_PRECIO : 0;
@@ -968,9 +980,7 @@ window.onBusqCBKeydown = async function(e){
     }
 
     _agregarOSumar(prodBal, cantBal);
-    inp.value = '';
-    inp.focus();
-    return;   // no continuar con la lógica estándar
+    return { ok:true, prod:prodBal, cantidad:cantBal, accion:'agregado' };   // no continuar con la lógica estándar
   }
   // ────────────────────────────────────────────────────────────────────────────
 
@@ -983,15 +993,16 @@ window.onBusqCBKeydown = async function(e){
   if (idxAst >= 0){
     var pref = raw.substring(0, idxAst).trim().replace(',', '.');
     var resto = raw.substring(idxAst + 1).trim();
-    if (!resto){ showAlert('Ingrese un código de barras después del asterisco.'); inp.select(); return; }
+    if (!resto) return { ok:false, mensaje:'Ingrese un código de barras después del asterisco.' };
     var n = parseFloat(pref);
     cantPrefijo = (isFinite(n) && n > 0) ? n : 1;
     q = resto;
   }
 
-  var lista = await _buscarProducto(q, 'codBarras');
-  if (!lista.length){ showAlert('Producto no encontrado por código de barras.'); inp.select(); return; }
-  var prod = lista[0];
+  var r = await _buscarUnicoPorCodigo(q);
+  if (r.cancelado) return { ok:false, cancelado:true, mensaje:'Selección cancelada.' };
+  if (!r.prod) return { ok:false, mensaje:'Producto no encontrado por código de barras.' };
+  var prod = r.prod;
 
   if (cantPrefijo !== null){
     // Con prefijo importe/cantidad * código:
@@ -1007,16 +1018,58 @@ window.onBusqCBKeydown = async function(e){
       cantEfectiva = cantPrefijo;
     }
     _agregarOSumar(prod, cantEfectiva);
-    inp.value = '';
-    inp.focus();
-  } else if (TIENE_CB === 1){
-    _agregarOSumar(prod, 1);
-    inp.value = '';
-    inp.focus();
-  } else {
-    inp.value = '';
-    _enviarACantidad(prod, 'txtBusqCB');
+    return { ok:true, prod:prod, cantidad:cantEfectiva, accion:'agregado' };
   }
+  // Lectora habilitada o lectura con la cámara: agrega 1 unidad (o suma 1 si ya está en la grilla)
+  if (TIENE_CB === 1 || desdeEscaner){
+    _agregarOSumar(prod, 1);
+    return { ok:true, prod:prod, cantidad:1, accion:'agregado' };
+  }
+  return { ok:true, prod:prod, accion:'cantidad' };   // sin lectora: se pide la cantidad
+}
+
+window.onBusqCBKeydown = async function(e){
+  if (e.key === 'Escape'){ e.target.value=''; return; }
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  var inp = document.getElementById('txtBusqCB');
+  var raw = inp.value.trim();
+  if (!raw) return;
+
+  var r = await procesarCodigoBarras(raw, false);
+  if (!r.ok){ if (!r.cancelado) showAlert(r.mensaje); inp.select(); return; }
+  inp.value = '';
+  if (r.accion === 'cantidad') _enviarACantidad(r.prod, 'txtBusqCB');
+  else inp.focus();
+};
+
+// ── Escáner con cámara (wwwroot/js/escaner-productos.js) ───────────────────
+// Usa exactamente el mismo circuito que el Enter del campo: búsqueda, _agregarOSumar y promociones.
+window.abrirEscaner = function(){
+  Escaner.abrir({ onCodigo: async function(codigo){
+    var r = await procesarCodigoBarras(codigo, true);
+    if (!r.ok) return { ok:false, cancelado:!!r.cancelado,
+                        titulo: r.cancelado ? 'Selección cancelada' : '✖ ' + (r.mensaje || 'No se agregó'),
+                        detalle: r.cancelado ? '' : 'Código leído: ' + codigo };
+    await PromoDesc.recalcular(true);   // deja evaluadas las promociones y el aviso de "falta 1" para mostrarlos
+    var fila = _rows.find(function(x){ return x.fkProducto === r.prod.productoId && !x.promoLocked; });
+    var aviso = fila && fila.promo ? 'Promoción aplicada: ' + fila.promo.nombre
+              : (fila && fila.proxima ? fila.proxima.textoCorto : '');
+    return { ok:true, titulo:'✔ ' + (r.prod.descripcion || ''),
+             detalle:'Cantidad en la venta: ' + fmtN(fila ? fila.cantidad : r.cantidad, DEC_CANT) +
+                     (fila ? ' · Subtotal $' + fmt(fila.subtotal) : ''),
+             aviso: aviso };
+  }});
+};
+
+// Modo lector (Bluetooth/USB tipo teclado): el campo no abre el teclado del celular y conserva el foco.
+window.alternarModoLector = function(){
+  var inp = document.getElementById('txtBusqCB');
+  var btn = document.getElementById('btnModoLector');
+  var activar = inp.getAttribute('inputmode') !== 'none';
+  if (activar) inp.setAttribute('inputmode', 'none'); else inp.removeAttribute('inputmode');
+  if (btn){ btn.classList.toggle('active', activar); btn.setAttribute('aria-pressed', activar ? 'true' : 'false'); }
+  inp.focus();
 };
 
 // ── Cód. Proveedor ─────────────────────────────────────────────────────────
@@ -1157,7 +1210,7 @@ function renderGrilla(){
       '</td>'+
       '<td style="font-size:.75rem;">'+escHtml(row.codBarras||'')+'</td>'+
       '<td style="font-size:.75rem;">'+escHtml(row.codProveedor||'')+'</td>'+
-      '<td>'+escHtml(row.descripcion||'')+'</td>'+
+      '<td>'+escHtml(row.descripcion||'')+PromoDesc.badge(row)+'</td>'+
       '<td style="text-align:right;font-size:.78rem;">'+fmtInp(row.stock,DEC_CANT)+'</td>'+
       '<td style="text-align:right;">$'+fmt(row.precioSinIva)+'</td>'+
       '<td style="text-align:right;'+drColor+'">'+
@@ -1185,13 +1238,16 @@ window.onChangeCant = function(idx,val){
   _rows[idx].cantidad = parseFloat(val)||0;
   recalcularFila(_rows[idx]);
   renderGrilla();
+  PromoDesc.recalcular();
 };
 window.onChangeDr = function(idx,val){
   var dr = parseFloat(val)||0;
   _rows[idx].descRec = _drMode==='desc' ? -Math.abs(dr) : Math.abs(dr);
   if (BONIF===1){ _rows[idx].descRec = _drMode==='desc' ? -Math.abs(dr) : Math.abs(dr); }
+  _rows[idx].promo = null;   // desc/rec manual: gana sobre la promoción (si queda en 0 la promoción vuelve)
   recalcularFila(_rows[idx]);
   renderGrilla();
+  PromoDesc.recalcular();
 };
 window.onCantKeydown = function(e, idx){
   if (e.key!=='Enter') return;
@@ -1202,7 +1258,7 @@ window.onCantKeydown = function(e, idx){
 };
 window.rowSelChange = function(idx,checked){ _rows[idx].sel=checked; _syncChkAll(); };
 window.seleccionarTodas = function(checked){ _rows.forEach(r=>r.sel=checked); renderGrilla(); };
-window.eliminarFila = function(idx){ _rows.splice(idx,1); renderGrilla(); };
+window.eliminarFila = function(idx){ _rows.splice(idx,1); renderGrilla(); PromoDesc.recalcular(); };
 
 function _syncChkAll(){
   var chk = document.getElementById('chkSelAll');
@@ -1224,16 +1280,18 @@ window.aplicarDescRec = function(){
   if (BONIF===1){
     var sel = _rows.filter(r=>r.sel);
     if (!sel.length){ showAlert('Seleccione al menos una fila para aplicar desc/rec.'); return; }
-    sel.forEach(r=>{ r.descRec=dr; recalcularFila(r); });
+    sel.forEach(r=>{ r.promo=null; r.descRec=dr; recalcularFila(r); });   // el desc/rec manual gana sobre la promoción
   } else {
-    _rows.forEach(r=>{ r.descRec=dr; recalcularFila(r); });
+    _rows.forEach(r=>{ if (r.promo) return; r.descRec=dr; recalcularFila(r); });   // las filas con promoción no reciben el desc/rec global
   }
   renderGrilla();
+  PromoDesc.recalcular();
 };
 window.limpiarDescRec = function(){
-  _rows.forEach(r=>{ r.descRec=0; recalcularFila(r); });
+  _rows.forEach(r=>{ r.promo=null; r.descRec=0; recalcularFila(r); });
   document.getElementById('txtDrPct').value='0';
   renderGrilla();
+  PromoDesc.recalcular();
 };
 
 // ── Descuento general (%) sobre Total S/IVA — solo modo por línea (BONIF===1) ──
@@ -1331,6 +1389,7 @@ window.actualizarPrecios = async function(){
   });
   renderGrilla();
   showInfo('Precios actualizados.');
+  PromoDesc.recalcular();
 };
 
 // ── Cargar Pedido ──────────────────────────────────────────────────────────
@@ -1439,7 +1498,8 @@ window.cargarPedido = async function(pedidoId){
       stock       : 0,
       fraccionado : d.fraccionado || false,
       costo       : d.costo||0,
-      sel         : false
+      sel         : false,
+      promoLocked : PromoDesc.activo()   // precio pactado en el pedido: no participa de las promociones
     };
     recalcularFila(row);
     // Para productos fraccionados restaurar el subtotal exacto almacenado en BD.
@@ -1805,6 +1865,9 @@ window.vender = async function(ordenFacturar){
   _ordenFacturar = ordenFacturar;
   if (!formularioValido()) return;
 
+  // Promociones por cantidad / porcentaje: confirmar lo vigente justo antes de grabar
+  await PromoDesc.recalcular(true);
+
   // ── Verificar promociones antes de grabar ────────────────────────────────
   var promoIntercept = await _verificarPromociones();
   if (promoIntercept) return;   // modal abierto, esperar confirmación del usuario
@@ -1852,7 +1915,9 @@ async function grabarVenta(){
     fraccionado   : r.fraccionado||false,
     descRec       : r.descRec||0,
     subtotalSinIva: r.subtotalSIva||0,
-    fkPedido      : _pedidoCargado||0
+    fkPedido      : _pedidoCargado||0,
+    fkPromoRegla  : r.promo ? r.promo.fkRegla : null,
+    promoBloqueada: !!r.promoLocked
   }));
 
   var fps = (TIENE_MEDPAG===1||LLEVA_CC===1) ? (_formasPago||[]) : [];
@@ -1934,6 +1999,7 @@ async function grabarVenta(){
       progCerrar();
       if (popupComprobante){ try{ popupComprobante.close(); }catch(e){} }
       showAlert('Error al guardar venta: '+(r.msg||'Error desconocido.'));
+      PromoDesc.recalcular(true);   // si cambiaron las promociones, refresca los importes en pantalla
       toggleBtns(false);
       return;
     }
@@ -2021,6 +2087,7 @@ function toggleBtns(disabled){
 // ── Limpiar formulario ─────────────────────────────────────────────────────
 window.limpiarFormulario = function(){
   _rows=[];
+  PromoDesc.reset();
   _pedidoCargado=0;
   document.getElementById('hPedidoCargado').value=0;
   document.getElementById('txtBusqCB').value='';
@@ -2112,6 +2179,17 @@ function showInfo(msg){
   setTimeout(()=>d.style.display='none', 6000);
 }
 
+// ── Promociones por cantidad / porcentaje: decide el servidor (ver wwwroot/js/promo-descuentos.js) ──
+PromoDesc.init({
+  habilitado: @(Model.PromoDescHabilitado ? "true" : "false"),
+  url       : '?handler=EvaluarPromos',
+  getRows   : function(){ return _rows; },
+  baseline  : function(){ return 0; },
+  recalcFila: recalcularFila,
+  refrescar : function(){ renderGrilla(); },
+  avisar    : function(html){ showInfo(html); }
+});
+
 // ═══════════════════════════════════════════════════════════════════════════
 // ── MÓDULO PROMOCIONES ─────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2189,9 +2267,10 @@ window.volverAgregarPromo = function(){
   // El usuario regresa a la grilla para seguir editando
 };
 
-window.confirmarYVender = function(){
+window.confirmarYVender = async function(){
   bootstrap.Modal.getInstance(document.getElementById('modalConfirmarPromo'))?.hide();
   _aplicarPromociones(_resultadoPromo);
+  await PromoDesc.recalcular(true);   // los combos cambiaron cantidades: reevaluar promociones por cantidad/porcentaje
   grabarVenta();
 };
 

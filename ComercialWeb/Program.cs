@@ -94,6 +94,7 @@ builder.Services.AddScoped<IDashboardProveedorService, DashboardProveedorService
 builder.Services.AddScoped<IDashboardClienteService,  DashboardClienteService>();
 builder.Services.AddScoped<IAltaMasivaProductosService, AltaMasivaProductosService>();
 builder.Services.AddScoped<IListaPreciosService, ListaPreciosService>();
+builder.Services.AddScoped<IStockExistenciaPdfService, StockExistenciaPdfService>();
 builder.Services.AddScoped<IGestionStockService, GestionStockService>();
 builder.Services.AddScoped<IMovimientosProductosService, MovimientosProductosService>();
 builder.Services.AddScoped<ICambiosPreciosMasivoService, CambiosPreciosMasivoService>();
@@ -102,12 +103,15 @@ builder.Services.AddScoped<IImpresionEtiquetasService, ImpresionEtiquetasService
 builder.Services.AddScoped<ICuentaCorrienteService, CuentaCorrienteService>();
 builder.Services.AddScoped<ICobroService, CobroService>();
 builder.Services.AddScoped<INotaCreditoService, NotaCreditoService>();
+builder.Services.AddScoped<IVariantesProductoService, VariantesProductoService>();
+builder.Services.AddScoped<IVarianteAdminService, VarianteAdminService>();
 builder.Services.AddScoped<IPedidoService, PedidoService>();
 builder.Services.AddScoped<IFacturacionElectronicaService, FacturacionElectronicaService>();
 builder.Services.AddScoped<IVentaService, VentaService>();
 builder.Services.AddScoped<IReporteVentasService, ReporteVentasService>();
 builder.Services.AddScoped<IDevolucionService, DevolucionService>();
 builder.Services.AddScoped<IPromocionService, PromocionService>();
+builder.Services.AddScoped<IPromocionDescuentosService, PromocionDescuentosService>();
 builder.Services.AddScoped<IFacturacionLotesService, FacturacionLotesService>();
 builder.Services.AddScoped<IComprobantesFiscalesService, ComprobantesFiscalesService>();
 

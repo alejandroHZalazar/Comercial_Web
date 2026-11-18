@@ -1,0 +1,106 @@
+@page
+@model Comercial_Web.Pages.Productos.PromocionesDescuentos.IndexModel
+@{
+    ViewData["Title"] = "Promociones por Cantidad / Descuento";
+}
+
+<style>
+    .page-header { background:linear-gradient(135deg,#1a2a4a 0%,#2d4a7a 100%); border-radius:12px; padding:1.25rem 1.5rem; margin-bottom:1.25rem; color:#fff; }
+    .page-header h4 { margin:0; font-weight:700; }
+    .section-card { background:#fff; border:1px solid #e3e6f0; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:1.25rem; overflow:hidden; }
+    .pd-table { width:100%; border-collapse:collapse; font-size:.83rem; }
+    .pd-table thead tr { background:linear-gradient(90deg,#1a2a4a 0%,#2d4a7a 100%); }
+    .pd-table th { padding:.55rem .75rem; color:#fff; font-size:.7rem; text-transform:uppercase; letter-spacing:.4px; white-space:nowrap; }
+    .pd-table td { padding:.5rem .75rem; border-bottom:1px solid #f0f0f0; vertical-align:middle; }
+    .pd-table tbody tr:hover { background:#f8f9ff; }
+    .pd-badge { display:inline-block; border-radius:10px; padding:.12rem .6rem; font-size:.72rem; font-weight:700; color:#fff; }
+    .pd-b-vigente { background:#1cc88a; } .pd-b-inactiva { background:#858796; } .pd-b-fuera { background:#f6a23e; }
+    .pd-tipo { background:#eef2ff; color:#4e73df; border-radius:10px; padding:.12rem .6rem; font-size:.74rem; font-weight:700; }
+    .btn-pd { border:none; border-radius:8px; padding:.35rem .85rem; font-size:.8rem; font-weight:600; cursor:pointer; color:#fff; }
+    .btn-pd-primary { background:#4e73df; } .btn-pd-danger { background:#e74a3b; } .btn-pd-secondary { background:#858796; } .btn-pd-ok { background:#1cc88a; }
+</style>
+
+<div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div>
+        <h4>Promociones por Cantidad / Descuento</h4>
+        <small class="opacity-75">2x1, 3x2, 4x2… y porcentajes de descuento sobre productos. Se aplican en Ventas, Venta minorista y Pedidos.</small>
+    </div>
+    @if (Model.TablasListas)
+    {
+        <a class="btn-pd btn-pd-ok text-decoration-none" asp-page="Edit">+ Nueva promoción</a>
+    }
+</div>
+
+@if (!Model.TablasListas)
+{
+    <div class="alert alert-warning">
+        Faltan las tablas de este módulo o la columna <code>promociones_reglas.agrupaVariantes</code>. Ejecute el script
+        <code>scripts/promociones_reglas.sql</code> (o aplique la columna) en la base de datos y vuelva a abrir esta pantalla.
+    </div>
+}
+else
+{
+    @if (!Model.MotorActivo)
+    {
+        <div class="alert alert-info py-2" style="font-size:.85rem;">
+            Las promociones todavía <strong>no se aplican</strong> en las operaciones: el motor está apagado.
+            Para activarlo, el parámetro <code>promociones / descuentos</code> debe valer <code>1</code>.
+        </div>
+    }
+    <div class="section-card">
+        <div class="table-responsive">
+            <table class="pd-table">
+                <thead>
+                    <tr><th>Nombre</th><th>Tipo</th><th>Beneficio</th><th>Vigencia (hora Argentina)</th><th>Productos</th><th>Estado</th><th></th></tr>
+                </thead>
+                <tbody>
+                @foreach (var r in Model.Reglas)
+                {
+                    <tr id="fila-@r.Id">
+                        <td><strong>@r.Nombre</strong></td>
+                        <td><span class="pd-tipo">@(r.Tipo == "NXM" ? "Cantidad" : "Porcentaje")</span></td>
+                        <td>@r.Resumen</td>
+                        <td style="white-space:nowrap;">@r.Desde.ToString("dd/MM/yyyy HH:mm") &rarr; @r.Hasta.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@r.CantProductos</td>
+                        <td>
+                            @if (!r.Activa) { <span class="pd-badge pd-b-inactiva" id="est-@r.Id">Inactiva</span> }
+                            else if (r.Vigente) { <span class="pd-badge pd-b-vigente" id="est-@r.Id">Vigente</span> }
+                            else { <span class="pd-badge pd-b-fuera" id="est-@r.Id" title="Activa, pero fuera de su período de vigencia">Fuera de vigencia</span> }
+                        </td>
+                        <td style="white-space:nowrap;text-align:right;">
+                            <a class="btn-pd btn-pd-primary text-decoration-none" asp-page="Edit" asp-route-id="@r.Id">Editar</a>
+                            <button class="btn-pd btn-pd-secondary" onclick="toggle(@r.Id)">@(r.Activa ? "Desactivar" : "Activar")</button>
+                            <button class="btn-pd btn-pd-danger" onclick="eliminar(@r.Id, '@r.Nombre.Replace("'", "\\'")')">Eliminar</button>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Reglas.Any())
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-4">Todavía no hay promociones. Creá la primera con “Nueva promoción”.</td></tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script>
+async function post(handler, id) {
+    var r = await fetch('?handler=' + handler + '&id=' + id, { method: 'POST' });
+    return r.json();
+}
+async function toggle(id) {
+    var d = await post('Toggle', id);
+    if (!d.ok) { alert(d.error || 'No se pudo cambiar el estado.'); return; }
+    location.reload();
+}
+async function eliminar(id, nombre) {
+    if (!confirm('¿Eliminar la promoción "' + nombre + '"?\n\nLas operaciones ya registradas conservan el detalle de lo que se aplicó.')) return;
+    var d = await post('Eliminar', id);
+    if (!d.ok) { alert(d.error || 'No se pudo eliminar.'); return; }
+    var tr = document.getElementById('fila-' + id);
+    if (tr) tr.remove();
+}
+</script>
+}

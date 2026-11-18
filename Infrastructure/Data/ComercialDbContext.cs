@@ -49,6 +49,14 @@ public partial class ComercialDbContext : DbContext
 
     public virtual DbSet<PedidoVenta> PedidosVentas { get; set; }
 
+    public virtual DbSet<VarianteMedida> VariantesMedidas { get; set; }
+
+    public virtual DbSet<VarianteColor> VariantesColores { get; set; }
+
+    public virtual DbSet<ProductoPrincipal> ProductosPrincipales { get; set; }
+
+    public virtual DbSet<ProductoVariante> ProductosVariantes { get; set; }
+
     public virtual DbSet<Permiso> Permisos { get; set; }
 
     public virtual DbSet<PreciosProducto> PreciosProductos { get; set; }
@@ -114,6 +122,10 @@ public partial class ComercialDbContext : DbContext
     public virtual DbSet<PromocionSlot>          PromocionSlots           { get; set; }
     public virtual DbSet<PromocionSlotProducto>  PromocionSlotProductos   { get; set; }
     public virtual DbSet<VentaPromoComponente>   VentaPromoComponentes    { get; set; }
+    public virtual DbSet<PromocionRegla>         PromocionesReglas        { get; set; }
+    public virtual DbSet<PromocionReglaProducto> PromocionesReglasProductos { get; set; }
+    public virtual DbSet<VentaPromoDetalle>      VentasPromoDetalle       { get; set; }
+    public virtual DbSet<PedidoPromoDetalle>     PedidosPromoDetalle      { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -683,6 +695,52 @@ public partial class ComercialDbContext : DbContext
                 .HasColumnName("precio");
         });
 
+        // ── Variantes de producto (tablas creadas desde LitoralMarket; solo se consultan si el parámetro está en '1') ──
+        modelBuilder.Entity<VarianteMedida>(entity =>
+        {
+            entity.ToTable("variantesMedidas");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Nombre).HasColumnName("nombre");
+            entity.Property(e => e.Orden).HasColumnName("orden");
+            entity.Property(e => e.Activa).HasColumnName("activa");
+        });
+
+        modelBuilder.Entity<VarianteColor>(entity =>
+        {
+            entity.ToTable("variantesColores");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Nombre).HasColumnName("nombre");
+            entity.Property(e => e.CodigoHex).HasColumnName("codigoHex");
+            entity.Property(e => e.Orden).HasColumnName("orden");
+            entity.Property(e => e.Activa).HasColumnName("activa");
+        });
+
+        modelBuilder.Entity<ProductoPrincipal>(entity =>
+        {
+            entity.ToTable("productosPrincipales");
+            entity.HasKey(e => e.FkProducto);
+            entity.Property(e => e.FkProducto).HasColumnName("fk_producto").ValueGeneratedNever();
+            entity.Property(e => e.UsaMedidas).HasColumnName("usaMedidas");
+            entity.Property(e => e.UsaColores).HasColumnName("usaColores");
+            entity.Property(e => e.PreciosIguales).HasColumnName("preciosIguales");
+            entity.Property(e => e.FechaAlta).HasColumnName("fechaAlta");
+        });
+
+        modelBuilder.Entity<ProductoVariante>(entity =>
+        {
+            entity.ToTable("productosVariantes");
+            entity.HasKey(e => e.FkProducto);
+            entity.Property(e => e.FkProducto).HasColumnName("fk_producto").ValueGeneratedNever();
+            entity.Property(e => e.FkPrincipal).HasColumnName("fk_principal");
+            entity.Property(e => e.FkMedida).HasColumnName("fk_medida");
+            entity.Property(e => e.FkColor).HasColumnName("fk_color");
+            entity.Property(e => e.Activa).HasColumnName("activa");
+            entity.Property(e => e.Orden).HasColumnName("orden");
+            entity.Property(e => e.FechaAlta).HasColumnName("fechaAlta");
+        });
+
         modelBuilder.Entity<PedidoVenta>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PRIMARY");
@@ -781,8 +839,11 @@ public partial class ComercialDbContext : DbContext
             entity.Property(e => e.Descuento)
                 .HasPrecision(18, 2)
                 .HasColumnName("descuento");
+            // En algunas bases la columna es NOT NULL DEFAULT 1.00 y en otras DEFAULT NULL: con valor nulo se
+            // omite del INSERT y aplica el default de la base (el SQL indicado no se ejecuta, solo marca la columna).
             entity.Property(e => e.CantidadMinimaVenta)
                 .HasPrecision(10, 2)
+                .HasDefaultValueSql("1")
                 .HasColumnName("cantidadMinimaVenta");
             entity.Property(e => e.DescripcionLarga)
                 .HasColumnType("text")
@@ -1576,6 +1637,66 @@ public partial class ComercialDbContext : DbContext
             entity.Property(e => e.FkSlot).HasColumnType("int(11)").HasColumnName("fk_slot");
             entity.Property(e => e.FkProducto).HasColumnType("int(11)").HasColumnName("fk_producto");
             entity.Property(e => e.Cantidad).HasPrecision(18, 4).HasColumnName("cantidad");
+        });
+
+        // ── Promociones por cantidad (NxM) y porcentaje ──────────────────────────────
+        modelBuilder.Entity<PromocionRegla>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+            entity.ToTable("promociones_reglas");
+            entity.Property(e => e.Id).HasColumnType("int(11)").HasColumnName("id");
+            entity.Property(e => e.Nombre).HasMaxLength(100).HasColumnName("nombre");
+            entity.Property(e => e.Tipo).HasMaxLength(4).HasColumnName("tipo");
+            entity.Property(e => e.Porcentaje).HasPrecision(5, 2).HasColumnName("porcentaje");
+            entity.Property(e => e.Lleva).HasColumnType("int(11)").HasColumnName("lleva");
+            entity.Property(e => e.Paga).HasColumnType("int(11)").HasColumnName("paga");
+            entity.Property(e => e.AgrupaVariantes).HasColumnName("agrupaVariantes");
+            entity.Property(e => e.VigenteDesde).HasColumnType("datetime").HasColumnName("vigenteDesde");
+            entity.Property(e => e.VigenteHasta).HasColumnType("datetime").HasColumnName("vigenteHasta");
+            entity.Property(e => e.Activa).HasColumnName("activa");
+            entity.Property(e => e.FechaAlta).HasColumnType("datetime").HasColumnName("fechaAlta");
+            entity.Property(e => e.Usuario).HasMaxLength(50).HasColumnName("usuario");
+        });
+
+        modelBuilder.Entity<PromocionReglaProducto>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+            entity.ToTable("promociones_reglas_productos");
+            entity.Property(e => e.Id).HasColumnType("int(11)").HasColumnName("id");
+            entity.Property(e => e.FkRegla).HasColumnType("int(11)").HasColumnName("fk_regla");
+            entity.Property(e => e.FkProducto).HasColumnType("int(11)").HasColumnName("fk_producto");
+        });
+
+        modelBuilder.Entity<VentaPromoDetalle>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+            entity.ToTable("ventas_promo_detalle");
+            entity.Property(e => e.Id).HasColumnType("int(11)").HasColumnName("id");
+            entity.Property(e => e.FkVentaDetalle).HasColumnType("bigint(20)").HasColumnName("fk_ventaDetalle");
+            entity.Property(e => e.FkRegla).HasColumnType("int(11)").HasColumnName("fk_regla");
+            entity.Property(e => e.Nombre).HasMaxLength(100).HasColumnName("nombre");
+            entity.Property(e => e.Tipo).HasMaxLength(4).HasColumnName("tipo");
+            entity.Property(e => e.Porcentaje).HasPrecision(5, 2).HasColumnName("porcentaje");
+            entity.Property(e => e.Lleva).HasColumnType("int(11)").HasColumnName("lleva");
+            entity.Property(e => e.Paga).HasColumnType("int(11)").HasColumnName("paga");
+            entity.Property(e => e.CantBonificada).HasPrecision(18, 4).HasColumnName("cantBonificada");
+            entity.Property(e => e.Ahorro).HasPrecision(18, 4).HasColumnName("ahorro");
+        });
+
+        modelBuilder.Entity<PedidoPromoDetalle>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+            entity.ToTable("pedidos_promo_detalle");
+            entity.Property(e => e.Id).HasColumnType("int(11)").HasColumnName("id");
+            entity.Property(e => e.FkPedidoDetalle).HasColumnType("bigint(20)").HasColumnName("fk_pedidoDetalle");
+            entity.Property(e => e.FkRegla).HasColumnType("int(11)").HasColumnName("fk_regla");
+            entity.Property(e => e.Nombre).HasMaxLength(100).HasColumnName("nombre");
+            entity.Property(e => e.Tipo).HasMaxLength(4).HasColumnName("tipo");
+            entity.Property(e => e.Porcentaje).HasPrecision(5, 2).HasColumnName("porcentaje");
+            entity.Property(e => e.Lleva).HasColumnType("int(11)").HasColumnName("lleva");
+            entity.Property(e => e.Paga).HasColumnType("int(11)").HasColumnName("paga");
+            entity.Property(e => e.CantBonificada).HasPrecision(18, 4).HasColumnName("cantBonificada");
+            entity.Property(e => e.Ahorro).HasPrecision(18, 4).HasColumnName("ahorro");
         });
 
         OnModelCreatingPartial(modelBuilder);

@@ -563,6 +563,7 @@
 </div>
 
 @section Scripts {
+<script src="~/js/promo-descuentos.js" asp-append-version="true"></script>
 <script>
 // ======================================================================
 // PARÁMETROS DEL SISTEMA
@@ -981,6 +982,7 @@ function agregarProducto(p, cant) {
   var idx = _rows.length - 1;
   renderGrilla();
   recalcularTotales();
+  PromoDesc.recalcular();
   return idx;
 }
 
@@ -992,6 +994,7 @@ function agregarOSumarProducto(p, cant) {
     calcRow(_rows[existente]);
     renderGrilla();
     recalcularTotales();
+    PromoDesc.recalcular();
   } else {
     agregarProducto(p, cant);
   }
@@ -1001,6 +1004,7 @@ function eliminarFila(idx) {
   _rows.splice(idx, 1);
   renderGrilla();
   recalcularTotales();
+  PromoDesc.recalcular();
 }
 
 function _syncChkAll() {
@@ -1026,7 +1030,7 @@ function renderGrilla() {
       + '<td style="' + selVis + 'text-align:center;"><input type="checkbox" class="row-sel" onchange="rowSelChange(' + i + ',this.checked)" ' + (r.selected?'checked':'') + '></td>'
       + '<td style="font-size:.72rem;">' + escH(r.codBarras) + '</td>'
       + '<td style="font-size:.72rem;">' + escH(r.codProveedor) + '</td>'
-      + '<td title="' + escH(r.descripcion) + '">' + escH(r.descripcion) + '</td>'
+      + '<td title="' + escH(r.descripcion) + '">' + escH(r.descripcion) + PromoDesc.badge(r) + '</td>'
       + '<td><input type="text" class="td-edit td-obs" value="' + escH(r.observ||'') + '" maxlength="50"'
       +   ' oninput="_rows[' + i + '].observ=this.value" style="width:110px;text-align:left;"></td>'
       + '<td class="td-calc">' + fmtN(r.stock) + '</td>'
@@ -1059,20 +1063,23 @@ function onChangePrecio(idx, val) {
   calcRow(_rows[idx]);
   actualizarCeldasCalc(idx);
   recalcularTotales();
+  PromoDesc.recalcular();
 }
 function onChangeDescRec(idx, val) {
   var v = parseFloat(val) || 0;
   if (BONIF_POR_LINEA === 0) {
     // Aplica a TODAS las filas
-    _rows.forEach(function(r) { r.descRec = v; calcRow(r); });
+    _rows.forEach(function(r) { if (r.promo) return; r.descRec = v; calcRow(r); });   // las filas con promoción no reciben el desc/rec global
     renderGrilla();
   } else {
-    // Solo a la fila actual
+    // Solo a la fila actual (el desc/rec manual gana sobre la promoción)
+    _rows[idx].promo = null;
     _rows[idx].descRec = v;
     calcRow(_rows[idx]);
     actualizarCeldasCalc(idx);
   }
   recalcularTotales();
+  PromoDesc.recalcular();
 }
 
 // ======================================================================
@@ -1097,7 +1104,7 @@ function aplicarDescRec() {
   if (_rows.length === 0) { msg.textContent = 'No hay productos en el pedido.'; return; }
 
   if (BONIF_POR_LINEA === 0) {
-    _rows.forEach(function(r) { r.descRec = valor; calcRow(r); });
+    _rows.forEach(function(r) { if (r.promo) return; r.descRec = valor; calcRow(r); });   // las filas con promoción no reciben el desc/rec global
     msg.textContent = (isDesc ? 'Descuento' : 'Recargo') + ' de ' + pct + '% aplicado a todos los productos.';
   } else {
     var selRows = _rows.filter(function(r) { return r.selected; });
@@ -1105,19 +1112,21 @@ function aplicarDescRec() {
       msg.textContent = 'Seleccione al menos una fila para aplicar.';
       return;
     }
-    selRows.forEach(function(r) { r.descRec = valor; calcRow(r); });
+    selRows.forEach(function(r) { r.promo = null; r.descRec = valor; calcRow(r); });   // el desc/rec manual gana sobre la promoción
     msg.textContent = (isDesc ? 'Descuento' : 'Recargo') + ' de ' + pct + '% aplicado a ' + selRows.length + ' fila(s) seleccionada(s).';
   }
   renderGrilla();
   recalcularTotales();
+  PromoDesc.recalcular();
   // Limpiar mensaje después de 3s
   setTimeout(function() { document.getElementById('descRecMsg').textContent = ''; }, 3000);
 }
 
 function limpiarDescRec() {
-  _rows.forEach(function(r) { r.descRec = 0; calcRow(r); });
+  _rows.forEach(function(r) { r.promo = null; r.descRec = 0; calcRow(r); });
   renderGrilla();
   recalcularTotales();
+  PromoDesc.recalcular();
   document.getElementById('txtDescRecPct').value = '';
   var msg = document.getElementById('descRecMsg');
   msg.textContent = 'Desc/Rec eliminado de todas las filas.';
@@ -1128,6 +1137,7 @@ function onChangeCantidad(idx, val) {
   calcRow(_rows[idx]);
   actualizarCeldasCalc(idx);
   recalcularTotales();
+  PromoDesc.recalcular();
 }
 function rowSelChange(idx, checked) {
   _rows[idx].selected = checked;
@@ -1199,11 +1209,44 @@ function recalcularTotales() {
 // ======================================================================
 // GUARDAR PEDIDO
 // ======================================================================
+// ======================================================================
+// PROMOCIONES POR CANTIDAD / PORCENTAJE (decide el servidor; ver wwwroot/js/promo-descuentos.js)
+// ======================================================================
+function mostrarAvisoPromo(html) {
+  PromoDesc.toast(html, { id: 'aplicadas', clase: 'success', ms: 9000 });   // contenedor compartido: no se superpone con los avisos de proximidad
+}
+PromoDesc.init({
+  habilitado: @(Model.PromoDescHabilitado ? "true" : "false"),
+  url       : '/Ventas/Pedidos?handler=EvaluarPromos',
+  getRows   : function() { return _rows; },
+  baseline  : function() { return 0; },
+  recalcFila: calcRow,
+  refrescar : function() { renderGrilla(); recalcularTotales(); },
+  avisar    : mostrarAvisoPromo
+});
+
+// Al recargar un pedido guardado, las líneas de una misma promoción (cobradas + bonificadas) se reúnen
+// en una sola fila y el servidor vuelve a evaluar las promociones vigentes.
+function fusionarLineasPromo(det) {
+  var res = [], idxPorClave = {};
+  det.forEach(function(d) {
+    if (!d.fkPromoRegla) { res.push(d); return; }
+    var clave = d.fkProducto + '|' + d.fkPromoRegla;
+    if (idxPorClave[clave] !== undefined) { res[idxPorClave[clave]].cantidad = (+res[idxPorClave[clave]].cantidad) + (+d.cantidad); return; }
+    idxPorClave[clave] = res.length;
+    res.push(Object.assign({}, d, { descuento: 0, recargo: 0 }));
+  });
+  return res;
+}
+
 async function guardarPedido() {
   if (_clienteId <= 0) { alert('Debe seleccionar un cliente.'); return; }
   if (_rows.length === 0) { alert('Debe agregar al menos un producto.'); return; }
   var vendId = parseInt(document.getElementById('selVendedor').value)||0;
   if (vendId <= 0) { alert('Debe seleccionar un vendedor.'); return; }
+
+  // Promociones por cantidad / porcentaje: confirmar lo vigente justo antes de guardar
+  await PromoDesc.recalcular(true);
 
   var btn = document.getElementById('btnConfirmar');
   btn.disabled = true;
@@ -1236,7 +1279,8 @@ async function guardarPedido() {
         descuento:     r.descRec < 0 ? Math.abs(r.descRec) : 0,
         recargo:       r.descRec > 0 ? r.descRec : 0,
         subtotalSinIva: r.subtotalSinIva,
-        subtotal:      r.subtotal
+        subtotal:      r.subtotal,
+        fkPromoRegla:  r.promo ? r.promo.fkRegla : null
       };
     })
   };
@@ -1258,6 +1302,7 @@ async function guardarPedido() {
       }, 400);
     } else {
       alert(data.msg || 'Error al guardar.');
+      PromoDesc.recalcular(true);   // si cambiaron las promociones, refresca los importes en pantalla
       btn.disabled = false;
       document.getElementById('progressWrap').style.display='none';
     }
@@ -1289,6 +1334,7 @@ function setProgress(v) {
 // ======================================================================
 function limpiarTodo() {
   _clienteId = 0; _pedidoId = 0; _rows = [];
+  PromoDesc.reset();
   document.getElementById('clienteInfo').style.display  = 'none';
   document.getElementById('clienteVacio').style.display = 'block';
   document.getElementById('hClienteId').value           = '0';
@@ -1572,10 +1618,11 @@ async function cargarPedido(pedidoId, fkCliente) {
     descRecGlobal = (c.descuento || 0) * -1 + (c.recargo || 0);
   }
 
-  _rows = (data.detalle||[]).map(function(d) {
-    var descRec = descRecGlobal !== null
+  var hayPromos = (data.detalle||[]).some(function(d) { return d.fkPromoRegla; });
+  _rows = fusionarLineasPromo(data.detalle||[]).map(function(d) {
+    var descRec = d.fkPromoRegla ? 0 : (descRecGlobal !== null
       ? descRecGlobal
-      : (d.recargo > 0 ? d.recargo : (d.descuento > 0 ? -d.descuento : 0));
+      : (d.recargo > 0 ? d.recargo : (d.descuento > 0 ? -d.descuento : 0)));
     var row = {
       fkProducto:    d.fkProducto,
       codBarras:     d.codBarras   || '',
@@ -1618,6 +1665,7 @@ async function cargarPedido(pedidoId, fkCliente) {
 
   renderGrilla();
   recalcularTotales();
+  if (hayPromos) PromoDesc.recalcular(true);   // el pedido tenía promociones: reevaluar las vigentes
 }
 
 // ======================================================================

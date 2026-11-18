@@ -8,8 +8,13 @@ namespace Infrastructure.Services;
 public class ImpresionEtiquetasService : IImpresionEtiquetasService
 {
     private readonly ComercialDbContext _db;
+    private readonly IVariantesProductoService _variantes;
 
-    public ImpresionEtiquetasService(ComercialDbContext db) => _db = db;
+    public ImpresionEtiquetasService(ComercialDbContext db, IVariantesProductoService variantes)
+    {
+        _db = db;
+        _variantes = variantes;
+    }
 
     public async Task<List<ImpresionEtiquetasItemDto>> BuscarAsync(
         IEnumerable<int>? proveedorIds,
@@ -29,6 +34,11 @@ public class ImpresionEtiquetasService : IImpresionEtiquetasService
             join rub  in _db.Rubros on p.FkRubro equals (int?)rub.Id into rubG
             from rub  in rubG.DefaultIfEmpty()
             select new { p, prp, prov, rub };
+
+        // Con variantes habilitadas se muestran solo las variantes: la ficha principal no tiene stock, precio ni
+        // código propios para operar. Con el parámetro apagado la consulta no cambia (ni nombra la tabla).
+        if (await _variantes.HabilitadoAsync())
+            query = query.Where(x => !_db.ProductosPrincipales.Any(f => f.FkProducto == x.p.Id));
 
         if (provList != null && provList.Count > 0)
             query = query.Where(x =>

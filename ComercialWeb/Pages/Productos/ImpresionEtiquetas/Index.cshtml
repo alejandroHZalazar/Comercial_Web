@@ -116,6 +116,12 @@
         font-size:.68rem; font-weight:700; color:#fff; min-width:2rem;
     }
 
+    /* CANTIDADES */
+    .qty-input { text-align:center; font-size:.82rem; border-radius:6px; padding:.2rem .35rem; font-weight:600; }
+    .qty-input.qty-multi  { border-color:#4e73df; background:#eef2ff; color:#2d4a7a; }
+    .qty-input.qty-invalid { border-color:#e74a3b; background:#fdecea; color:#c93627; }
+    .cnt-badge.badge-error { background:#fdecea; color:#c93627; }
+
     /* EMPTY */
     .empty-state { text-align:center; padding:2.5rem 1rem; color:#bbb; }
 
@@ -225,7 +231,14 @@
             <span style="font-weight:700;font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;color:#4e73df;">Productos seleccionados</span>
             <span class="cnt-badge" id="cntFilas">0</span>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-3 align-items-center flex-wrap">
+            <div class="d-flex align-items-center gap-2">
+                <label class="form-label mb-0" for="txtCantGlobal" title="Se aplica a todos los productos de la lista">Cantidad de etiquetas</label>
+                <input type="number" id="txtCantGlobal" class="form-control form-control-sm qty-input" style="width:84px;"
+                       min="1" max="500" step="1" placeholder="—" oninput="cambiarCantidadGlobal(this)"
+                       title="Cantidad para todos los productos (1 a 500). Reemplaza las cantidades individuales."/>
+            </div>
+            <span class="cnt-badge" id="lblTotalEtiquetas" title="Total de etiquetas que se imprimirán">Total: 0 etiquetas</span>
             <button class="btn-ie btn-ie-secondary" onclick="limpiarGrilla()">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854z"/></svg>
                 Limpiar
@@ -241,6 +254,7 @@
                     <th>Descripción</th>
                     <th>Proveedor</th>
                     <th>Rubro</th>
+                    <th style="width:110px;text-align:center;">Cantidad</th>
                     <th style="width:40px;"></th>
                 </tr>
             </thead>
@@ -292,7 +306,9 @@
                 Generar e Imprimir PDF
             </button>
             <span style="font-size:.79rem;color:#6c757d;">Se abrirá una ventana para imprimir. El progreso se muestra abajo.</span>
+            <span class="cnt-badge" id="lblTotalEtiquetas2">Total: 0 etiquetas</span>
         </div>
+        <div id="msgCantidad" style="display:none;font-size:.8rem;font-weight:600;color:#e74a3b;margin:-.5rem 0 1rem;"></div>
 
         @* Barra de progreso *@
         <div id="panelProgreso" style="display:none;">

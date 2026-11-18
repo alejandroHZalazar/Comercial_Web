@@ -21,6 +21,7 @@ public class IndexModel : PageModel
     private readonly ILocalidadService     _localidadService;
     private readonly IZonaClienteService   _zonaClienteService;
     private readonly IClienteService       _clienteService;
+    private readonly IPromocionDescuentosService _promoDescService;
 
     public IndexModel(
         IPedidoService        pedidoService,
@@ -30,7 +31,8 @@ public class IndexModel : PageModel
         ICondicionIvaService  condIvaService,
         ILocalidadService     localidadService,
         IZonaClienteService   zonaClienteService,
-        IClienteService       clienteService)
+        IClienteService       clienteService,
+        IPromocionDescuentosService promoDescService)
     {
         _pedidoService      = pedidoService;
         _ivaService         = ivaService;
@@ -40,6 +42,7 @@ public class IndexModel : PageModel
         _localidadService   = localidadService;
         _zonaClienteService = zonaClienteService;
         _clienteService     = clienteService;
+        _promoDescService   = promoDescService;
     }
 
     public List<SelectListItem> ListaIvas        { get; private set; } = new();
@@ -64,8 +67,12 @@ public class IndexModel : PageModel
     public string  PosicionPrecio        { get; private set; } = "";
     public string  DivisorPrecio         { get; private set; } = "1";
 
+    /// <summary>Promociones por cantidad/porcentaje activas (parámetro promociones/descuentos = 1 y tablas creadas).</summary>
+    public bool PromoDescHabilitado { get; private set; }
+
     public async Task OnGetAsync()
     {
+        PromoDescHabilitado = await _promoDescService.HabilitadoAsync();
         var ivas = await _ivaService.GetAllAsync();
         ListaIvas = ivas
             .OrderBy(i => i.Valor)
@@ -219,6 +226,13 @@ public class IndexModel : PageModel
         {
             return new JsonResult(new { ok = false, msg = ex.Message });
         }
+    }
+
+    // ── POST: evaluar promociones por cantidad / porcentaje (solo muestra el resultado del servidor) ──
+    public async Task<IActionResult> OnPostEvaluarPromosAsync([FromBody] List<PromoEvalLineaDto>? lineas)
+    {
+        var r = await _promoDescService.EvaluarAsync(lineas ?? new List<PromoEvalLineaDto>());
+        return new JsonResult(r, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
     }
 
     // ── POST: guardar pedido ─────────────────────────────────────────────

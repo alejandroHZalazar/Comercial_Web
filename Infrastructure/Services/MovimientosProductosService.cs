@@ -8,8 +8,13 @@ namespace Infrastructure.Services;
 public class MovimientosProductosService : IMovimientosProductosService
 {
     private readonly ComercialDbContext _db;
+    private readonly IVariantesProductoService _variantes;
 
-    public MovimientosProductosService(ComercialDbContext db) => _db = db;
+    public MovimientosProductosService(ComercialDbContext db, IVariantesProductoService variantes)
+    {
+        _db = db;
+        _variantes = variantes;
+    }
 
     // ================================================================
     // TAB 1 — Buscar lotes de ingreso
@@ -36,6 +41,11 @@ public class MovimientosProductosService : IMovimientosProductosService
             join prov in _db.Proveedores on p.FkProveedor equals prov.Id into provG
             from prov in provG.DefaultIfEmpty()
             select new { m, p, prov };
+
+        // Con variantes habilitadas se muestran solo las variantes: la ficha principal no tiene stock, precio ni
+        // código propios para operar. Con el parámetro apagado la consulta no cambia (ni nombra la tabla).
+        if (await _variantes.HabilitadoAsync())
+            query = query.Where(x => !_db.ProductosPrincipales.Any(f => f.FkProducto == x.m.FkProducto));
 
         // Filtro proveedor
         if (provList != null && provList.Count > 0)
@@ -164,6 +174,11 @@ public class MovimientosProductosService : IMovimientosProductosService
             from p in pG.DefaultIfEmpty()
             where p != null && p.Baja != true
             select new { m, p };
+
+        // Con variantes habilitadas se muestran solo las variantes: la ficha principal no tiene stock, precio ni
+        // código propios para operar. Con el parámetro apagado la consulta no cambia (ni nombra la tabla).
+        if (await _variantes.HabilitadoAsync())
+            query = query.Where(x => !_db.ProductosPrincipales.Any(f => f.FkProducto == x.m.FkProducto));
 
         if (!string.IsNullOrEmpty(txt))
             query = query.Where(x =>

@@ -23,10 +23,11 @@ public class IndexModel : Comercial_Web.Pages.Ventas.Ventas.IndexModel
         ICobroService         cobroService,
         IPorcentajeIvaService porcIvaService,
         IPromocionService     promoService,
-        IParametroService     parametroService)
+        IParametroService     parametroService,
+        IPromocionDescuentosService promoDescService)
         : base(ventaService, pedidoService, usuarioService, clienteService,
                condIvaService, localidadService, zonaService, cobroService,
-               porcIvaService, promoService, parametroService)
+               porcIvaService, promoService, parametroService, promoDescService)
     { }
 
     protected override bool OmitirRedirectMinorista => true;

@@ -16,6 +16,12 @@ const _SO = '<' + 'script';
 const grilla  = new Map();
 let tipoImp   = 'etiqueta';
 
+// Cantidades: entero 1..CANT_MAX por producto, tope total por impresion
+const CANT_MAX  = 500;
+const TOTAL_MAX = 5000;
+let cantidadGlobal = null;      // null = sin cantidad global fijada
+let globalInvalida = false;
+
 // ================================================================
 // MULTI-SELECT
 // ================================================================
@@ -88,7 +94,10 @@ async function buscar() {
 
         let agr=0, om=0;
         items.forEach(item=>{
-            if (!grilla.has(item.productoId)){ grilla.set(item.productoId,item); agregarFila(item); agr++; }
+            if (!grilla.has(item.productoId)){
+                item.cant = cantidadGlobal != null ? cantidadGlobal : 1;   // cantidad global vigente o 1
+                grilla.set(item.productoId,item); agregarFila(item); agr++;
+            }
             else om++;
         });
         actualizarEstado();
@@ -117,6 +126,9 @@ function agregarFila(item) {
         '<td style="max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="'+esc(item.descripcion)+'">'+esc(item.descripcion)+'</td>'+
         '<td style="font-size:.78rem;">'+esc(item.proveedorNombre)+'</td>'+
         '<td style="font-size:.78rem;">'+esc(item.rubroNombre)+'</td>'+
+        '<td style="text-align:center;"><input type="number" class="form-control form-control-sm qty-input" id="qty-'+item.productoId+'"'+
+        ' min="1" max="'+CANT_MAX+'" step="1" value="'+item.cant+'" style="width:84px;margin:0 auto;"'+
+        ' title="Cantidad de etiquetas de este producto (1 a '+CANT_MAX+')" oninput="cambiarCantidad('+item.productoId+',this)"/></td>'+
         '<td><button class="btn-del-row" title="Quitar" onclick="quitarFila('+item.productoId+')">'+
         '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16">'+
         '<path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>'+
@@ -148,6 +160,76 @@ function actualizarEstado() {
     const n = grilla.size;
     document.getElementById('cntFilas').textContent = n+' producto(s)';
     document.getElementById('emptyGrilla').style.display = n===0?'block':'none';
+    actualizarCantidades();
+}
+
+// ================================================================
+// CANTIDADES
+// ================================================================
+// Devuelve el entero valido (1..CANT_MAX) o null si el texto no lo es.
+function parseCant(inp) {
+    const t = String(inp.value).trim();
+    if (!/^\d+$/.test(t)) return null;          // vacio, decimales, negativos, texto
+    const v = parseInt(t, 10);
+    return (v >= 1 && v <= CANT_MAX) ? v : null;
+}
+
+function cambiarCantidad(id, inp) {
+    const it = grilla.get(id);
+    if (!it) return;
+    it.cant = parseCant(inp);                    // null = invalida
+    actualizarCantidades();
+}
+
+// La cantidad global reemplaza las cantidades individuales de TODOS los productos.
+function cambiarCantidadGlobal(inp) {
+    const vacio = String(inp.value).trim() === '' && !inp.validity.badInput;
+    if (vacio) { cantidadGlobal = null; globalInvalida = false; actualizarCantidades(); return; }
+    const v = parseCant(inp);
+    if (v == null) { globalInvalida = true; actualizarCantidades(); return; }
+    globalInvalida = false;
+    cantidadGlobal = v;
+    grilla.forEach((it, id) => {
+        it.cant = v;
+        const q = document.getElementById('qty-'+id);
+        if (q) q.value = v;
+    });
+    actualizarCantidades();
+}
+
+// Valida todo, actualiza total, resaltado y habilita/deshabilita la impresion.
+// Devuelve { total, error } (error = texto o null).
+function actualizarCantidades() {
+    let total = 0, invalidos = 0;
+    grilla.forEach((it, id) => {
+        const q = document.getElementById('qty-'+id);
+        if (it.cant == null) invalidos++; else total += it.cant;
+        if (q) {
+            q.classList.toggle('qty-invalid', it.cant == null);
+            q.classList.toggle('qty-multi', it.cant != null && it.cant > 1);
+        }
+    });
+    const g = document.getElementById('txtCantGlobal');
+    if (g) {
+        g.classList.toggle('qty-invalid', globalInvalida);
+        g.classList.toggle('qty-multi', !globalInvalida && cantidadGlobal != null && cantidadGlobal > 1);
+    }
+
+    let error = null;
+    if (globalInvalida)         error = 'Cantidad de etiquetas inválida: ingresá un número entero entre 1 y '+CANT_MAX+'.';
+    else if (invalidos > 0)     error = invalidos+' producto(s) con cantidad inválida: usá enteros entre 1 y '+CANT_MAX+' (sin decimales, ceros ni negativos).';
+    else if (total > TOTAL_MAX) error = 'El total ('+total.toLocaleString('es-AR')+') supera el máximo de '+TOTAL_MAX.toLocaleString('es-AR')+' etiquetas por impresión.';
+
+    const txt = 'Total: '+total.toLocaleString('es-AR')+' etiqueta'+(total===1?'':'s');
+    ['lblTotalEtiquetas','lblTotalEtiquetas2'].forEach(i => {
+        const e = document.getElementById(i);
+        if (e) { e.textContent = txt; e.classList.toggle('badge-error', !!error); }
+    });
+    const m = document.getElementById('msgCantidad');
+    if (m) { m.textContent = error || ''; m.style.display = error ? 'block' : 'none'; }
+    const b = document.getElementById('btnGenerar');
+    if (b) b.disabled = !!error || grilla.size === 0;
+    return { total, error };
 }
 
 // ================================================================
@@ -156,14 +238,20 @@ function actualizarEstado() {
 async function generarPdf() {
     if (!grilla.size) return;
 
+    // No se imprime con cantidades invalidas ni por encima del tope.
+    const chk = actualizarCantidades();
+    if (chk.error) { mostrarToast(chk.error, false); return; }
+
     const btn = document.getElementById('btnGenerar');
     btn.disabled = true;
     const panelProg = document.getElementById('panelProgreso');
     panelProg.style.removeProperty('display');
-    setProgreso(0, grilla.size, 'Iniciando generación…');
 
-    const items  = [...grilla.values()];
-    const total  = items.length;
+    // Una entrada por etiqueta a imprimir: cada producto se repite 'cant' veces.
+    const items  = [];
+    grilla.forEach(it => { for (let k = 0; k < it.cant; k++) items.push(it); });
+    const total  = items.length;      // == suma de las cantidades
+    setProgreso(0, total, 'Iniciando generación…');
     const isEtiq = tipoImp === 'etiqueta';
     const fecha  = new Date().toLocaleDateString('es-AR');
 
@@ -204,7 +292,7 @@ async function generarPdf() {
         const precio = Number(item.precioLista).toLocaleString('es-AR',
             { minimumFractionDigits: DEC, maximumFractionDigits: DEC });
         const barcode = (item.codBarras || '').trim();
-        const tieneBarcode = barcode.length >= 6;
+        const tieneBarcode = barcode.length >= 1;
 
         if (isEtiq) {
             labelsHtml +=
@@ -213,7 +301,7 @@ async function generarPdf() {
                 '<div class="lbl-cod">Cód: '+escHtml(cod5)+'</div>'+
                 '<div class="lbl-precio">$ '+precio+'</div>'+
                 '<div class="lbl-barcode">'+
-                (tieneBarcode ? '<svg id="bc'+item.productoId+'"></svg>' : '<span style="font-size:5.5pt;color:#aaa;">Sin código de barras</span>')+
+                (tieneBarcode ? '<svg class="bcs" data-code="'+esc(barcode)+'"></svg>' : '<span style="font-size:5.5pt;color:#aaa;">Sin código de barras</span>')+
                 '</div>'+
                 '<div class="lbl-fecha">'+fecha+'</div>'+
                 '</div>';
@@ -221,7 +309,7 @@ async function generarPdf() {
             labelsHtml +=
                 '<div class="lbl">'+
                 '<div class="lbl-barcode">'+
-                (tieneBarcode ? '<svg id="bc'+item.productoId+'"></svg>' : '<span style="font-size:5pt;color:#aaa;">Sin cód.</span>')+
+                (tieneBarcode ? '<svg class="bcs" data-code="'+esc(barcode)+'"></svg>' : '<span style="font-size:5pt;color:#aaa;">Sin cód.</span>')+
                 '</div>'+
                 '<div class="lbl-barnum">'+escHtml(barcode)+'</div>'+
                 '</div>';
@@ -236,10 +324,11 @@ async function generarPdf() {
     setProgreso(total, total, 'Abriendo ventana de impresión…');
     await sleep(80);
 
-    const barcodeInits = [...grilla.values()]
-        .filter(it => ((it.codBarras||'').trim().length) >= 6)
-        .map(it => 'try { JsBarcode("#bc'+it.productoId+'", '+JSON.stringify(it.codBarras.trim())+', {format:"CODE128",width:1.2,height:'+(isEtiq ? 28 : 22)+',displayValue:false,margin:0}); } catch(e){}')
-        .join('\n');
+    // Una sola rutina dibuja todos los svg (uno por etiqueta, sin ids repetidos).
+    const barcodeInits =
+        'document.querySelectorAll("svg.bcs").forEach(function(s){'+
+        'try { JsBarcode(s, s.getAttribute("data-code"), {format:"CODE128",width:1.2,height:'+(isEtiq ? 28 : 22)+',displayValue:false,margin:0}); } catch(e){}'+
+        '});';
 
     const htmlCompleto =
         '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'+

@@ -37,6 +37,7 @@ public class IndexModel : PageModel
     private readonly ICobroService          _cobroService;
     private readonly IPorcentajeIvaService  _porcIvaService;
     private readonly IPromocionService      _promoService;
+    private readonly IPromocionDescuentosService _promoDescService;
     protected readonly IParametroService    _parametroService;
 
     public IndexModel(
@@ -50,7 +51,8 @@ public class IndexModel : PageModel
         ICobroService         cobroService,
         IPorcentajeIvaService porcIvaService,
         IPromocionService     promoService,
-        IParametroService     parametroService)
+        IParametroService     parametroService,
+        IPromocionDescuentosService promoDescService)
     {
         _ventaService     = ventaService;
         _pedidoService    = pedidoService;
@@ -63,6 +65,7 @@ public class IndexModel : PageModel
         _porcIvaService   = porcIvaService;
         _promoService     = promoService;
         _parametroService = parametroService;
+        _promoDescService = promoDescService;
     }
 
     // ── Datos para la vista ─────────────────────────────────────────────
@@ -76,6 +79,8 @@ public class IndexModel : PageModel
     public List<SelectListItem>      ListaZonas       { get; private set; } = new();
     public List<PlanPagoConMedioDto> PlanesPago       { get; private set; } = new();
     public int                       UsuarioId        { get; private set; }
+    /// <summary>Promociones por cantidad/porcentaje activas (parámetro promociones/descuentos = 1 y tablas creadas).</summary>
+    public bool                      PromoDescHabilitado { get; private set; }
 
     protected virtual bool OmitirRedirectMinorista => false;
 
@@ -90,6 +95,7 @@ public class IndexModel : PageModel
         }
 
         Params = await _ventaService.GetParametrosAsync(Environment.MachineName);
+        PromoDescHabilitado = await _promoDescService.HabilitadoAsync();
 
         var vendedores = await _usuarioService.GetAllAsync();
         ListaVendedores = vendedores
@@ -317,6 +323,13 @@ public class IndexModel : PageModel
     }
 
     // ── Promociones ──────────────────────────────────────────────────────────
+
+    // Promociones por cantidad / porcentaje: el servidor decide; el navegador solo muestra el resultado.
+    public async Task<IActionResult> OnPostEvaluarPromosAsync([FromBody] List<PromoEvalLineaDto>? lineas)
+    {
+        var r = await _promoDescService.EvaluarAsync(lineas ?? new List<PromoEvalLineaDto>());
+        return new JsonResult(r, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+    }
 
     // Calcula qué promos se pueden formar con los productos del carrito
     public async Task<IActionResult> OnPostCalcularPromocionesAsync(

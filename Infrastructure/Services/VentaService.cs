@@ -13,11 +13,16 @@ public class VentaService : IVentaService
 {
     private readonly ComercialDbContext _db;
     private readonly IFacturacionElectronicaService _feService;
+    private readonly IVariantesProductoService _variantes;
+    private readonly IPromocionDescuentosService _promos;
 
-    public VentaService(ComercialDbContext db, IFacturacionElectronicaService feService)
+    public VentaService(ComercialDbContext db, IFacturacionElectronicaService feService, IVariantesProductoService variantes,
+                        IPromocionDescuentosService promos)
     {
         _db        = db;
         _feService = feService;
+        _variantes = variantes;
+        _promos    = promos;
     }
 
     // ── Lista de impuestos ────────────────────────────────────────────────────
@@ -135,6 +140,27 @@ public class VentaService : IVentaService
     // ── Grabar venta (emula sp_VentasAddVenta) ────────────────────────────────
     public async Task<long> GrabarVentaAsync(GrabarVentaRequestDto dto)
     {
+        await _variantes.ValidarNoSonFichasAsync(dto.Detalle.Select(i => i.FkProducto));
+
+        // ── Promociones por cantidad / porcentaje ────────────────────────────
+        // Con el motor apagado (o sin tablas) detalleFinal == dto.Detalle y todo sigue exactamente igual.
+        // Con el motor activo el servidor valida lo que informó el navegador y expande NxM en
+        // líneas cobradas + bonificadas (lanza InvalidOperationException si las promociones cambiaron).
+        var detalleFinal = dto.Detalle;
+        List<PromoAplicadaDto?>? promoFinal = null;
+        if (await _promos.HabilitadoAsync())
+        {
+            var lineasPromo = dto.Detalle.Select((d, i) => new PromoGuardarLinea
+            {
+                Indice = i, FkProducto = d.FkProducto, Cantidad = d.Cantidad, PrecioSinIva = d.PrecioSinIva,
+                DescRec = d.DescRec, FkPromoRegla = d.FkPromoRegla,
+                Excluida = d.PromoBloqueada || d.Fraccionado     // lo que viene de un pedido ya está pactado
+            }).ToList();
+            var segmentos = await _promos.ResolverParaGuardarAsync(lineasPromo);
+            (detalleFinal, promoFinal) = ExpandirPromos(dto, segmentos);
+        }
+        var detallesPromo = new List<(VentasDetalle Ent, PromoAplicadaDto Promo)>();
+
         await using var tx = await _db.Database.BeginTransactionAsync();
         try
         {
@@ -158,7 +184,7 @@ public class VentaService : IVentaService
             long ventaId = venta.Id;
 
             // ── 2. Detalle, stock y movimientos ───────────────────────────────
-            foreach (var item in dto.Detalle)
+            foreach (var (item, idx) in detalleFinal.Select((x, i) => (x, i)))
             {
                 decimal descuento = item.DescRec < 0 ? item.DescRec * -1m : 0m;
                 decimal recargo   = item.DescRec > 0 ? item.DescRec        : 0m;
@@ -167,7 +193,7 @@ public class VentaService : IVentaService
                     ? item.Subtotal
                     : item.Cantidad * item.PrecioConIva;
 
-                _db.VentasDetalles.Add(new VentasDetalle
+                var detEnt = new VentasDetalle
                 {
                     FkVenta       = ventaId,
                     FkProducto    = item.FkProducto,
@@ -182,7 +208,9 @@ public class VentaService : IVentaService
                     Descuento     = descuento > 0 ? descuento : (decimal?)null,
                     Recargo       = recargo   > 0 ? recargo   : (decimal?)null,
                     SubtotalSinIva= item.SubtotalSinIva
-                });
+                };
+                _db.VentasDetalles.Add(detEnt);
+                if (promoFinal != null && promoFinal[idx] != null) detallesPromo.Add((detEnt, promoFinal[idx]!));
 
                 // Stock anterior
                 var stockRec = await _db.StockProductos.FirstOrDefaultAsync(s => s.FkProducto == item.FkProducto);
@@ -227,6 +255,19 @@ public class VentaService : IVentaService
                 }
             }
             await _db.SaveChangesAsync();
+
+            // ── 2b. Auditoría de promociones aplicadas (ya existen las líneas: hay ids) ──
+            if (detallesPromo.Count > 0)
+            {
+                foreach (var (ent, p) in detallesPromo)
+                    _db.VentasPromoDetalle.Add(new VentaPromoDetalle
+                    {
+                        FkVentaDetalle = ent.Linea, FkRegla = p.FkRegla, Nombre = p.Nombre, Tipo = p.Tipo,
+                        Porcentaje = p.Porcentaje, Lleva = p.Lleva, Paga = p.Paga,
+                        CantBonificada = p.Tipo == "NXM" ? p.CantBonificada : (decimal?)null, Ahorro = p.Ahorro
+                    });
+                await _db.SaveChangesAsync();
+            }
 
             // ── 3. Marcar pedido como vendido ──────────────────────────────────
             if (dto.PedidoCargado > 0)
@@ -555,6 +596,41 @@ public class VentaService : IVentaService
         return productoIds.ToDictionary(
             id => id,
             id => stocks.FirstOrDefault(s => s.FkProducto == id)?.Cantidad ?? 0m);
+    }
+
+    // ── Promociones: aplica los segmentos resueltos por el servicio sobre el detalle recibido ──
+    // Segmento sin DescuentoPct = línea original sin tocar. Con DescuentoPct se recalculan los importes
+    // de la línea con la misma fórmula de la grilla (P.S/IVA × (1 − %) → × (1 + IVA) → × cantidad).
+    private static (List<GrabarVentaDetalleDto> Detalle, List<PromoAplicadaDto?> Promos) ExpandirPromos(
+        GrabarVentaRequestDto dto, List<PromoGuardarSegmento> segmentos)
+    {
+        var detalle = new List<GrabarVentaDetalleDto>();
+        var promos  = new List<PromoAplicadaDto?>();
+        foreach (var seg in segmentos)
+        {
+            var o = dto.Detalle[seg.Indice];
+            if (seg.DescuentoPct == null) { detalle.Add(o); promos.Add(null); continue; }
+
+            var pct    = seg.DescuentoPct.Value;
+            var subSin = o.PrecioSinIva * (1m - pct / 100m);
+            var conIva = subSin * (1m + dto.Iva / 100m);
+            detalle.Add(new GrabarVentaDetalleDto
+            {
+                FkProducto     = o.FkProducto,
+                PrecioSinIva   = o.PrecioSinIva,
+                PrecioConIva   = conIva,
+                Cantidad       = seg.Cantidad,
+                Costo          = o.Costo,
+                Subtotal       = seg.Cantidad * conIva,
+                Fraccionado    = o.Fraccionado,
+                DescRec        = pct > 0m ? -pct : 0m,
+                SubtotalSinIva = subSin,
+                FkPedido       = o.FkPedido,
+                FkPromoRegla   = seg.Promo?.FkRegla
+            });
+            promos.Add(seg.Promo);
+        }
+        return (detalle, promos);
     }
 
     // ── Emitir factura electrónica (delegado a FacturacionElectronicaService) ─

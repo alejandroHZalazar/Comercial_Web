@@ -13,10 +13,12 @@ namespace Infrastructure.Services
     public class ProductoService : IProductoService
     {
         private readonly ComercialDbContext _context;
+        private readonly IVariantesProductoService _variantes;
 
-        public ProductoService(ComercialDbContext context)
+        public ProductoService(ComercialDbContext context, IVariantesProductoService variantes)
         {
-            _context = context;
+            _context   = context;
+            _variantes = variantes;
         }
 
         public async Task<List<Producto>> TraerTodosAsync()
@@ -72,7 +74,12 @@ namespace Infrastructure.Services
             if (vm.CantidadMinimaVenta.HasValue && vm.CantidadMinimaVenta.Value < 1)
                 throw new ArgumentException("La cantidad mínima de venta debe ser mayor o igual a 1.", nameof(vm.CantidadMinimaVenta));
 
-            using var tx = await _context.Database.BeginTransactionAsync();
+            // Las imágenes elegidas en el alta se validan antes de escribir nada: si alguna no sirve, no se crea el producto.
+            var imagenesPendientes = _PrepararImagenesPendientes(vm.ImagenesNuevasJson);
+
+            // Si quien llama ya abrió una transacción (alta de producto con variantes), se une a ella.
+            var propia = _context.Database.CurrentTransaction == null;
+            using var tx = propia ? await _context.Database.BeginTransactionAsync() : null;
 
             var producto = new Producto
             {
@@ -92,6 +99,7 @@ namespace Infrastructure.Services
 
             _context.Productos.Add(producto);
             await _context.SaveChangesAsync();
+            vm.Id = producto.Id;
 
             _context.PreciosProductos.Add(new PreciosProducto
             {
@@ -120,10 +128,10 @@ namespace Infrastructure.Services
 
             // Imágenes cargadas antes de guardar (aún no existía Id de producto).
             // Se insertan en la misma transacción para no dejar el alta a mitad de camino.
-            _AgregarImagenesPendientes(producto.Id, vm.ImagenesNuevasJson);
+            _AgregarImagenesPendientes(producto.Id, imagenesPendientes);
 
             await _context.SaveChangesAsync();
-            await tx.CommitAsync();
+            if (propia) await tx!.CommitAsync();
         }
 
 
@@ -132,7 +140,8 @@ namespace Infrastructure.Services
             if (producto.CantidadMinimaVenta.HasValue && producto.CantidadMinimaVenta.Value < 1)
                 throw new ArgumentException("La cantidad mínima de venta debe ser mayor o igual a 1.", nameof(producto.CantidadMinimaVenta));
 
-            using var tx = await _context.Database.BeginTransactionAsync();
+            var propia = _context.Database.CurrentTransaction == null;
+            using var tx = propia ? await _context.Database.BeginTransactionAsync() : null;
 
             var existente = await _context.Productos.FirstOrDefaultAsync(p => p.Id == producto.Id);
             if (existente == null)
@@ -145,7 +154,10 @@ namespace Infrastructure.Services
             existente.FkProveedor      = producto.FkProveedor;
             existente.Ganancia         = producto.Ganancia;
             existente.Descuento        = producto.Descuento;
-            existente.CantidadMinimaVenta = producto.CantidadMinimaVenta;
+            // Si la base ya tiene un valor y no se informa uno nuevo, se conserva: en las bases donde la columna
+            // es NOT NULL no se puede dejar vacía (en las que admiten NULL, un valor ya cargado no se borra desde acá).
+            if (producto.CantidadMinimaVenta.HasValue || existente.CantidadMinimaVenta == null)
+                existente.CantidadMinimaVenta = producto.CantidadMinimaVenta;
             existente.DescripcionLarga = producto.DescripcionLarga?.Trim();
 
             // Lógica de imagen:
@@ -182,7 +194,7 @@ namespace Infrastructure.Services
             stock.CantidadMinima = producto.CantidadMinima;
 
             await _context.SaveChangesAsync();
-            await tx.CommitAsync();
+            if (propia) await tx!.CommitAsync();
         }
 
         public async Task EliminarAsync(int id)
@@ -191,13 +203,32 @@ namespace Infrastructure.Services
             if (producto == null) return;
 
             producto.Baja = true;
+
+            // Con variantes habilitadas: dar de baja una ficha da de baja todas sus variantes, y dar de baja una
+            // variante deshabilita su combinación. Con el parámetro apagado no se consulta ninguna tabla de variantes.
+            if (await _variantes.HabilitadoAsync())
+            {
+                var variante = await _context.ProductosVariantes.FirstOrDefaultAsync(v => v.FkProducto == id);
+                if (variante != null) variante.Activa = false;
+
+                var hijas = await _context.ProductosVariantes.Where(v => v.FkPrincipal == id)
+                    .Select(v => v.FkProducto).ToListAsync();
+                if (hijas.Count > 0)
+                    await _context.Productos.Where(x => hijas.Contains(x.Id))
+                        .ExecuteUpdateAsync(s => s.SetProperty(x => x.Baja, true));
+            }
+
             await _context.SaveChangesAsync();
         }
 
         public async Task<List<ProductoDto>> TraerProductosProveedorAsync(int proveedorId)
         {
-            return await _context.Productos
-                .Where(p => p.FkProveedor == proveedorId && p.Baja != true)
+            IQueryable<Producto> q = _context.Productos.Where(p => p.FkProveedor == proveedorId && p.Baja != true);
+            // Con variantes habilitadas se ofrecen las variantes y no la ficha principal.
+            if (await _variantes.HabilitadoAsync())
+                q = q.Where(p => !_context.ProductosPrincipales.Any(f => f.FkProducto == p.Id));
+
+            return await q
                 .Select(p => new ProductoDto
                 {
                     Id = p.Id,
@@ -409,9 +440,10 @@ namespace Infrastructure.Services
         /// Persiste (dentro de la transacción de alta) las imágenes cargadas antes de que el
         /// producto tuviera Id. Aplica la misma regla de "una sola principal" que AgregarImagenAsync.
         /// </summary>
-        private void _AgregarImagenesPendientes(int idProducto, string? imagenesNuevasJson)
+        /// <summary>Lee y valida las imágenes elegidas en el alta (JSON con el campo "imagen" en base64). Null si no hay.</summary>
+        private static (List<byte[]> Binarios, int IdxPrincipal)? _PrepararImagenesPendientes(string? imagenesNuevasJson)
         {
-            if (string.IsNullOrWhiteSpace(imagenesNuevasJson)) return;
+            if (string.IsNullOrWhiteSpace(imagenesNuevasJson)) return null;
 
             List<ImagenProductoNuevaDto>? pendientes;
             try
@@ -419,31 +451,65 @@ namespace Infrastructure.Services
                 pendientes = JsonSerializer.Deserialize<List<ImagenProductoNuevaDto>>(
                     imagenesNuevasJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
-            catch { return; } // JSON inválido: no bloquea el alta del producto, simplemente no carga imágenes
+            catch (JsonException)
+            {
+                // Antes se ignoraba en silencio y el producto quedaba sin imágenes: ahora el alta se cancela con un aviso.
+                throw new InvalidOperationException("No se pudieron leer las imágenes seleccionadas. Volvé a cargarlas e intentá nuevamente.");
+            }
 
-            if (pendientes == null || pendientes.Count == 0) return;
+            if (pendientes == null || pendientes.Count == 0) return null;
+
+            // Se validan TODAS: una imagen inválida cancela el alta (nunca se pierde en silencio).
+            var binarios = new List<byte[]>();
+            for (int i = 0; i < pendientes.Count; i++)
+            {
+                var bytes = _Base64ABytes(pendientes[i].Imagen);
+                if (bytes == null || bytes.Length == 0)
+                    throw new InvalidOperationException($"No se pudo procesar la imagen {i + 1} de {pendientes.Count}. Volvé a cargarla e intentá nuevamente.");
+                if (bytes.Length > MaxBytesImagen)
+                    throw new InvalidOperationException($"La imagen {i + 1} supera el límite de 5 MB.");
+                if (!_EsImagenSoportada(bytes))
+                    throw new InvalidOperationException($"La imagen {i + 1} no tiene un formato admitido (JPG, PNG, GIF o WEBP).");
+                binarios.Add(bytes);
+            }
 
             // No confiar en el cliente: garantizar una sola principal (la primera marcada, o la de orden 0).
             int idxPrincipal = pendientes.FindIndex(p => p.EsPrincipal);
             if (idxPrincipal < 0) idxPrincipal = 0;
+            return (binarios, idxPrincipal);
+        }
 
-            for (int i = 0; i < pendientes.Count; i++)
+        /// <summary>Inserta (dentro de la transacción del alta) las imágenes ya validadas, con el id definitivo del producto.</summary>
+        private void _AgregarImagenesPendientes(int idProducto, (List<byte[]> Binarios, int IdxPrincipal)? pendientes)
+        {
+            if (pendientes == null) return;
+
+            for (int i = 0; i < pendientes.Value.Binarios.Count; i++)
             {
-                var bytes = _Base64ABytes(pendientes[i].Imagen);
-                if (bytes == null) continue;
+                var bytes = pendientes.Value.Binarios[i];
 
                 _context.ImagenesProductos.Add(new ImagenesProducto
                 {
                     FkProducto  = idProducto,
                     Imagen      = bytes,
                     ContentType = _DetectarContentTypeImagen(bytes),
-                    EsPrincipal = i == idxPrincipal,
+                    EsPrincipal = i == pendientes.Value.IdxPrincipal,
                     Orden       = i,
                     Baja        = false,
                     FechaAlta   = DateTime.Now
                 });
             }
         }
+
+        private const int MaxBytesImagen = 5 * 1024 * 1024;
+
+        /// <summary>JPEG, PNG, GIF o WEBP según la firma del archivo.</summary>
+        private static bool _EsImagenSoportada(byte[] d) =>
+            d.Length >= 12 && (
+                (d[0] == 0xFF && d[1] == 0xD8) ||
+                (d[0] == 0x89 && d[1] == 0x50 && d[2] == 0x4E && d[3] == 0x47) ||
+                (d[0] == 0x47 && d[1] == 0x49 && d[2] == 0x46) ||
+                (d[0] == 0x52 && d[1] == 0x49 && d[2] == 0x46 && d[3] == 0x46 && d[8] == 0x57 && d[9] == 0x45));
 
         private static string _DetectarContentTypeImagen(byte[] data)
         {

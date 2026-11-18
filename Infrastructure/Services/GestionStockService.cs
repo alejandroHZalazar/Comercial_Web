@@ -9,8 +9,13 @@ namespace Infrastructure.Services;
 public class GestionStockService : IGestionStockService
 {
     private readonly ComercialDbContext _db;
+    private readonly IVariantesProductoService _variantes;
 
-    public GestionStockService(ComercialDbContext db) => _db = db;
+    public GestionStockService(ComercialDbContext db, IVariantesProductoService variantes)
+    {
+        _db = db;
+        _variantes = variantes;
+    }
 
     // ---------------------------------------------------------------
     // Búsqueda con todos los datos de precios y stock (5-way LEFT JOIN)
@@ -33,6 +38,11 @@ public class GestionStockService : IGestionStockService
             join pl in _db.PreciosProductos   on p.Id equals pl.FkProducto into plG from pl in plG.DefaultIfEmpty()
             join pp in _db.PreciosProveedores on p.Id equals pp.FkProducto into ppG from pp in ppG.DefaultIfEmpty()
             select new { p, s, c, pl, pp };
+
+        // Con variantes habilitadas se muestran solo las variantes: la ficha principal no tiene stock, precio ni
+        // código propios para operar. Con el parámetro apagado la consulta no cambia (ni nombra la tabla).
+        if (await _variantes.HabilitadoAsync())
+            query = query.Where(x => !_db.ProductosPrincipales.Any(f => f.FkProducto == x.p.Id));
 
         if (provList != null && provList.Count > 0)
             query = query.Where(x =>
