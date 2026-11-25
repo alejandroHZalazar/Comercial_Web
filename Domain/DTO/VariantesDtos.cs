@@ -96,6 +96,8 @@ public class ResultadoVariantes
     public List<string> Errores    { get; set; } = new();
     public int          ProductoId { get; set; }
     public int Creadas        { get; set; }
+    /// <summary>Variantes nuevas que recibieron código de barras generado automáticamente.</summary>
+    public int CodigosGenerados { get; set; }
     public int Actualizadas   { get; set; }
     public int Habilitadas    { get; set; }
     public int Deshabilitadas { get; set; }

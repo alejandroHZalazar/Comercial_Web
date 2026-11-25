@@ -112,6 +112,7 @@ builder.Services.AddScoped<IReporteVentasService, ReporteVentasService>();
 builder.Services.AddScoped<IDevolucionService, DevolucionService>();
 builder.Services.AddScoped<IPromocionService, PromocionService>();
 builder.Services.AddScoped<IPromocionDescuentosService, PromocionDescuentosService>();
+builder.Services.AddScoped<IGeneradorCodigoBarrasService, GeneradorCodigoBarrasService>();
 builder.Services.AddScoped<IFacturacionLotesService, FacturacionLotesService>();
 builder.Services.AddScoped<IComprobantesFiscalesService, ComprobantesFiscalesService>();
 

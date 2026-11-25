@@ -12,7 +12,8 @@ namespace Domain.Contracts
     {
         Task<List<Producto>> TraerTodosAsync();        
         Task<List<Producto>> BuscarPorDescripcionAsync(string descripcion);
-        Task CrearAsync(ProductoDetallesDTO vm);
+        /// <param name="generarCodigo">false = no generar código de barras automático (p. ej. la ficha principal de variantes).</param>
+        Task CrearAsync(ProductoDetallesDTO vm, bool generarCodigo = true);
         Task ActualizarAsync(ProductoDetallesDTO producto);
         Task EliminarAsync(int id); // baja lógica       
         Task<List<ProductoDto>> TraerProductosProveedorAsync(int proveedorId); 

@@ -181,8 +181,8 @@
               <td data-label="Habilitada"><input type="checkbox" class="form-check-input" data-hab="${i}" ${f.habilitada ? 'checked' : ''}></td>
               ${S.usaMedidas ? `<td data-label="Medida">${esc(nombreM(f.medidaId))}</td>` : ''}
               ${S.usaColores ? `<td data-label="Color">${hexC(f.colorId) ? `<span class="var-dot" style="background:${esc(hexC(f.colorId))}"></span>` : ''}${esc(nombreC(f.colorId))}</td>` : ''}
-              <td data-label="Cód. barras"><input class="form-control form-control-sm" maxlength="45" data-i="${i}" data-campo="codBarras" value="${esc(f.codBarras)}" inputmode="numeric"></td>
-              <td data-label="Cód. proveedor"><input class="form-control form-control-sm" maxlength="45" data-i="${i}" data-campo="codProveedor" value="${esc(f.codProveedor)}"></td>
+              <td data-label="Cód. barras"><input class="form-control form-control-sm" maxlength="45" data-i="${i}" data-campo="codBarras" value="${esc(f.codBarras)}" inputmode="numeric" placeholder="${window.ABM_CODIGO_AUTO && !f.productoId ? 'Automático' : ''}"></td>
+              <td data-label="Cód. proveedor"><input class="form-control form-control-sm" maxlength="45" data-i="${i}" data-campo="codProveedor" value="${esc(f.codProveedor)}" placeholder="${window.ABM_CODIGO_AUTO && !f.productoId ? 'Automático' : ''}"></td>
               <td data-label="Costo">${celdaPrecio(f, i, 'costo')}</td>
               <td data-label="Precio">${celdaPrecio(f, i, 'precio')}${S.iguales ? `<button type="button" class="btn btn-sm btn-link p-0 ms-1" data-propio="${i}" title="${f.override ? 'Volver al precio común' : 'Poner un precio propio'}">${f.override ? '↺' : '✎'}</button>` : ''}${propioBadge}</td>
               <td data-label="${colEstado}">${f.productoId

@@ -102,9 +102,13 @@ CREATE TABLE IF NOT EXISTS pedidos_promo_detalle (
 -- 5) Parámetro general (apagado por defecto). Solo se inserta si no existe.
 --    '1' = el motor evalúa promociones en Ventas, Venta minorista y Pedidos.
 -- ----------------------------------------------------------------------------
-INSERT INTO parametros (modulo, parametro, valor)
-SELECT 'promociones', 'descuentos', '0' FROM DUAL
-WHERE NOT EXISTS (SELECT 1 FROM parametros WHERE modulo = 'promociones' AND parametro = 'descuentos');
+-- El id se calcula porque en varias bases parametros.id no es AUTO_INCREMENT.
+INSERT INTO parametros (id, modulo, parametro, valor)
+SELECT t.nuevo, 'promociones', 'descuentos', '0'
+FROM (SELECT IFNULL(MAX(id), 0) + 1 AS nuevo,
+             IFNULL(SUM(modulo = 'promociones' AND parametro = 'descuentos'), 0) AS existe
+      FROM parametros) t
+WHERE t.existe = 0;
 
 -- ----------------------------------------------------------------------------
 -- 6) Ítem de menú "ABM Promociones por Cantidad / Descuento" (hijo del menú Productos = 200)

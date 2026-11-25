@@ -199,6 +199,13 @@ Módulo independiente de los combos por slots (`IPromocionService`). Un único m
 - **Cámara:** `wwwroot/js/escaner-productos.js` (`Escaner.abrir({ onCodigo })`): `getUserMedia` (cámara trasera, requiere HTTPS), `BarcodeDetector` nativo o polyfill `barcode-detector` 3.2.3 + `zxing_reader.wasm` (zxing-wasm 3.1.6) alojados en `wwwroot/lib/barcode-detector/` (sin CDN). Anti-duplicados (mismo código 1,5 s), feedback sonoro/vibración, linterna/cambio de cámara si existen; libera la cámara al cerrar, al ocultar la pestaña y en `pagehide`. No envía imágenes.
 - **Modo lector:** botón 🔫 pone `inputmode="none"` en `txtBusqCB` (sin teclado virtual del celular).
 
+### Código de barras automático
+
+- Parámetros `productos/generaCodigoBarras` ('1' activo) y `productos/proximoCodigoBarras` (contador). Script: `scripts/codigo_barras_automatico.sql`.
+- Solo en altas del ABM (producto simple y variantes nuevas) y **solo si código de barras y de proveedor vienen vacíos**; el mismo valor va a ambos (`001`…`999`, `1000`…). La ficha principal no lleva código. NO aplica a importaciones masivas (alta masiva / cambio de precios), a la edición, ni a LitoralMarket o la aplicación de escritorio.
+- `IGeneradorCodigoBarrasService.ReservarAsync` debe ser la primera lectura de la transacción: bloquea la fila del contador (`SELECT … FOR UPDATE`) y verifica que el código no exista como `codBarras` ni `codProveedor` en ningún producto.
+- En varias bases `parametros.id` **no es AUTO_INCREMENT**: los scripts deben calcular el id.
+
 ### Tabla de Parámetros del Sistema
 
 - **Tabla `parametros`**: almacena configuraciones clave-valor por módulo

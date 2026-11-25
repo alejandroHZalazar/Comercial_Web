@@ -14,11 +14,13 @@ namespace Infrastructure.Services
     {
         private readonly ComercialDbContext _context;
         private readonly IVariantesProductoService _variantes;
+        private readonly IGeneradorCodigoBarrasService _codigos;
 
-        public ProductoService(ComercialDbContext context, IVariantesProductoService variantes)
+        public ProductoService(ComercialDbContext context, IVariantesProductoService variantes, IGeneradorCodigoBarrasService codigos)
         {
             _context   = context;
             _variantes = variantes;
+            _codigos   = codigos;
         }
 
         public async Task<List<Producto>> TraerTodosAsync()
@@ -69,7 +71,7 @@ namespace Infrastructure.Services
                 .ToListAsync();
         }
 
-        public async Task CrearAsync(ProductoDetallesDTO vm)
+        public async Task CrearAsync(ProductoDetallesDTO vm, bool generarCodigo = true)
         {
             if (vm.CantidadMinimaVenta.HasValue && vm.CantidadMinimaVenta.Value < 1)
                 throw new ArgumentException("La cantidad mínima de venta debe ser mayor o igual a 1.", nameof(vm.CantidadMinimaVenta));
@@ -77,9 +79,22 @@ namespace Infrastructure.Services
             // Las imágenes elegidas en el alta se validan antes de escribir nada: si alguna no sirve, no se crea el producto.
             var imagenesPendientes = _PrepararImagenesPendientes(vm.ImagenesNuevasJson);
 
+            // Código de barras automático: solo si el usuario dejó vacíos los DOS códigos y el parámetro está activo.
+            // Se consulta antes de abrir la transacción: la reserva debe ser la primera lectura dentro de ella.
+            var generar = generarCodigo
+                && string.IsNullOrWhiteSpace(vm.CodBarras) && string.IsNullOrWhiteSpace(vm.CodProveedor)
+                && await _codigos.HabilitadoAsync();
+
             // Si quien llama ya abrió una transacción (alta de producto con variantes), se une a ella.
             var propia = _context.Database.CurrentTransaction == null;
             using var tx = propia ? await _context.Database.BeginTransactionAsync() : null;
+
+            if (generar)
+            {
+                var codigo = (await _codigos.ReservarAsync(1))[0];
+                vm.CodBarras    = codigo;
+                vm.CodProveedor = codigo;
+            }
 
             var producto = new Producto
             {

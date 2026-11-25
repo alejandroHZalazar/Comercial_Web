@@ -393,11 +393,11 @@
                     <div class="row mb-3">
                         <div class="col-md-4 solo-simple">
                             <label class="form-label fw-semibold" style="font-size:.83rem;">Cód. Proveedor</label>
-                            <input type="text" class="form-control form-control-sm" name="Producto.CodProveedor" autocomplete="off" />
+                            <input type="text" class="form-control form-control-sm" name="Producto.CodProveedor" autocomplete="off" placeholder="@(Model.GeneraCodigoBarras ? "Alta: vacío = automático" : null)" />
                         </div>
                         <div class="col-md-4 solo-simple">
                             <label class="form-label fw-semibold" style="font-size:.83rem;">Cód. Barras</label>
-                            <input type="text" class="form-control form-control-sm" name="Producto.CodBarras" autocomplete="off" />
+                            <input type="text" class="form-control form-control-sm" name="Producto.CodBarras" autocomplete="off" placeholder="@(Model.GeneraCodigoBarras ? "Alta: vacío = automático" : null)" />
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold" style="font-size:.83rem;">Descripción <span class="text-danger">*</span></label>
@@ -766,6 +766,7 @@
 @section Scripts {
 @if (Model.VariantesHabilitadas)
 {
+    <script>window.ABM_CODIGO_AUTO = @(Model.GeneraCodigoBarras ? "true" : "false");</script>
     <script src="~/js/abm-variantes.js" asp-append-version="true"></script>
 }
 <script>

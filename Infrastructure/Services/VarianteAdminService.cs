@@ -25,14 +25,16 @@ public class VarianteAdminService : IVarianteAdminService
     private readonly IProductoService               _productos;
     private readonly IVariantesProductoService      _estado;
     private readonly ILogger<VarianteAdminService>  _logger;
+    private readonly IGeneradorCodigoBarrasService  _codigos;
 
     public VarianteAdminService(ComercialDbContext db, IProductoService productos,
-        IVariantesProductoService estado, ILogger<VarianteAdminService> logger)
+        IVariantesProductoService estado, ILogger<VarianteAdminService> logger, IGeneradorCodigoBarrasService codigos)
     {
         _db        = db;
         _productos = productos;
         _estado    = estado;
         _logger    = logger;
+        _codigos   = codigos;
     }
 
     // ═════════════════════════════════════════════════════════════
@@ -551,14 +553,32 @@ public class VarianteAdminService : IVarianteAdminService
         var resultado = new ResultadoVariantes();
         var nuevas = new List<(Producto Prod, VarianteFilaDto Fila, int Orden)>();
 
+        // Código de barras automático para las variantes NUEVAS que vengan sin ninguno de los dos códigos.
+        // La ficha principal nunca recibe código. El parámetro se consulta antes de abrir la transacción.
+        var sinCodigo = filas.Where(f => f.ProductoId is null && f.CodBarras is null && f.CodProveedor is null).ToList();
+        if (sinCodigo.Count > 0 && !await _codigos.HabilitadoAsync()) sinCodigo.Clear();
+
         // Si quien llama ya abrió una transacción, se une a ella (y es quien confirma o revierte).
         var propia = _db.Database.CurrentTransaction == null;
         await using var tx = propia ? await _db.Database.BeginTransactionAsync() : null;
         try
         {
+            // Primera lectura de la transacción: se reservan TODOS los códigos de la operación de una sola vez
+            // (excluyendo los que el usuario escribió en otras filas o en la ficha).
+            if (sinCodigo.Count > 0)
+            {
+                var escritos = filas.SelectMany(f => new[] { f.CodBarras, f.CodProveedor })
+                    .Append(p.CodBarras).Append(p.CodProveedor)
+                    .Where(c => c != null).Select(c => c!);
+                var codigos = await _codigos.ReservarAsync(sinCodigo.Count, escritos);
+                for (var i = 0; i < sinCodigo.Count; i++)
+                    sinCodigo[i].CodBarras = sinCodigo[i].CodProveedor = codigos[i];
+                resultado.CodigosGenerados = sinCodigo.Count;
+            }
+
             // 1) Ficha principal (producto + stock/precio/costo/proveedor + imágenes) con el servicio existente,
             //    dentro de esta misma transacción (ProductoService se une a la transacción en curso).
-            if (principal is null) await _productos.CrearAsync(p);
+            if (principal is null) await _productos.CrearAsync(p, generarCodigo: false);   // la ficha no lleva código
             else                   await _productos.ActualizarAsync(p);
             pid = p.Id ?? throw new InvalidOperationException("No se pudo obtener el id del producto creado.");
             resultado.ProductoId = pid;

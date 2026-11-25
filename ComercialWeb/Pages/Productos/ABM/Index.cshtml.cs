@@ -29,6 +29,8 @@ namespace Comercial_Web.Pages.Productos.ABM
 
         /// <summary>true solo con ecommerce/HabilitarVariantesProducto = '1' y las tablas de variantes creadas.</summary>
         public bool VariantesHabilitadas { get; private set; }
+        /// <summary>Parámetro productos/generaCodigoBarras activo (solo para informar en la pantalla).</summary>
+        public bool GeneraCodigoBarras { get; private set; }
 
         public List<Producto> Productos { get; set; } = new();
         public List<SelectListItem> Rubros { get; set; } = new();
@@ -61,6 +63,7 @@ namespace Comercial_Web.Pages.Productos.ABM
         private async Task CargarCombosAsync()
         {
             VariantesHabilitadas = await _variantes.HabilitadoAsync();
+            GeneraCodigoBarras = (await _parametroService.ObtenerValorAsync("productos", "generaCodigoBarras")).Trim() == "1";
 
             Rubros = (await _rubroService.GetAllConRutaAsync())
                 .Select(c => new SelectListItem { Value = c.Id.ToString(), Text = c.Ruta }).ToList();
@@ -462,6 +465,7 @@ namespace Comercial_Web.Pages.Productos.ABM
 
                 var partes = new List<string> { eraNuevo ? "Producto con variantes creado." : "Producto con variantes actualizado." };
                 if (rv.Creadas > 0)           partes.Add($"{rv.Creadas} variante(s) nueva(s).");
+                if (rv.CodigosGenerados > 0)  partes.Add($"{rv.CodigosGenerados} código(s) de barras generado(s).");
                 if (rv.Habilitadas > 0)       partes.Add($"{rv.Habilitadas} habilitada(s).");
                 if (rv.Deshabilitadas > 0)    partes.Add($"{rv.Deshabilitadas} deshabilitada(s).");
                 if (rv.PreciosPropagados > 0) partes.Add($"Precio común aplicado a {rv.PreciosPropagados} variante(s).");
@@ -523,11 +527,15 @@ namespace Comercial_Web.Pages.Productos.ABM
                 return new JsonResult(new { ok = false, errores = new[] { errorRegla } }, _camel);
 
             var eraNuevo = (Producto.Id ?? 0) == 0;
+            var sinCodigos = string.IsNullOrWhiteSpace(Producto.CodBarras) && string.IsNullOrWhiteSpace(Producto.CodProveedor);
             try
             {
                 if (eraNuevo) await _productoService.CrearAsync(Producto);
                 else          await _productoService.ActualizarAsync(Producto);
-                return new JsonResult(new { ok = true, productoId = Producto.Id, mensaje = eraNuevo ? "Producto creado correctamente." : "Producto actualizado correctamente." }, _camel);
+                var mensaje = eraNuevo ? "Producto creado correctamente." : "Producto actualizado correctamente.";
+                if (eraNuevo && sinCodigos && !string.IsNullOrWhiteSpace(Producto.CodBarras))
+                    mensaje += $" Código de barras asignado: {Producto.CodBarras}.";
+                return new JsonResult(new { ok = true, productoId = Producto.Id, mensaje }, _camel);
             }
             catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
             {
