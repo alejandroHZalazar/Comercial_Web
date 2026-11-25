@@ -80,6 +80,7 @@
         div.className = 'modal fade';
         div.id = 'modalEscaner';
         div.tabIndex = -1;
+        div.style.zIndex = '1070';   // por encima del botón de menú móvil del layout (1060), que tapaba el título
         div.setAttribute('aria-label', 'Escanear producto');
         div.innerHTML =
             '<div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">' +
